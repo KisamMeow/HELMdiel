@@ -1,0 +1,24 @@
+# Development files kept locally, never published.
+CLAUDE.md
+test_harness.lua
+
+# Compiled Lua / luac output
+*.luac
+luac.out
+
+# Ashita writes per-character settings outside the addon folder, but guard
+# against a stray copy being committed with a character's gathered data.
+settings.lua
+config/
+
+# Editor and OS noise
+.vscode/
+.idea/
+*.swp
+*~
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# Claude Code local overrides
+.claude/settings.local.json

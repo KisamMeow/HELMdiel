@@ -1,0 +1,40 @@
+# Changelog
+
+All notable changes to HHelmet are documented here.
+
+The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+## [0.5.0] - 2026-08-11
+
+Initial public release.
+
+### Added
+
+- Per-zone fatigue tracking for all four HELM activities (Harvesting,
+  Excavation, Logging, Mining), capped at 200 and persisted per character.
+- ImGui window with one tab per activity, a colored progress bar per tracked
+  zone, and a `(here)` marker on your current zone.
+- Item drop logging per zone, grouped into rarity tiers (Common through
+  Extremely Rare) and sorted by tier, then alphabetically.
+- `/hhelmet` command set: `show`, `hide`, `debug`, `reset all`,
+  `reset <activity>`, `reset <activity> zone`, and `set <activity> <0-200>`.
+- Auto-open on gather, toggleable from the window.
+- `debug` mode that prints raw incoming chat lines, for calibrating message
+  detection against the live server.
+
+### Known limitations
+
+- Only Harvesting's chat patterns are confirmed against real HorizonXI text.
+  Excavation, Logging, and Mining use unverified best guesses and may not
+  count correctly. See the README for how to report the real strings.
+- Zone IDs use standard retail-compatible numbering and have not been checked
+  one-by-one against HorizonXI's server.
+- The rule that a gather decays *all* other zones for that activity was
+  inferred from a two-zone observation, not stress-tested against three or
+  more fatigued zones at once.
+
+[Unreleased]: https://github.com/KisamMeow/HHelmet/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/KisamMeow/HHelmet/releases/tag/v0.5.0
