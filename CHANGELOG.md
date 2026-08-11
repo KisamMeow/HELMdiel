@@ -12,8 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - **Home tab**, shown first, covering only the zone you're standing in: skill,
-  fatigue, and gathered items. Zones supporting two activities — Yuhtunga and
-  Yhoator Jungle — get a section for each.
+  fatigue, and gathered items. Zones supporting two activities (Yuhtunga and
+  Yhoator Jungle) get a section for each.
 - **Settings tab**, holding a box for each skill level, the auto-open toggle,
   and the Reset Session button.
 - **Skill tracking.** Skill levels are read from skill-up messages and shown at

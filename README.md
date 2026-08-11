@@ -15,7 +15,7 @@ Ashita v4 addon. Version 0.6.0. Released under GPL-3.0. Coded with help from Cla
 - Skill levels, read automatically from your skill-up messages.
 - A Settings tab for your skill levels and the addon's options.
 - Colored progress bars showing how close each zone is to the 200 cap.
-- Automatic detection from the chat log — no manual counting.
+- Automatic detection from the chat log, with no manual counting.
 - Item drop logging per zone, grouped into rarity tiers, for eyeballing rough
   drop rates.
 - Optional auto-open: the window pops up when you gather.
@@ -42,19 +42,19 @@ To load it automatically, add that line to your Ashita script (usually
 
 ## Commands
 
-  * **/hhelmet** — _Toggles the fatigue window._
-  * **/hhelmet show** / **/hhelmet hide** — _Shows or hides the window._
-  * **/hhelmet debug** — _Toggles printing of raw incoming chat lines, used to
+  * **/hhelmet** - _Toggles the fatigue window._
+  * **/hhelmet show** / **/hhelmet hide** - _Shows or hides the window._
+  * **/hhelmet debug** - _Toggles printing of raw incoming chat lines, used to
     calibrate message detection (see below)._
-  * **/hhelmet reset all** — _Wipes all fatigue and item data for the current
+  * **/hhelmet reset all** - _Wipes all fatigue and item data for the current
     character._
-  * **/hhelmet reset &lt;activity&gt;** — _Wipes one activity across all zones._
-  * **/hhelmet reset &lt;activity&gt; zone** — _Wipes one activity in the current
+  * **/hhelmet reset &lt;activity&gt;** - _Wipes one activity across all zones._
+  * **/hhelmet reset &lt;activity&gt; zone** - _Wipes one activity in the current
     zone only._
-  * **/hhelmet set &lt;activity&gt; &lt;0-200&gt;** — _Manually sets the current zone's
+  * **/hhelmet set &lt;activity&gt; &lt;0-200&gt;** - _Manually sets the current zone's
     fatigue for one activity. Useful for seeding the counter when you start
     using the addon partway through a session._
-  * **/hhelmet skill &lt;activity&gt; &lt;value&gt;** — _Manually sets your skill level
+  * **/hhelmet skill &lt;activity&gt; &lt;value&gt;** - _Manually sets your skill level
     for one activity. The Settings tab does the same thing with a box._
 
 ## How fatigue works
@@ -80,8 +80,8 @@ tracking, use `/hhelmet set` to bring the counter back in line.
 
 The **Home** tab shows only what applies to the zone you're currently in: your
 skill, that zone's fatigue, and what you've gathered there. A few zones support
-two activities — Yuhtunga Jungle and Yhoator Jungle are both Harvesting and
-Logging — and Home shows a section for each. In a zone with no HELM activity,
+two activities (Yuhtunga Jungle and Yhoator Jungle are both Harvesting and
+Logging), and Home shows a section for each. In a zone with no HELM activity,
 it says so.
 
 The next four tabs are one per activity, showing your skill for that activity
@@ -92,7 +92,7 @@ at the top, then every tracked zone. The zone you're standing in is tagged
 toggle, and the Reset Session button.
 
 Skill starts as `unknown`. The game only reports your skill when it goes *up*,
-so an existing level can't be detected — type it into the Settings tab, or
+so an existing level can't be detected. Type it into the Settings tab, or
 just wait for your next skill-up and it fills itself in.
 
 Bar colors:
@@ -115,7 +115,7 @@ what dropped, grouped by how often it appeared:
 | Extremely Rare | under 1% |
 
 Items are sorted by tier, then alphabetically within a tier. These percentages
-are only as good as your sample size — a zone with 20 gathers logged will show
+are only as good as your sample size. A zone with 20 gathers logged will show
 wildly misleading tiers. Give it a few hundred before reading anything into it.
 
 ## Detection status
@@ -124,7 +124,7 @@ Detection works by matching text in your chat log. **All four activities have
 been verified against real HorizonXI messages.**
 
 Excavation and Mining are worth explaining, because the game gives them the
-same success message — both say "You successfully dig up." Nothing in the
+same success message: both say "You successfully dig up." Nothing in the
 text distinguishes them, so HHelmet uses the zone you're standing in to tell
 them apart. That works because no zone appears in both lists. If you gather
 in a zone HHelmet doesn't track, an ambiguous message may be filed under the
@@ -143,14 +143,14 @@ If something isn't being counted:
 
 Fatigue and item logging cover a fixed list of zones per activity:
 
-- **Harvesting** — West Sarutabaruta, Giddeus, Yuhtunga Jungle, Yhoator
+- **Harvesting**: West Sarutabaruta, Giddeus, Yuhtunga Jungle, Yhoator
   Jungle, Bhaflau Thickets, Wajaom Woodlands
-- **Excavation** — Attohwa Chasm, Korroloka Tunnel, Maze of Shakhrami,
+- **Excavation**: Attohwa Chasm, Korroloka Tunnel, Maze of Shakhrami,
   Tahrongi Canyon
-- **Logging** — Buburimu Peninsula, Carpenters' Landing, East Ronfaure,
+- **Logging**: Buburimu Peninsula, Carpenters' Landing, East Ronfaure,
   Ghelsba Outpost, Jugner Forest, Lufaise Meadows, Misareaux Coast, Yhoator
   Jungle, Yuhtunga Jungle, Caedarva Mire, Mamook
-- **Mining** — Gusgen Mines, Ifrit's Cauldron, Newton Movalpolos, Oldton
+- **Mining**: Gusgen Mines, Ifrit's Cauldron, Newton Movalpolos, Oldton
   Movalpolos, Palborough Mines, Yughott Grotto, Zeruhn Mines
 
 Gathering in a zone outside these lists still updates fatigue for that zone,
@@ -173,8 +173,8 @@ Deleting that file resets the character completely, same as `/hhelmet reset all`
   so gathering either one in an untracked zone can be misfiled (see above).
 - Zone IDs use the standard retail-compatible numbering and have not been
   checked one-by-one against HorizonXI's server.
-- The rule that a gather decays *all* other zones — rather than only the most
-  recently fatigued one — was inferred from a two-zone observation and hasn't
+- The rule that a gather decays *all* other zones, rather than only the most
+  recently fatigued one, was inferred from a two-zone observation and hasn't
   been stress-tested against three or more fatigued zones at once.
 - Logged item names keep their leading article, e.g. `a sprig of dyer's woad`.
 
