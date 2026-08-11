@@ -4,12 +4,16 @@ Tracks HorizonXI's new HELM system released in 2.0.0
 
 This addon is in very early development, there will be bugs and the UI will be reworked as I get closer to being feature complete.
 
-Ashita v4 addon. Version 0.5.1. Released under GPL-3.0. Coded with help from Claude Opus 5.
+Ashita v4 addon. Version 0.6.0. Released under GPL-3.0. Coded with help from Claude Opus 5.
 
 ## Features
 
+- A Home tab showing everything relevant to the zone you're standing in,
+  including zones that support more than one HELM activity.
 - Per-zone fatigue counters for each of the four HELM activities, tracked
   independently and persisted per character.
+- Skill levels, read automatically from your skill-up messages.
+- A Settings tab for your skill levels and the addon's options.
 - Colored progress bars showing how close each zone is to the 200 cap.
 - Automatic detection from the chat log — no manual counting.
 - Item drop logging per zone, grouped into rarity tiers, for eyeballing rough
@@ -22,8 +26,7 @@ Planned, in no particular order and with no promised timeline:
 
 - Export gathered data to a CSV file, openable in Excel or Sheets
 - UI rework
-- Home tab
-- Settings tab
+- Rank tracking
 
 ## Installation
 
@@ -51,6 +54,8 @@ To load it automatically, add that line to your Ashita script (usually
   * **/hhelmet set &lt;activity&gt; &lt;0-200&gt;** — _Manually sets the current zone's
     fatigue for one activity. Useful for seeding the counter when you start
     using the addon partway through a session._
+  * **/hhelmet skill &lt;activity&gt; &lt;value&gt;** — _Manually sets your skill level
+    for one activity. The Settings tab does the same thing with a box._
 
 ## How fatigue works
 
@@ -73,8 +78,22 @@ tracking, use `/hhelmet set` to bring the counter back in line.
 
 ## Reading the window
 
-One tab per activity. Within a tab, every tracked zone gets a bar, and the
-zone you're standing in is tagged `(here)`.
+The **Home** tab shows only what applies to the zone you're currently in: your
+skill, that zone's fatigue, and what you've gathered there. A few zones support
+two activities — Yuhtunga Jungle and Yhoator Jungle are both Harvesting and
+Logging — and Home shows a section for each. In a zone with no HELM activity,
+it says so.
+
+The next four tabs are one per activity, showing your skill for that activity
+at the top, then every tracked zone. The zone you're standing in is tagged
+`(here)`.
+
+**Settings** is last, and holds a box for each skill level, the auto-open
+toggle, and the Reset Session button.
+
+Skill starts as `unknown`. The game only reports your skill when it goes *up*,
+so an existing level can't be detected — type it into the Settings tab, or
+just wait for your next skill-up and it fills itself in.
 
 Bar colors:
 

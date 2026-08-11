@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-08-11
+
+### Added
+
+- **Home tab**, shown first, covering only the zone you're standing in: skill,
+  fatigue, and gathered items. Zones supporting two activities — Yuhtunga and
+  Yhoator Jungle — get a section for each.
+- **Settings tab**, holding a box for each skill level, the auto-open toggle,
+  and the Reset Session button.
+- **Skill tracking.** Skill levels are read from skill-up messages and shown at
+  the top of each activity tab.
+- `/hhelmet skill <activity> <value>` to set a skill level manually, since the
+  game only reveals your skill when it increases.
+
+### Fixed
+
+- Every gather wrote your settings file to disk twice instead of once.
+- Having the window open added empty entries to your settings file for
+  activities and zones you had never gathered in.
+
 ## [0.5.1] - 2026-08-11
 
 ### Fixed
@@ -53,6 +73,7 @@ Initial public release.
   inferred from a two-zone observation, not stress-tested against three or
   more fatigued zones at once.
 
-[Unreleased]: https://github.com/KisamMeow/HHelmet/compare/v0.5.1...HEAD
+[Unreleased]: https://github.com/KisamMeow/HHelmet/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/KisamMeow/HHelmet/compare/v0.5.1...v0.6.0
 [0.5.1]: https://github.com/KisamMeow/HHelmet/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/KisamMeow/HHelmet/releases/tag/v0.5.0

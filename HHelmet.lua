@@ -1,6 +1,6 @@
 addon.name    = 'HHelmet';
 addon.author  = 'Masuru';
-addon.version = '0.5.1';
+addon.version = '0.6.0';
 addon.desc    = 'Tracks HELM (Harvesting/Excavation/Logging/Mining) regional gathering fatigue on HorizonXI.';
 addon.link    = 'https://github.com/KisamMeow/HHelmet';
 
@@ -16,6 +16,7 @@ local chat     = require('chat');
 local FATIGUE_CAP          = 200;
 local FATIGUE_WARN         = 150;
 local DEDUP_WINDOW_SECONDS = 3.5;
+local SKILL_INPUT_WIDTH    = 70;
 
 local ACTIVITIES = T{ 'Harvesting', 'Excavation', 'Logging', 'Mining' };
 
@@ -80,16 +81,33 @@ local MESSAGE_PATTERNS = T{
 
 local FATIGUE_PATTERN = 'You sense there is little more to be gained from this area.';
 
-local TRACKED_ZONE_SET = T{};
-local ZONE_NAMES       = T{};
+local SKILL_NAMES = T{
+    Harvesting = 'harvesting',
+    Excavation = 'excavating',
+    Logging    = 'logging',
+    Mining     = 'mining',
+};
+
+local SKILL_MARKER        = 'skill has increased';
+local SKILL_VALUE_DECIMAL = 'raising it to (%d+%.%d+)';
+local SKILL_VALUE_INTEGER = 'raising it to (%d+)';
+
+local TRACKED_ZONE_SET  = T{};
+local ZONE_NAMES        = T{};
+local ZONE_ACTIVITIES   = T{};
+local SKILL_PATTERNS    = T{};
 
 for _, activity in ipairs(ACTIVITIES) do
     local set = T{};
     for _, zone in ipairs(TRACKED_ZONES[activity]) do
         set[zone.id]        = true;
         ZONE_NAMES[zone.id] = zone.name;
+
+        ZONE_ACTIVITIES[zone.id] = ZONE_ACTIVITIES[zone.id] or T{};
+        table.insert(ZONE_ACTIVITIES[zone.id], activity);
     end
     TRACKED_ZONE_SET[activity] = set;
+    SKILL_PATTERNS[activity]   = ('Your %s skill has increased'):fmt(SKILL_NAMES[activity]);
 end
 
 ----------------------------------------
@@ -179,6 +197,18 @@ local function get_fatigue_color(value)
     return COLOR_LOW;
 end
 
+local EMPTY_LOG = T{};
+local ZONE_KEYS = T{};
+
+local function zone_key(zoneId)
+    local key = ZONE_KEYS[zoneId];
+    if (key == nil) then
+        key = tostring(zoneId);
+        ZONE_KEYS[zoneId] = key;
+    end
+    return key;
+end
+
 local function get_rarity_tier(pct)
     for _, tier in ipairs(RARITY_TIERS) do
         if (pct >= tier.min_pct) then return tier; end
@@ -193,11 +223,12 @@ end
 local function ensure_char(charname)
     local char = helm_settings.characters[charname];
     if (char == nil) then
-        char = T{ fatigue = T{}, item_log = T{} };
+        char = T{ fatigue = T{}, item_log = T{}, skill = T{} };
         helm_settings.characters[charname] = char;
     end
     char.fatigue  = char.fatigue or T{};
     char.item_log = char.item_log or T{};
+    char.skill    = char.skill or T{};
     return char;
 end
 
@@ -209,32 +240,46 @@ end
 
 local function ensure_item_log(charname, activity, zoneId)
     local char = ensure_char(charname);
-    local key  = tostring(zoneId);
+    local key  = zone_key(zoneId);
     char.item_log[activity]      = char.item_log[activity] or T{};
     char.item_log[activity][key] = char.item_log[activity][key] or T{};
     return char.item_log[activity][key];
 end
 
 local function get_fatigue(charname, activity, zoneId)
-    return ensure_fatigue(charname, activity)[tostring(zoneId)] or 0;
+    local char = helm_settings.characters[charname];
+    if (char == nil or char.fatigue == nil or char.fatigue[activity] == nil) then
+        return 0;
+    end
+    return char.fatigue[activity][zone_key(zoneId)] or 0;
 end
 
 local function set_fatigue(charname, activity, zoneId, value)
-    ensure_fatigue(charname, activity)[tostring(zoneId)] =
+    ensure_fatigue(charname, activity)[zone_key(zoneId)] =
         math.max(0, math.min(FATIGUE_CAP, value));
+end
+
+local function get_skill(charname, activity)
+    local char = helm_settings.characters[charname];
+    if (char == nil or char.skill == nil) then return nil; end
+    return char.skill[activity];
+end
+
+local function set_skill(charname, activity, value)
+    ensure_char(charname).skill[activity] = value;
 end
 
 local function get_item_log(charname, activity, zoneId)
     local char = helm_settings.characters[charname];
     if (char == nil or char.item_log == nil or char.item_log[activity] == nil) then
-        return T{};
+        return EMPTY_LOG;
     end
-    return char.item_log[activity][tostring(zoneId)] or T{};
+    return char.item_log[activity][zone_key(zoneId)] or EMPTY_LOG;
 end
 
 local function register_gather(activity, zoneId)
     local fatigue = ensure_fatigue(get_char_name(), activity);
-    local key     = tostring(zoneId);
+    local key     = zone_key(zoneId);
 
     fatigue[key] = math.min(FATIGUE_CAP, (fatigue[key] or 0) + 1);
 
@@ -243,24 +288,24 @@ local function register_gather(activity, zoneId)
             fatigue[zid] = math.max(0, value - 1);
         end
     end
-
-    settings.save();
 end
 
 local function register_fatigue_cap(activity, zoneId)
     set_fatigue(get_char_name(), activity, zoneId, FATIGUE_CAP);
-    settings.save();
 end
 
 local function register_item_gather(activity, zoneId, itemName)
     if (itemName == nil) then return; end
     local log = ensure_item_log(get_char_name(), activity, zoneId);
     log[itemName] = (log[itemName] or 0) + 1;
-    settings.save();
+end
+
+local function register_skill(activity, value)
+    set_skill(get_char_name(), activity, value);
 end
 
 local function reset_session()
-    helm_settings.characters[get_char_name()] = T{ fatigue = T{}, item_log = T{} };
+    helm_settings.characters[get_char_name()] = T{ fatigue = T{}, item_log = T{}, skill = T{} };
 
     state.last_activity        = nil;
     state.last_gather_activity = nil;
@@ -324,6 +369,21 @@ local function resolve_gather(text, zoneId)
     return fallback_activity, fallback_pattern;
 end
 
+local function resolve_skill(text)
+    if (not text:find(SKILL_MARKER, 1, true)) then return nil, nil; end
+
+    for _, activity in ipairs(ACTIVITIES) do
+        if (text:find(SKILL_PATTERNS[activity], 1, true)) then
+            local value = tonumber(text:match(SKILL_VALUE_DECIMAL))
+                       or tonumber(text:match(SKILL_VALUE_INTEGER));
+            if (value ~= nil) then
+                return activity, value;
+            end
+        end
+    end
+    return nil, nil;
+end
+
 ----------------------------------------
 -- Events
 ----------------------------------------
@@ -337,6 +397,14 @@ ashita.events.register('text_in', 'hhelmet_text_in', function(e)
     end
 
     local zoneId = get_current_zone_id();
+
+    local skill_activity, skill_value = resolve_skill(text);
+    if (skill_activity ~= nil) then
+        register_skill(skill_activity, skill_value);
+        settings.save();
+        return;
+    end
+
     local activity, matched = resolve_gather(text, zoneId);
 
     if (activity ~= nil) then
@@ -362,6 +430,8 @@ ashita.events.register('text_in', 'hhelmet_text_in', function(e)
             register_item_gather(activity, zoneId, clean_item_name(extract_after(text, matched)));
         end
 
+        settings.save();
+
         if (helm_settings.window.auto_popup) then
             state.show = true;
         end
@@ -377,11 +447,159 @@ ashita.events.register('text_in', 'hhelmet_text_in', function(e)
         end
 
         register_fatigue_cap(state.last_activity, zoneId);
+        settings.save();
+
         if (helm_settings.window.auto_popup) then
             state.show = true;
         end
     end
 end);
+
+local function render_skill(charname, activity)
+    local skill = get_skill(charname, activity);
+    if (skill == nil) then
+        imgui.TextDisabled(('%s skill: unknown'):fmt(activity));
+    else
+        imgui.Text(('%s skill: %.1f'):fmt(activity, skill));
+    end
+end
+
+local function render_fatigue(charname, activity, zoneId, zoneName, curZoneId)
+    local value = get_fatigue(charname, activity, zoneId);
+    local color = get_fatigue_color(value);
+
+    local label = zoneName;
+    if (zoneId == curZoneId) then
+        label = label .. '  (here)';
+    end
+
+    imgui.TextColored(color, ('%s: %d / %d'):fmt(label, value, FATIGUE_CAP));
+
+    imgui.PushStyleColor(ImGuiCol_PlotHistogram, color);
+    imgui.ProgressBar(value / FATIGUE_CAP, { -1, 14 }, '');
+    imgui.PopStyleColor(1);
+
+    if (value >= FATIGUE_CAP) then
+        imgui.TextColored(COLOR_FATIGUED, 'FATIGUED');
+    end
+
+    imgui.Spacing();
+end
+
+local function count_gathers(log)
+    local total = 0;
+    for _, count in pairs(log) do
+        total = total + count;
+    end
+    return total;
+end
+
+local function render_item_list(log, total)
+    if (total == 0) then
+        imgui.TextDisabled('  No gathers recorded yet.');
+        return;
+    end
+
+    local items = T{};
+    for itemName, count in pairs(log) do
+        local pct = count / total * 100;
+        table.insert(items, {
+            name  = itemName,
+            count = count,
+            pct   = pct,
+            tier  = get_rarity_tier(pct),
+        });
+    end
+
+    table.sort(items, function(a, b)
+        if (a.tier.rank ~= b.tier.rank) then
+            return a.tier.rank < b.tier.rank;
+        end
+        return a.name < b.name;
+    end);
+
+    local last_rank = nil;
+    for _, item in ipairs(items) do
+        if (item.tier.rank ~= last_rank) then
+            imgui.Spacing();
+            imgui.TextDisabled(item.tier.name);
+            last_rank = item.tier.rank;
+        end
+        imgui.Text(('    %s: %d  (%.1f%%)'):fmt(item.name, item.count, item.pct));
+    end
+end
+
+local function render_home(charname, curZoneId)
+    local activities = ZONE_ACTIVITIES[curZoneId];
+
+    imgui.Spacing();
+    if (activities == nil or #activities == 0) then
+        imgui.TextDisabled('No HELM activity is tracked in this zone.');
+        imgui.Spacing();
+        return;
+    end
+
+    local zoneName = get_zone_name(curZoneId);
+
+    for index, activity in ipairs(activities) do
+        if (index > 1) then
+            imgui.Separator();
+            imgui.Spacing();
+        end
+
+        imgui.Text(activity);
+        render_skill(charname, activity);
+        imgui.Spacing();
+
+        render_fatigue(charname, activity, curZoneId, zoneName, curZoneId);
+
+        local log   = get_item_log(charname, activity, curZoneId);
+        local total = count_gathers(log);
+        imgui.TextDisabled(('Items  -  %d gathers'):fmt(total));
+        render_item_list(log, total);
+        imgui.Spacing();
+    end
+end
+
+local function render_settings(charname)
+    imgui.Spacing();
+    imgui.TextDisabled('Skill levels');
+    imgui.Spacing();
+
+    imgui.PushItemWidth(SKILL_INPUT_WIDTH);
+    for _, activity in ipairs(ACTIVITIES) do
+        local buffer = { get_skill(charname, activity) or 0 };
+        if (imgui.InputFloat(activity, buffer, 0, 0, '%.1f')) then
+            set_skill(charname, activity, math.max(0, buffer[1]));
+            settings.save();
+        end
+    end
+    imgui.PopItemWidth();
+
+    imgui.Spacing();
+    imgui.Separator();
+    imgui.Spacing();
+
+    if (imgui.Checkbox('Auto-open on gather', { helm_settings.window.auto_popup })) then
+        helm_settings.window.auto_popup = not helm_settings.window.auto_popup;
+        settings.save();
+    end
+
+    imgui.Spacing();
+    imgui.Separator();
+    imgui.Spacing();
+
+    if (imgui.Button('Reset Session')) then
+        reset_session();
+    end
+    imgui.TextDisabled('Clears all personal data for this character.');
+
+    imgui.Spacing();
+    imgui.Separator();
+    imgui.Spacing();
+    imgui.TextDisabled('Exporting Coming Soon');
+    imgui.Spacing();
+end
 
 ashita.events.register('d3d_present', 'hhelmet_present', function()
     if (not state.show) then return; end
@@ -398,42 +616,30 @@ ashita.events.register('d3d_present', 'hhelmet_present', function()
         imgui.Separator();
 
         if (imgui.BeginTabBar('##hhelmet_activity_tabs')) then
+            if (imgui.BeginTabItem('Home')) then
+                render_home(charname, curZoneId);
+                imgui.EndTabItem();
+            end
+
             for _, activity in ipairs(ACTIVITIES) do
                 if (imgui.BeginTabItem(activity)) then
                     local zones = TRACKED_ZONES[activity];
 
+                    render_skill(charname, activity);
+                    imgui.Separator();
+                    imgui.Spacing();
+
                     for _, zone in ipairs(zones) do
-                        local value = get_fatigue(charname, activity, zone.id);
-                        local color = get_fatigue_color(value);
-
-                        local label = zone.name;
-                        if (zone.id == curZoneId) then
-                            label = label .. '  (here)';
-                        end
-
-                        imgui.TextColored(color, ('%s: %d / %d'):fmt(label, value, FATIGUE_CAP));
-
-                        imgui.PushStyleColor(ImGuiCol_PlotHistogram, color);
-                        imgui.ProgressBar(value / FATIGUE_CAP, { -1, 14 }, '');
-                        imgui.PopStyleColor(1);
-
-                        if (value >= FATIGUE_CAP) then
-                            imgui.TextColored(COLOR_FATIGUED, 'FATIGUED');
-                        end
-
-                        imgui.Spacing();
+                        render_fatigue(charname, activity, zone.id, zone.name, curZoneId);
                     end
 
                     imgui.Separator();
-                    imgui.TextDisabled('Item drop tracking (for eyeballing rough rates)');
+                    imgui.TextDisabled('Item drop tracking');
                     imgui.Spacing();
 
                     for _, zone in ipairs(zones) do
                         local log   = get_item_log(charname, activity, zone.id);
-                        local total = 0;
-                        for _, count in pairs(log) do
-                            total = total + count;
-                        end
+                        local total = count_gathers(log);
 
                         local heading = zone.name;
                         if (zone.id == curZoneId) then
@@ -442,37 +648,7 @@ ashita.events.register('d3d_present', 'hhelmet_present', function()
                         heading = ('%s  -  %d gathers'):fmt(heading, total);
 
                         if (imgui.CollapsingHeader(heading)) then
-                            if (total == 0) then
-                                imgui.TextDisabled('  No gathers recorded yet.');
-                            else
-                                local items = T{};
-                                for itemName, count in pairs(log) do
-                                    local pct = count / total * 100;
-                                    table.insert(items, {
-                                        name  = itemName,
-                                        count = count,
-                                        pct   = pct,
-                                        tier  = get_rarity_tier(pct),
-                                    });
-                                end
-
-                                table.sort(items, function(a, b)
-                                    if (a.tier.rank ~= b.tier.rank) then
-                                        return a.tier.rank < b.tier.rank;
-                                    end
-                                    return a.name < b.name;
-                                end);
-
-                                local last_rank = nil;
-                                for _, item in ipairs(items) do
-                                    if (item.tier.rank ~= last_rank) then
-                                        imgui.Spacing();
-                                        imgui.TextDisabled(item.tier.name);
-                                        last_rank = item.tier.rank;
-                                    end
-                                    imgui.Text(('    %s: %d  (%.1f%%)'):fmt(item.name, item.count, item.pct));
-                                end
-                            end
+                            render_item_list(log, total);
                             imgui.Spacing();
                         end
                     end
@@ -481,17 +657,12 @@ ashita.events.register('d3d_present', 'hhelmet_present', function()
                 end
             end
 
+            if (imgui.BeginTabItem('Settings')) then
+                render_settings(charname);
+                imgui.EndTabItem();
+            end
+
             imgui.EndTabBar();
-        end
-
-        imgui.Separator();
-        if (imgui.Button('Reset Session')) then
-            reset_session();
-        end
-
-        if (imgui.Checkbox('Auto-open on gather', { helm_settings.window.auto_popup })) then
-            helm_settings.window.auto_popup = not helm_settings.window.auto_popup;
-            settings.save();
         end
     end
     imgui.End();
@@ -559,8 +730,20 @@ ashita.events.register('command', 'hhelmet_command', function(e)
             msg(('%s fatigue in %s set to %d.'):fmt(activity, get_zone_name(zoneId), value));
         end
 
+    elseif (sub == 'skill') then
+        local activity = match_activity(args[3] and args[3]:lower() or nil);
+        local value    = tonumber(args[4]);
+
+        if (activity == nil or value == nil or value < 0) then
+            msg('Usage: /hhelmet skill <activity> <value>');
+        else
+            set_skill(charname, activity, value);
+            settings.save();
+            msg(('%s skill set to %.1f.'):fmt(activity, value));
+        end
+
     else
-        msg('Usage: /hhelmet [show|hide|debug|reset <all|activity> [zone]|set <activity> <0-200>]');
+        msg('Usage: /hhelmet [show|hide|debug|reset <all|activity> [zone]|set <activity> <0-200>|skill <activity> <value>]');
     end
 end);
 
