@@ -4,7 +4,7 @@ Tracks HorizonXI's new HELM system released in 2.0.0
 
 This addon is in very early development, there will be bugs and the UI will be reworked as I get closer to being feature complete.
 
-Ashita v4 addon. Version 0.5.0. Released under GPL-3.0. Coded with help from Claude Opus 5.
+Ashita v4 addon. Version 0.5.1. Released under GPL-3.0. Coded with help from Claude Opus 5.
 
 ## Features
 
@@ -101,20 +101,24 @@ wildly misleading tiers. Give it a few hundred before reading anything into it.
 
 ## Detection status
 
-Detection works by matching text in your chat log. **Only Harvesting has been
-verified against real HorizonXI messages.** Excavation, Logging, and Mining
-use best-guess patterns based on standard FFXI wording, and have not been
-confirmed on a live server.
+Detection works by matching text in your chat log. **All four activities have
+been verified against real HorizonXI messages.**
 
-If gathers for those three activities aren't being counted, that's why. To
-help fix it:
+Excavation and Mining are worth explaining, because the game gives them the
+same success message — both say "You successfully dig up." Nothing in the
+text distinguishes them, so HHelmet uses the zone you're standing in to tell
+them apart. That works because no zone appears in both lists. If you gather
+in a zone HHelmet doesn't track, an ambiguous message may be filed under the
+wrong activity; the fix is to report the zone so it can be added.
+
+The fatigue-cap message is still only confirmed for Harvesting. It's assumed
+to be shared by all four, which is likely but unverified.
+
+If something isn't being counted:
 
 1. Run `/hhelmet debug`.
-2. Gather with the tool in question — a success, and if you can, keep going
-   until you hit the fatigue message.
+2. Gather with the tool in question.
 3. Copy the exact lines that appear and report them (see Feedback below).
-
-Once the real strings are known, the patterns are a one-line fix each.
 
 ## Tracked zones
 
@@ -145,7 +149,9 @@ Deleting that file resets the character completely, same as `/hhelmet reset all`
 
 ## Known limitations
 
-- Excavation, Logging, and Mining detection is unverified (see above).
+- The fatigue-cap message is confirmed only for Harvesting.
+- Excavation and Mining share a success message and are separated by zone,
+  so gathering either one in an untracked zone can be misfiled (see above).
 - Zone IDs use the standard retail-compatible numbering and have not been
   checked one-by-one against HorizonXI's server.
 - The rule that a gather decays *all* other zones — rather than only the most

@@ -1,6 +1,6 @@
 addon.name    = 'HHelmet';
 addon.author  = 'Masuru';
-addon.version = '0.5.0';
+addon.version = '0.5.1';
 addon.desc    = 'Tracks HELM (Harvesting/Excavation/Logging/Mining) regional gathering fatigue on HorizonXI.';
 addon.link    = 'https://github.com/KisamMeow/HHelmet';
 
@@ -73,9 +73,9 @@ local TRACKED_ZONES = T{
 
 local MESSAGE_PATTERNS = T{
     Harvesting = T{ 'You successfully harvest', 'You harvest' },
-    Excavation = T{ 'You successfully excavate' },
-    Logging    = T{ 'You successfully log' },
-    Mining     = T{ 'You successfully mine' },
+    Excavation = T{ 'You successfully dig up' },
+    Logging    = T{ 'You successfully cut off' },
+    Mining     = T{ 'You successfully dig up' },
 };
 
 local FATIGUE_PATTERN = 'You sense there is little more to be gained from this area.';
@@ -301,6 +301,30 @@ local function clean_item_name(name)
 end
 
 ----------------------------------------
+-- Detection
+----------------------------------------
+
+local function resolve_gather(text, zoneId)
+    local fallback_activity, fallback_pattern = nil, nil;
+
+    for _, activity in ipairs(ACTIVITIES) do
+        for _, pattern in ipairs(MESSAGE_PATTERNS[activity]) do
+            if (text:find(pattern, 1, true)) then
+                if (TRACKED_ZONE_SET[activity][zoneId]) then
+                    return activity, pattern;
+                end
+                if (fallback_activity == nil) then
+                    fallback_activity, fallback_pattern = activity, pattern;
+                end
+                break;
+            end
+        end
+    end
+
+    return fallback_activity, fallback_pattern;
+end
+
+----------------------------------------
 -- Events
 ----------------------------------------
 
@@ -313,44 +337,35 @@ ashita.events.register('text_in', 'hhelmet_text_in', function(e)
     end
 
     local zoneId = get_current_zone_id();
+    local activity, matched = resolve_gather(text, zoneId);
 
-    for _, activity in ipairs(ACTIVITIES) do
-        local matched = nil;
-        for _, pattern in ipairs(MESSAGE_PATTERNS[activity]) do
-            if (text:find(pattern, 1, true)) then
-                matched = pattern;
-                break;
-            end
-        end
+    if (activity ~= nil) then
+        state.last_activity = activity;
 
-        if (matched ~= nil) then
-            state.last_activity = activity;
-
-            local now = os.clock();
-            if (activity == state.last_gather_activity
-                and zoneId == state.last_gather_zone
-                and (now - state.last_gather_time) < DEDUP_WINDOW_SECONDS) then
-                if (state.debug) then
-                    msg('[dedup] ignored duplicate ' .. activity .. ' event');
-                end
-                return;
-            end
-
-            state.last_gather_activity = activity;
-            state.last_gather_zone     = zoneId;
-            state.last_gather_time     = now;
-
-            register_gather(activity, zoneId);
-
-            if (TRACKED_ZONE_SET[activity][zoneId]) then
-                register_item_gather(activity, zoneId, clean_item_name(extract_after(text, matched)));
-            end
-
-            if (helm_settings.window.auto_popup) then
-                state.show = true;
+        local now = os.clock();
+        if (activity == state.last_gather_activity
+            and zoneId == state.last_gather_zone
+            and (now - state.last_gather_time) < DEDUP_WINDOW_SECONDS) then
+            if (state.debug) then
+                msg('[dedup] ignored duplicate ' .. activity .. ' event');
             end
             return;
         end
+
+        state.last_gather_activity = activity;
+        state.last_gather_zone     = zoneId;
+        state.last_gather_time     = now;
+
+        register_gather(activity, zoneId);
+
+        if (TRACKED_ZONE_SET[activity][zoneId]) then
+            register_item_gather(activity, zoneId, clean_item_name(extract_after(text, matched)));
+        end
+
+        if (helm_settings.window.auto_popup) then
+            state.show = true;
+        end
+        return;
     end
 
     if (text:find(FATIGUE_PATTERN, 1, true)) then

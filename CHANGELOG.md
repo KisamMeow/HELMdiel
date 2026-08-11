@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-08-11
+
+### Fixed
+
+- Excavation, Logging, and Mining now detect gathers. All three shipped with
+  guessed chat patterns that never matched anything, so their counters stayed
+  at zero. Confirmed strings are `You successfully dig up` (Excavation and
+  Mining) and `You successfully cut off` (Logging).
+- Mining gathers are no longer counted as Excavation. The two activities emit
+  identical success text, and the first match won; the current zone now
+  decides between them.
+
+### Changed
+
+- Detection is no longer affected by chat addons that prefix lines with a
+  timestamp.
+
 ## [0.5.0] - 2026-08-11
 
 Initial public release.
@@ -36,5 +53,6 @@ Initial public release.
   inferred from a two-zone observation, not stress-tested against three or
   more fatigued zones at once.
 
-[Unreleased]: https://github.com/KisamMeow/HHelmet/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/KisamMeow/HHelmet/compare/v0.5.1...HEAD
+[0.5.1]: https://github.com/KisamMeow/HHelmet/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/KisamMeow/HHelmet/releases/tag/v0.5.0
