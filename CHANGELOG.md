@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.1] - 2026-08-12
+
+### Added
+
+- The Home tab now tracks your attempts, not just your successes. It shows how
+  many gathers gave you an item out of how many you tried, with a success rate.
+- Skill ups earned in the current zone are shown against that same attempt
+  count, with a percentage. Every skill up counts as one, whether it raised
+  your skill by 0.1 or 0.3, and skill ups from failed gathers count too.
+- Failed gathers are now detected so they can be counted as attempts. They
+  still do not affect fatigue.
+
+### Changed
+
+- The item drop list on Home is now labelled with its own total, which is
+  separate from the gather counters. Drop history is kept so percentages stay
+  meaningful, while the gather counters measure effort from when counting
+  began, so the two numbers differ on purpose.
+
+### Known limitations
+
+- Skill up rates are likely tied to your skill level against each zone's skill
+  range, which HHelmet does not track. Rates recorded at different skill levels
+  are not directly comparable.
+- Two of Logging's messages are unverified: its failure, and the one for
+  breaking a hatchet while still getting a log. Failed logging attempts may go
+  uncounted, and a logging gather that breaks your hatchet may be missed.
+
 ## [0.6.0] - 2026-08-11
 
 ### Added
@@ -73,7 +101,8 @@ Initial public release.
   inferred from a two-zone observation, not stress-tested against three or
   more fatigued zones at once.
 
-[Unreleased]: https://github.com/KisamMeow/HHelmet/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/KisamMeow/HHelmet/compare/v0.6.1...HEAD
+[0.6.1]: https://github.com/KisamMeow/HHelmet/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/KisamMeow/HHelmet/compare/v0.5.1...v0.6.0
 [0.5.1]: https://github.com/KisamMeow/HHelmet/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/KisamMeow/HHelmet/releases/tag/v0.5.0

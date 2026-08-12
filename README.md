@@ -4,7 +4,7 @@ Tracks HorizonXI's new HELM system released in 2.0.0
 
 This addon is in very early development, there will be bugs and the UI will be reworked as I get closer to being feature complete.
 
-Ashita v4 addon. Version 0.6.0. Released under GPL-3.0. Coded with help from Claude Opus 5.
+Ashita v4.30+ addon. Version 0.6.1. Released under GPL-3.0. Coded with help from Claude Opus 5.
 
 ## Features
 
@@ -13,6 +13,8 @@ Ashita v4 addon. Version 0.6.0. Released under GPL-3.0. Coded with help from Cla
 - Per-zone fatigue counters for each of the four HELM activities, tracked
   independently and persisted per character.
 - Skill levels, read automatically from your skill-up messages.
+- Attempt, success, and skill-up counts per zone, so you can see what a zone is
+  actually costing you.
 - A Settings tab for your skill levels and the addon's options.
 - Colored progress bars showing how close each zone is to the 200 cap.
 - Automatic detection from the chat log, with no manual counting.
@@ -29,6 +31,8 @@ Planned, in no particular order and with no promised timeline:
 - Rank tracking
 
 ## Installation
+
+**Requires Ashita v4.30 or newer.**
 
 Download from [github.com/KisamMeow/HHelmet](https://github.com/KisamMeow/HHelmet)
 and copy the `HHelmet` folder into your Ashita `addons` directory, then load it:
@@ -84,6 +88,30 @@ two activities (Yuhtunga Jungle and Yhoator Jungle are both Harvesting and
 Logging), and Home shows a section for each. In a zone with no HELM activity,
 it says so.
 
+Home also counts your attempts and skill ups in that zone:
+
+```
+Gathers 24/28 (85.7%)   Skill ups 2/28 (7.1%)
+Items  -  240 logged
+```
+
+**Gathers** is how many attempts gave you an item, out of how many you made,
+with your success rate. Failed attempts count, because they still cost you time
+and can still skill you up.
+
+**Skill ups** is how many you have earned in this zone, against the same
+attempt count, with the share of attempts that produced one. Every skill up
+counts as one, whether it raised your skill by 0.1 or 0.3.
+
+**Items** is the size of the drop sample below it, which is a different number:
+it keeps counting across resets so your drop percentages stay meaningful, while
+the gather counters describe effort since counting began.
+
+All of it is per zone. Be careful comparing one zone against another, though:
+your skill level relative to a zone's range almost certainly affects how often
+you skill up there, and HHelmet does not account for that yet. See Known
+limitations.
+
 The next four tabs are one per activity, showing your skill for that activity
 at the top, then every tracked zone. The zone you're standing in is tagged
 `(here)`.
@@ -130,8 +158,18 @@ them apart. That works because no zone appears in both lists. If you gather
 in a zone HHelmet doesn't track, an ambiguous message may be filed under the
 wrong activity; the fix is to report the zone so it can be added.
 
-The fatigue-cap message is still only confirmed for Harvesting. It's assumed
-to be shared by all four, which is likely but unverified.
+Three messages are still unconfirmed, all of them for Logging or shared:
+
+- **Logging's failure message.** If the guesses are wrong, failed logging
+  attempts go uncounted and Logging's success rate reads a permanent 100%. If
+  you see that, the pattern is wrong rather than your luck being remarkable.
+- **Logging's message for breaking a hatchet while still getting a log.** If
+  that one is wrong, such a gather is missed entirely and won't be counted at
+  all.
+- **The fatigue-cap message**, verified for Harvesting only and assumed shared
+  by all four.
+
+Reporting the real text for any of these fixes it in one line.
 
 If something isn't being counted:
 
@@ -168,7 +206,15 @@ Deleting that file resets the character completely, same as `/hhelmet reset all`
 
 ## Known limitations
 
+- Skill up rates are almost certainly tied to your current skill level against
+  each zone's skill range, and HHelmet does not track that. Your rate in a
+  given zone will drift as you level, so numbers collected at different skill
+  levels are not directly comparable, and a zone that looks slow may simply be
+  one you have outgrown.
 - The fatigue-cap message is confirmed only for Harvesting.
+- Two of Logging's messages are unverified: its failure, and the one for
+  breaking a hatchet while still getting a log. Failed logging attempts may go
+  uncounted, and a logging gather that breaks your hatchet may be missed.
 - Excavation and Mining share a success message and are separated by zone,
   so gathering either one in an untracked zone can be misfiled (see above).
 - Zone IDs use the standard retail-compatible numbering and have not been

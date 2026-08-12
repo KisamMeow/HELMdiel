@@ -1,6 +1,6 @@
 addon.name    = 'HHelmet';
 addon.author  = 'Masuru';
-addon.version = '0.6.0';
+addon.version = '0.6.1';
 addon.desc    = 'Tracks HELM (Harvesting/Excavation/Logging/Mining) regional gathering fatigue on HorizonXI.';
 addon.link    = 'https://github.com/KisamMeow/HHelmet';
 
@@ -35,10 +35,10 @@ local RARITY_TIERS = T{
 
 local TRACKED_ZONES = T{
     Harvesting = T{
-        { id = 115, name = 'West Sarutabaruta' },
-        { id = 145, name = 'Giddeus' },
-        { id = 123, name = 'Yuhtunga Jungle' },
-        { id = 124, name = 'Yhoator Jungle' },
+        { id = 115, name = 'West Sarutabaruta', skill_min = 0,  skill_max = 10 },
+        { id = 145, name = 'Giddeus',           skill_min = 0,  skill_max = 20 },
+        { id = 123, name = 'Yuhtunga Jungle',   skill_min = 10, skill_max = 30 },
+        { id = 124, name = 'Yhoator Jungle',    skill_min = 20, skill_max = 40 },
         { id = 52,  name = 'Bhaflau Thickets' },
         { id = 51,  name = 'Wajaom Woodlands' },
     },
@@ -74,9 +74,16 @@ local TRACKED_ZONES = T{
 
 local MESSAGE_PATTERNS = T{
     Harvesting = T{ 'You successfully harvest', 'You harvest' },
-    Excavation = T{ 'You successfully dig up' },
-    Logging    = T{ 'You successfully cut off' },
-    Mining     = T{ 'You successfully dig up' },
+    Excavation = T{ 'You successfully dig up', 'You dig up' },
+    Logging    = T{ 'You successfully cut off', 'You cut off' },
+    Mining     = T{ 'You successfully dig up', 'You dig up' },
+};
+
+local FAILURE_PATTERNS = T{
+    Harvesting = T{ 'You are unable to harvest anything' },
+    Excavation = T{ 'You are unable to mine anything' },
+    Logging    = T{ 'You are unable to log anything', 'You are unable to cut off anything' },
+    Mining     = T{ 'You are unable to mine anything' },
 };
 
 local FATIGUE_PATTERN = 'You sense there is little more to be gained from this area.';
@@ -223,12 +230,16 @@ end
 local function ensure_char(charname)
     local char = helm_settings.characters[charname];
     if (char == nil) then
-        char = T{ fatigue = T{}, item_log = T{}, skill = T{} };
+        char = T{ fatigue = T{}, item_log = T{}, skill = T{}, skillups = T{},
+                  attempts = T{}, successes = T{} };
         helm_settings.characters[charname] = char;
     end
-    char.fatigue  = char.fatigue or T{};
-    char.item_log = char.item_log or T{};
-    char.skill    = char.skill or T{};
+    char.fatigue   = char.fatigue or T{};
+    char.item_log  = char.item_log or T{};
+    char.skill     = char.skill or T{};
+    char.skillups  = char.skillups or T{};
+    char.attempts  = char.attempts or T{};
+    char.successes = char.successes or T{};
     return char;
 end
 
@@ -269,6 +280,30 @@ local function set_skill(charname, activity, value)
     ensure_char(charname).skill[activity] = value;
 end
 
+local function get_attempts(charname, activity, zoneId)
+    local char = helm_settings.characters[charname];
+    if (char == nil or char.attempts == nil or char.attempts[activity] == nil) then
+        return 0;
+    end
+    return char.attempts[activity][zone_key(zoneId)] or 0;
+end
+
+local function get_successes(charname, activity, zoneId)
+    local char = helm_settings.characters[charname];
+    if (char == nil or char.successes == nil or char.successes[activity] == nil) then
+        return 0;
+    end
+    return char.successes[activity][zone_key(zoneId)] or 0;
+end
+
+local function get_skillups(charname, activity, zoneId)
+    local char = helm_settings.characters[charname];
+    if (char == nil or char.skillups == nil or char.skillups[activity] == nil) then
+        return 0;
+    end
+    return char.skillups[activity][zone_key(zoneId)] or 0;
+end
+
 local function get_item_log(charname, activity, zoneId)
     local char = helm_settings.characters[charname];
     if (char == nil or char.item_log == nil or char.item_log[activity] == nil) then
@@ -304,8 +339,31 @@ local function register_skill(activity, value)
     set_skill(get_char_name(), activity, value);
 end
 
+local function register_attempt(activity, zoneId)
+    local char = ensure_char(get_char_name());
+    local key  = zone_key(zoneId);
+    char.attempts[activity]      = char.attempts[activity] or T{};
+    char.attempts[activity][key] = (char.attempts[activity][key] or 0) + 1;
+end
+
+local function register_success(activity, zoneId)
+    local char = ensure_char(get_char_name());
+    local key  = zone_key(zoneId);
+    char.successes[activity]      = char.successes[activity] or T{};
+    char.successes[activity][key] = (char.successes[activity][key] or 0) + 1;
+end
+
+local function register_skillup(activity, zoneId)
+    local char = ensure_char(get_char_name());
+    local key  = zone_key(zoneId);
+    char.skillups[activity]      = char.skillups[activity] or T{};
+    char.skillups[activity][key] = (char.skillups[activity][key] or 0) + 1;
+end
+
 local function reset_session()
-    helm_settings.characters[get_char_name()] = T{ fatigue = T{}, item_log = T{}, skill = T{} };
+    helm_settings.characters[get_char_name()] =
+        T{ fatigue = T{}, item_log = T{}, skill = T{}, skillups = T{},
+           attempts = T{}, successes = T{} };
 
     state.last_activity        = nil;
     state.last_gather_activity = nil;
@@ -349,11 +407,11 @@ end
 -- Detection
 ----------------------------------------
 
-local function resolve_gather(text, zoneId)
+local function resolve_from(patterns, text, zoneId)
     local fallback_activity, fallback_pattern = nil, nil;
 
     for _, activity in ipairs(ACTIVITIES) do
-        for _, pattern in ipairs(MESSAGE_PATTERNS[activity]) do
+        for _, pattern in ipairs(patterns[activity]) do
             if (text:find(pattern, 1, true)) then
                 if (TRACKED_ZONE_SET[activity][zoneId]) then
                     return activity, pattern;
@@ -367,6 +425,14 @@ local function resolve_gather(text, zoneId)
     end
 
     return fallback_activity, fallback_pattern;
+end
+
+local function resolve_gather(text, zoneId)
+    return resolve_from(MESSAGE_PATTERNS, text, zoneId);
+end
+
+local function resolve_failure(text, zoneId)
+    return resolve_from(FAILURE_PATTERNS, text, zoneId);
 end
 
 local function resolve_skill(text)
@@ -401,11 +467,18 @@ ashita.events.register('text_in', 'hhelmet_text_in', function(e)
     local skill_activity, skill_value = resolve_skill(text);
     if (skill_activity ~= nil) then
         register_skill(skill_activity, skill_value);
+        register_skillup(skill_activity, zoneId);
         settings.save();
         return;
     end
 
     local activity, matched = resolve_gather(text, zoneId);
+    local failed = false;
+
+    if (activity == nil) then
+        activity = resolve_failure(text, zoneId);
+        failed   = (activity ~= nil);
+    end
 
     if (activity ~= nil) then
         state.last_activity = activity;
@@ -424,10 +497,15 @@ ashita.events.register('text_in', 'hhelmet_text_in', function(e)
         state.last_gather_zone     = zoneId;
         state.last_gather_time     = now;
 
-        register_gather(activity, zoneId);
+        register_attempt(activity, zoneId);
 
-        if (TRACKED_ZONE_SET[activity][zoneId]) then
-            register_item_gather(activity, zoneId, clean_item_name(extract_after(text, matched)));
+        if (not failed) then
+            register_success(activity, zoneId);
+            register_gather(activity, zoneId);
+
+            if (TRACKED_ZONE_SET[activity][zoneId]) then
+                register_item_gather(activity, zoneId, clean_item_name(extract_after(text, matched)));
+            end
         end
 
         settings.save();
@@ -553,9 +631,23 @@ local function render_home(charname, curZoneId)
 
         render_fatigue(charname, activity, curZoneId, zoneName, curZoneId);
 
-        local log   = get_item_log(charname, activity, curZoneId);
-        local total = count_gathers(log);
-        imgui.TextDisabled(('Items  -  %d gathers'):fmt(total));
+        local log       = get_item_log(charname, activity, curZoneId);
+        local total     = count_gathers(log);
+        local attempts  = get_attempts(charname, activity, curZoneId);
+        local successes = get_successes(charname, activity, curZoneId);
+
+        local skillups = get_skillups(charname, activity, curZoneId);
+
+        if (attempts > 0) then
+            imgui.TextDisabled(('Gathers %d/%d (%.1f%%)   Skill ups %d/%d (%.1f%%)')
+                :fmt(successes, attempts, successes / attempts * 100,
+                     skillups,  attempts, skillups  / attempts * 100));
+        else
+            imgui.TextDisabled(('Gathers 0/0   Skill ups %d/0'):fmt(skillups));
+        end
+
+        imgui.Spacing();
+        imgui.TextDisabled(('Items  -  %d logged'):fmt(total));
         render_item_list(log, total);
         imgui.Spacing();
     end
