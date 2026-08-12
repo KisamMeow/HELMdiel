@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-08-12
+
+### Added
+
+- **Show or hide each activity.** The Settings tab has a checkbox per activity;
+  unchecking one removes its tab and drops it from Home. Hiding does not stop
+  tracking, so nothing is lost by tidying the window.
+- A second reset button. **Reset Session** clears only the Gathers and Skill ups
+  counters, keeping your fatigue, gathered items, and skill levels, so you can
+  start a fresh measurement without losing anything. **Reset All Data** clears
+  everything, as the old single button did.
+
+### Changed
+
+- **Item names now read the way they do in your inventory**, abbreviations
+  included, rather than the way they appear in the chat log. Names are looked up
+  in the game's own item data, so nothing is hardcoded.
+- Items are sorted by how often they drop, most common first, instead of
+  alphabetically. The rarity sections are unchanged.
+- Zones with no fatigue are hidden, so the lists show only what you have
+  actually worked.
+- The window is narrower. Gathers and Skill ups sit on their own lines, the
+  gather count moved out of each foldout title, the `(here)` marker is gone, and
+  the activity name no longer repeats above its own skill line.
+
+### Fixed
+
+- Breaking a tool now counts as a gathering attempt. Previously a break that
+  yielded nothing was ignored, so those attempts were missing from your success
+  rate and from the attempts each skill up took.
+
 ## [0.6.1] - 2026-08-12
 
 ### Added
@@ -101,7 +132,8 @@ Initial public release.
   inferred from a two-zone observation, not stress-tested against three or
   more fatigued zones at once.
 
-[Unreleased]: https://github.com/KisamMeow/HHelmet/compare/v0.6.1...HEAD
+[Unreleased]: https://github.com/KisamMeow/HHelmet/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/KisamMeow/HHelmet/compare/v0.6.1...v0.7.0
 [0.6.1]: https://github.com/KisamMeow/HHelmet/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/KisamMeow/HHelmet/compare/v0.5.1...v0.6.0
 [0.5.1]: https://github.com/KisamMeow/HHelmet/compare/v0.5.0...v0.5.1

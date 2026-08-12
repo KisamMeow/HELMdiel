@@ -4,7 +4,7 @@ Tracks HorizonXI's new HELM system released in 2.0.0
 
 This addon is in very early development, there will be bugs and the UI will be reworked as I get closer to being feature complete.
 
-Ashita v4.30+ addon. Version 0.6.1. Released under GPL-3.0. Coded with help from Claude Opus 5.
+Ashita v4.30+ addon. Version 0.7.0. Released under GPL-3.0. Coded with help from Claude Opus 5.
 
 ## Features
 
@@ -15,7 +15,10 @@ Ashita v4.30+ addon. Version 0.6.1. Released under GPL-3.0. Coded with help from
 - Skill levels, read automatically from your skill-up messages.
 - Attempt, success, and skill-up counts per zone, so you can see what a zone is
   actually costing you.
-- A Settings tab for your skill levels and the addon's options.
+- A Settings tab for your skill levels and the addon's options, including
+  hiding any activities you don't work.
+- Item names shown the way your inventory shows them, not the way the chat log
+  writes them.
 - Colored progress bars showing how close each zone is to the 200 cap.
 - Automatic detection from the chat log, with no manual counting.
 - Item drop logging per zone, grouped into rarity tiers, for eyeballing rough
@@ -50,8 +53,8 @@ To load it automatically, add that line to your Ashita script (usually
   * **/hhelmet show** / **/hhelmet hide** - _Shows or hides the window._
   * **/hhelmet debug** - _Toggles printing of raw incoming chat lines, used to
     calibrate message detection (see below)._
-  * **/hhelmet reset all** - _Wipes all fatigue and item data for the current
-    character._
+  * **/hhelmet reset all** - _Wipes everything for the current character,
+    gathered items included. Same as the Reset All Data button._
   * **/hhelmet reset &lt;activity&gt;** - _Wipes one activity across all zones._
   * **/hhelmet reset &lt;activity&gt; zone** - _Wipes one activity in the current
     zone only._
@@ -91,13 +94,14 @@ it says so.
 Home also counts your attempts and skill ups in that zone:
 
 ```
-Gathers 24/28 (85.7%)   Skill ups 2/28 (7.1%)
+Gathers - 24/28 (85.7%)
+Skill Ups - 2/28 (7.1%)
 Items  -  240 logged
 ```
 
 **Gathers** is how many attempts gave you an item, out of how many you made,
-with your success rate. Failed attempts count, because they still cost you time
-and can still skill you up.
+with your success rate. Failed attempts count, and so does breaking your tool,
+because both still cost you time and both can still skill you up.
 
 **Skill ups** is how many you have earned in this zone, against the same
 attempt count, with the share of attempts that produced one. Every skill up
@@ -108,16 +112,27 @@ it keeps counting across resets so your drop percentages stay meaningful, while
 the gather counters describe effort since counting began.
 
 All of it is per zone. Be careful comparing one zone against another, though:
-your skill level relative to a zone's range almost certainly affects how often
-you skill up there, and HHelmet does not account for that yet. See Known
-limitations.
+your skill level relative to a zone's skill cap affects how often you skill up
+there, and HHelmet does not account for that yet. See Known limitations.
 
 The next four tabs are one per activity, showing your skill for that activity
-at the top, then every tracked zone. The zone you're standing in is tagged
-`(here)`.
+at the top, then the zones you have fatigue in. Zones sitting at zero are left
+out, so the list stays short until you have actually worked somewhere.
 
-**Settings** is last, and holds a box for each skill level, the auto-open
-toggle, and the Reset Session button.
+**Settings** is last, and holds a checkbox per activity, a box for each skill
+level, the auto-open toggle, and two reset buttons.
+
+Unchecking an activity removes its tab and drops it from Home, which is useful
+if you only work one or two of them. It keeps tracking in the background, so
+nothing is lost and re-checking brings everything back.
+
+The two reset buttons:
+
+- **Reset Session** clears only the two Home tab counters, Gathers and Skill
+  ups. Your fatigue, gathered items, and skill levels are all kept, so you can
+  start a fresh measurement without losing anything you have built up.
+- **Reset All Data** clears everything for this character, fatigue and gathered
+  items included. `/hhelmet reset all` does the same thing.
 
 Skill starts as `unknown`. The game only reports your skill when it goes *up*,
 so an existing level can't be detected. Type it into the Settings tab, or
@@ -131,8 +146,9 @@ Bar colors:
 | Yellow | 150–199 | Approaching the cap |
 | Red | 200 | Fatigued |
 
-Below the bars, each zone has a collapsible item log showing total gathers and
-what dropped, grouped by how often it appeared:
+Below the bars, each zone has a collapsible item log. Open one and it shows how
+many gathers it is based on, then what dropped, grouped by how often it
+appeared:
 
 | Tier | Share of that zone's gathers |
 |---|---|
@@ -142,7 +158,7 @@ what dropped, grouped by how often it appeared:
 | Very Rare | 1–4% |
 | Extremely Rare | under 1% |
 
-Items are sorted by tier, then alphabetically within a tier. These percentages
+Items are sorted by how often they drop, most common first. These percentages
 are only as good as your sample size. A zone with 20 gathers logged will show
 wildly misleading tiers. Give it a few hundred before reading anything into it.
 
@@ -158,14 +174,13 @@ them apart. That works because no zone appears in both lists. If you gather
 in a zone HHelmet doesn't track, an ambiguous message may be filed under the
 wrong activity; the fix is to report the zone so it can be added.
 
-Three messages are still unconfirmed, all of them for Logging or shared:
+Three messages have not been seen directly yet:
 
-- **Logging's failure message.** If the guesses are wrong, failed logging
-  attempts go uncounted and Logging's success rate reads a permanent 100%. If
-  you see that, the pattern is wrong rather than your luck being remarkable.
-- **Logging's message for breaking a hatchet while still getting a log.** If
-  that one is wrong, such a gather is missed entirely and won't be counted at
-  all.
+- **Logging's failure message** and **Logging's message for breaking a hatchet
+  while still getting a log.** Both match what the older `hgather` addon uses,
+  so they are very likely right, but neither has been confirmed here. If
+  Logging's success rate sits at a permanent 100%, the failure pattern is wrong
+  rather than your luck being remarkable.
 - **The fatigue-cap message**, verified for Harvesting only and assumed shared
   by all four.
 
@@ -206,15 +221,17 @@ Deleting that file resets the character completely, same as `/hhelmet reset all`
 
 ## Known limitations
 
-- Skill up rates are almost certainly tied to your current skill level against
-  each zone's skill range, and HHelmet does not track that. Your rate in a
-  given zone will drift as you level, so numbers collected at different skill
-  levels are not directly comparable, and a zone that looks slow may simply be
-  one you have outgrown.
+- Skill up rates are affected by your skill level against a zone's skill cap,
+  and HHelmet does not account for that. You can still skill up in a high cap
+  zone at low skill, but the rate is heavily reduced, and your rate anywhere
+  drifts as you level. Numbers collected at different skill levels are not
+  directly comparable, and a zone that looks slow may just be a poor match for
+  your current skill.
 - The fatigue-cap message is confirmed only for Harvesting.
-- Two of Logging's messages are unverified: its failure, and the one for
-  breaking a hatchet while still getting a log. Failed logging attempts may go
-  uncounted, and a logging gather that breaks your hatchet may be missed.
+- Two of Logging's messages have not been seen directly, its failure and the
+  one for breaking a hatchet while still getting a log. Both match what an
+  older gathering addon uses, so they are probably right, but if either is
+  wrong those cases go uncounted.
 - Excavation and Mining share a success message and are separated by zone,
   so gathering either one in an untracked zone can be misfiled (see above).
 - Zone IDs use the standard retail-compatible numbering and have not been

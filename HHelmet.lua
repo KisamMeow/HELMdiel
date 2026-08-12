@@ -1,6 +1,6 @@
 addon.name    = 'HHelmet';
 addon.author  = 'Masuru';
-addon.version = '0.6.1';
+addon.version = '0.7.0';
 addon.desc    = 'Tracks HELM (Harvesting/Excavation/Logging/Mining) regional gathering fatigue on HorizonXI.';
 addon.link    = 'https://github.com/KisamMeow/HHelmet';
 
@@ -35,18 +35,18 @@ local RARITY_TIERS = T{
 
 local TRACKED_ZONES = T{
     Harvesting = T{
-        { id = 115, name = 'West Sarutabaruta', skill_min = 0,  skill_max = 10 },
-        { id = 145, name = 'Giddeus',           skill_min = 0,  skill_max = 20 },
-        { id = 123, name = 'Yuhtunga Jungle',   skill_min = 10, skill_max = 30 },
-        { id = 124, name = 'Yhoator Jungle',    skill_min = 20, skill_max = 40 },
+        { id = 115, name = 'West Sarutabaruta', skill_cap = 10 },
+        { id = 145, name = 'Giddeus',           skill_cap = 20 },
+        { id = 123, name = 'Yuhtunga Jungle',   skill_cap = 30 },
+        { id = 124, name = 'Yhoator Jungle',    skill_cap = 30 },
         { id = 52,  name = 'Bhaflau Thickets' },
         { id = 51,  name = 'Wajaom Woodlands' },
     },
     Excavation = T{
         { id = 7,   name = 'Attohwa Chasm' },
-        { id = 173, name = 'Korroloka Tunnel' },
-        { id = 198, name = 'Maze of Shakhrami' },
-        { id = 117, name = 'Tahrongi Canyon' },
+        { id = 173, name = 'Korroloka Tunnel',  skill_cap = 20 },
+        { id = 198, name = 'Maze of Shakhrami', skill_cap = 20 },
+        { id = 117, name = 'Tahrongi Canyon',   skill_cap = 10 },
     },
     Logging = T{
         { id = 118, name = 'Buburimu Peninsula' },
@@ -80,10 +80,11 @@ local MESSAGE_PATTERNS = T{
 };
 
 local FAILURE_PATTERNS = T{
-    Harvesting = T{ 'You are unable to harvest anything' },
-    Excavation = T{ 'You are unable to mine anything' },
-    Logging    = T{ 'You are unable to log anything', 'You are unable to cut off anything' },
-    Mining     = T{ 'You are unable to mine anything' },
+    Harvesting = T{ 'You are unable to harvest anything', 'Your sickle breaks' },
+    Excavation = T{ 'You are unable to mine anything', 'Your pickaxe breaks' },
+    Logging    = T{ 'You are unable to log anything', 'You are unable to cut off anything',
+                    'Your hatchet breaks' },
+    Mining     = T{ 'You are unable to mine anything', 'Your pickaxe breaks' },
 };
 
 local FATIGUE_PATTERN = 'You sense there is little more to be gained from this area.';
@@ -126,9 +127,16 @@ local default_settings = T{
     window     = T{
         auto_popup = true,
     },
+    activities = T{
+        Harvesting = true,
+        Excavation = true,
+        Logging    = true,
+        Mining     = true,
+    },
 };
 
 local helm_settings = settings.load(default_settings);
+helm_settings.activities = helm_settings.activities or T{};
 
 settings.register('settings', 'settings_update', function(s)
     if (s ~= nil) then
@@ -187,6 +195,12 @@ local function get_zone_name(zoneId)
     return resolved;
 end
 
+local function activity_enabled(activity)
+    local value = helm_settings.activities[activity];
+    if (value == nil) then return true; end
+    return value;
+end
+
 local function match_activity(name)
     if (name == nil) then return nil; end
     for _, activity in ipairs(ACTIVITIES) do
@@ -204,8 +218,15 @@ local function get_fatigue_color(value)
     return COLOR_LOW;
 end
 
-local EMPTY_LOG = T{};
-local ZONE_KEYS = T{};
+local EMPTY_LOG  = T{};
+local ZONE_KEYS  = T{};
+local ITEM_NAMES = T{};
+
+local ITEM_LOOKUP     = T{};
+local ITEM_SCAN_CHUNK = 1500;
+local ITEM_SCAN_MAX   = 65535;
+local item_scan_next  = 1;
+local item_scan_done  = false;
 
 local function zone_key(zoneId)
     local key = ZONE_KEYS[zoneId];
@@ -227,47 +248,69 @@ end
 -- Data access
 ----------------------------------------
 
+local CHARACTER_KEYS = T{ 'fatigue', 'item_log', 'skill', 'skillups',
+                          'attempts', 'successes' };
+local SESSION_KEYS   = T{ 'skillups', 'attempts', 'successes' };
+
 local function ensure_char(charname)
-    local char = helm_settings.characters[charname];
-    if (char == nil) then
-        char = T{ fatigue = T{}, item_log = T{}, skill = T{}, skillups = T{},
-                  attempts = T{}, successes = T{} };
-        helm_settings.characters[charname] = char;
+    local char = helm_settings.characters[charname] or T{};
+    helm_settings.characters[charname] = char;
+
+    for _, key in ipairs(CHARACTER_KEYS) do
+        char[key] = char[key] or T{};
     end
-    char.fatigue   = char.fatigue or T{};
-    char.item_log  = char.item_log or T{};
-    char.skill     = char.skill or T{};
-    char.skillups  = char.skillups or T{};
-    char.attempts  = char.attempts or T{};
-    char.successes = char.successes or T{};
     return char;
 end
 
-local function ensure_fatigue(charname, activity)
-    local char = ensure_char(charname);
-    char.fatigue[activity] = char.fatigue[activity] or T{};
-    return char.fatigue[activity];
+local function ensure_zone(charname, field, activity, zoneId, empty)
+    local group = ensure_char(charname)[field];
+    group[activity] = group[activity] or T{};
+
+    if (zoneId == nil) then return group[activity]; end
+
+    local key = zone_key(zoneId);
+    if (empty ~= nil) then
+        group[activity][key] = group[activity][key] or empty();
+    end
+    return group[activity], key;
 end
 
-local function ensure_item_log(charname, activity, zoneId)
-    local char = ensure_char(charname);
-    local key  = zone_key(zoneId);
-    char.item_log[activity]      = char.item_log[activity] or T{};
-    char.item_log[activity][key] = char.item_log[activity][key] or T{};
-    return char.item_log[activity][key];
+local function read_zone(charname, field, activity, zoneId, missing)
+    local char = helm_settings.characters[charname];
+    if (char == nil or char[field] == nil or char[field][activity] == nil) then
+        return missing;
+    end
+    return char[field][activity][zone_key(zoneId)] or missing;
+end
+
+local function bump(field, activity, zoneId)
+    local group, key = ensure_zone(get_char_name(), field, activity, zoneId);
+    group[key] = (group[key] or 0) + 1;
 end
 
 local function get_fatigue(charname, activity, zoneId)
-    local char = helm_settings.characters[charname];
-    if (char == nil or char.fatigue == nil or char.fatigue[activity] == nil) then
-        return 0;
-    end
-    return char.fatigue[activity][zone_key(zoneId)] or 0;
+    return read_zone(charname, 'fatigue', activity, zoneId, 0);
+end
+
+local function get_attempts(charname, activity, zoneId)
+    return read_zone(charname, 'attempts', activity, zoneId, 0);
+end
+
+local function get_successes(charname, activity, zoneId)
+    return read_zone(charname, 'successes', activity, zoneId, 0);
+end
+
+local function get_skillups(charname, activity, zoneId)
+    return read_zone(charname, 'skillups', activity, zoneId, 0);
+end
+
+local function get_item_log(charname, activity, zoneId)
+    return read_zone(charname, 'item_log', activity, zoneId, EMPTY_LOG);
 end
 
 local function set_fatigue(charname, activity, zoneId, value)
-    ensure_fatigue(charname, activity)[zone_key(zoneId)] =
-        math.max(0, math.min(FATIGUE_CAP, value));
+    local group, key = ensure_zone(charname, 'fatigue', activity, zoneId);
+    group[key] = math.max(0, math.min(FATIGUE_CAP, value));
 end
 
 local function get_skill(charname, activity)
@@ -280,41 +323,8 @@ local function set_skill(charname, activity, value)
     ensure_char(charname).skill[activity] = value;
 end
 
-local function get_attempts(charname, activity, zoneId)
-    local char = helm_settings.characters[charname];
-    if (char == nil or char.attempts == nil or char.attempts[activity] == nil) then
-        return 0;
-    end
-    return char.attempts[activity][zone_key(zoneId)] or 0;
-end
-
-local function get_successes(charname, activity, zoneId)
-    local char = helm_settings.characters[charname];
-    if (char == nil or char.successes == nil or char.successes[activity] == nil) then
-        return 0;
-    end
-    return char.successes[activity][zone_key(zoneId)] or 0;
-end
-
-local function get_skillups(charname, activity, zoneId)
-    local char = helm_settings.characters[charname];
-    if (char == nil or char.skillups == nil or char.skillups[activity] == nil) then
-        return 0;
-    end
-    return char.skillups[activity][zone_key(zoneId)] or 0;
-end
-
-local function get_item_log(charname, activity, zoneId)
-    local char = helm_settings.characters[charname];
-    if (char == nil or char.item_log == nil or char.item_log[activity] == nil) then
-        return EMPTY_LOG;
-    end
-    return char.item_log[activity][zone_key(zoneId)] or EMPTY_LOG;
-end
-
 local function register_gather(activity, zoneId)
-    local fatigue = ensure_fatigue(get_char_name(), activity);
-    local key     = zone_key(zoneId);
+    local fatigue, key = ensure_zone(get_char_name(), 'fatigue', activity, zoneId);
 
     fatigue[key] = math.min(FATIGUE_CAP, (fatigue[key] or 0) + 1);
 
@@ -331,45 +341,41 @@ end
 
 local function register_item_gather(activity, zoneId, itemName)
     if (itemName == nil) then return; end
-    local log = ensure_item_log(get_char_name(), activity, zoneId);
-    log[itemName] = (log[itemName] or 0) + 1;
+    local group, key = ensure_zone(get_char_name(), 'item_log', activity, zoneId, T);
+    group[key][itemName] = (group[key][itemName] or 0) + 1;
 end
 
 local function register_skill(activity, value)
     set_skill(get_char_name(), activity, value);
 end
 
-local function register_attempt(activity, zoneId)
-    local char = ensure_char(get_char_name());
-    local key  = zone_key(zoneId);
-    char.attempts[activity]      = char.attempts[activity] or T{};
-    char.attempts[activity][key] = (char.attempts[activity][key] or 0) + 1;
-end
+local function register_attempt(activity, zoneId) bump('attempts',  activity, zoneId); end
+local function register_success(activity, zoneId) bump('successes', activity, zoneId); end
+local function register_skillup(activity, zoneId) bump('skillups',  activity, zoneId); end
 
-local function register_success(activity, zoneId)
-    local char = ensure_char(get_char_name());
-    local key  = zone_key(zoneId);
-    char.successes[activity]      = char.successes[activity] or T{};
-    char.successes[activity][key] = (char.successes[activity][key] or 0) + 1;
-end
-
-local function register_skillup(activity, zoneId)
-    local char = ensure_char(get_char_name());
-    local key  = zone_key(zoneId);
-    char.skillups[activity]      = char.skillups[activity] or T{};
-    char.skillups[activity][key] = (char.skillups[activity][key] or 0) + 1;
-end
-
-local function reset_session()
-    helm_settings.characters[get_char_name()] =
-        T{ fatigue = T{}, item_log = T{}, skill = T{}, skillups = T{},
-           attempts = T{}, successes = T{} };
-
+local function clear_detection_state()
     state.last_activity        = nil;
     state.last_gather_activity = nil;
     state.last_gather_zone     = nil;
     state.last_gather_time     = 0;
+end
 
+local function reset_session()
+    local char = ensure_char(get_char_name());
+    for _, key in ipairs(SESSION_KEYS) do
+        char[key] = T{};
+    end
+
+    clear_detection_state();
+    settings.save();
+end
+
+local function reset_all()
+    local charname = get_char_name();
+    helm_settings.characters[charname] = nil;
+    ensure_char(charname);
+
+    clear_detection_state();
     settings.save();
 end
 
@@ -536,22 +542,17 @@ end);
 local function render_skill(charname, activity)
     local skill = get_skill(charname, activity);
     if (skill == nil) then
-        imgui.TextDisabled(('%s skill: unknown'):fmt(activity));
+        imgui.TextDisabled(('%s Skill: unknown'):fmt(activity));
     else
-        imgui.Text(('%s skill: %.1f'):fmt(activity, skill));
+        imgui.Text(('%s Skill: %.1f'):fmt(activity, skill));
     end
 end
 
-local function render_fatigue(charname, activity, zoneId, zoneName, curZoneId)
+local function render_fatigue(charname, activity, zoneId, zoneName)
     local value = get_fatigue(charname, activity, zoneId);
     local color = get_fatigue_color(value);
 
-    local label = zoneName;
-    if (zoneId == curZoneId) then
-        label = label .. '  (here)';
-    end
-
-    imgui.TextColored(color, ('%s: %d / %d'):fmt(label, value, FATIGUE_CAP));
+    imgui.TextColored(color, ('%s: %d / %d'):fmt(zoneName, value, FATIGUE_CAP));
 
     imgui.PushStyleColor(ImGuiCol_PlotHistogram, color);
     imgui.ProgressBar(value / FATIGUE_CAP, { -1, 14 }, '');
@@ -572,6 +573,68 @@ local function count_gathers(log)
     return total;
 end
 
+local function item_key(text)
+    if (type(text) ~= 'string') then return ''; end
+    return (text:lower():gsub('%p', ' '):gsub('%s+', ' '):match('^%s*(.-)%s*$') or '');
+end
+
+local function item_string(field)
+    if (field == nil) then return nil; end
+    for index = 1, 4 do
+        local value = field[index];
+        if (type(value) == 'string' and value ~= '') then return value; end
+    end
+    return nil;
+end
+
+local function index_item(item)
+    local shown = item_string(item.Name);
+    if (shown == nil) then return; end
+
+    local logged = item_key(item_string(item.LogNameSingular));
+    if (logged ~= '' and ITEM_LOOKUP[logged] == nil) then
+        ITEM_LOOKUP[logged] = shown;
+    end
+
+    local named = item_key(shown);
+    if (named ~= '' and ITEM_LOOKUP[named] == nil) then
+        ITEM_LOOKUP[named] = shown;
+    end
+end
+
+local function scan_item_chunk()
+    if (item_scan_done) then return; end
+
+    local resources = AshitaCore:GetResourceManager();
+    if (resources == nil) then item_scan_done = true; return; end
+
+    local lookup = resources.GetItemById;
+    local last   = math.min(item_scan_next + ITEM_SCAN_CHUNK - 1, ITEM_SCAN_MAX);
+
+    for id = item_scan_next, last do
+        local ok, item = pcall(lookup, resources, id);
+        if (ok and item ~= nil) then
+            pcall(index_item, item);
+        end
+    end
+
+    item_scan_next = last + 1;
+    if (last >= ITEM_SCAN_MAX) then item_scan_done = true; end
+end
+
+local function display_item_name(name)
+    local cached = ITEM_NAMES[name];
+    if (cached ~= nil) then return cached; end
+
+    local bare  = name:gsub('^[Aa]n?%s+', '');
+    local shown = ITEM_LOOKUP[item_key(bare)] or (bare:gsub('^%l', string.upper));
+
+    if (item_scan_done) then
+        ITEM_NAMES[name] = shown;
+    end
+    return shown;
+end
+
 local function render_item_list(log, total)
     if (total == 0) then
         imgui.TextDisabled('  No gathers recorded yet.');
@@ -582,7 +645,7 @@ local function render_item_list(log, total)
     for itemName, count in pairs(log) do
         local pct = count / total * 100;
         table.insert(items, {
-            name  = itemName,
+            name  = display_item_name(itemName),
             count = count,
             pct   = pct,
             tier  = get_rarity_tier(pct),
@@ -590,8 +653,8 @@ local function render_item_list(log, total)
     end
 
     table.sort(items, function(a, b)
-        if (a.tier.rank ~= b.tier.rank) then
-            return a.tier.rank < b.tier.rank;
+        if (a.count ~= b.count) then
+            return a.count > b.count;
         end
         return a.name < b.name;
     end);
@@ -608,11 +671,24 @@ local function render_item_list(log, total)
 end
 
 local function render_home(charname, curZoneId)
-    local activities = ZONE_ACTIVITIES[curZoneId];
+    local tracked = ZONE_ACTIVITIES[curZoneId];
 
     imgui.Spacing();
-    if (activities == nil or #activities == 0) then
+    if (tracked == nil or #tracked == 0) then
         imgui.TextDisabled('No HELM activity is tracked in this zone.');
+        imgui.Spacing();
+        return;
+    end
+
+    local activities = T{};
+    for _, activity in ipairs(tracked) do
+        if (activity_enabled(activity)) then
+            table.insert(activities, activity);
+        end
+    end
+
+    if (#activities == 0) then
+        imgui.TextDisabled('All activities here are hidden.');
         imgui.Spacing();
         return;
     end
@@ -625,11 +701,12 @@ local function render_home(charname, curZoneId)
             imgui.Spacing();
         end
 
-        imgui.Text(activity);
         render_skill(charname, activity);
         imgui.Spacing();
 
-        render_fatigue(charname, activity, curZoneId, zoneName, curZoneId);
+        if (get_fatigue(charname, activity, curZoneId) > 0) then
+            render_fatigue(charname, activity, curZoneId, zoneName);
+        end
 
         local log       = get_item_log(charname, activity, curZoneId);
         local total     = count_gathers(log);
@@ -639,11 +716,13 @@ local function render_home(charname, curZoneId)
         local skillups = get_skillups(charname, activity, curZoneId);
 
         if (attempts > 0) then
-            imgui.TextDisabled(('Gathers %d/%d (%.1f%%)   Skill ups %d/%d (%.1f%%)')
-                :fmt(successes, attempts, successes / attempts * 100,
-                     skillups,  attempts, skillups  / attempts * 100));
+            imgui.TextDisabled(('Gathers - %d/%d (%.1f%%)')
+                :fmt(successes, attempts, successes / attempts * 100));
+            imgui.TextDisabled(('Skill Ups - %d/%d (%.1f%%)')
+                :fmt(skillups, attempts, skillups / attempts * 100));
         else
-            imgui.TextDisabled(('Gathers 0/0   Skill ups %d/0'):fmt(skillups));
+            imgui.TextDisabled('Gathers 0/0');
+            imgui.TextDisabled(('Skill Ups %d/0'):fmt(skillups));
         end
 
         imgui.Spacing();
@@ -654,6 +733,19 @@ local function render_home(charname, curZoneId)
 end
 
 local function render_settings(charname)
+    imgui.Spacing();
+    imgui.TextDisabled('Shown activities');
+    imgui.Spacing();
+
+    for _, activity in ipairs(ACTIVITIES) do
+        if (imgui.Checkbox(('%s##show'):fmt(activity), { activity_enabled(activity) })) then
+            helm_settings.activities[activity] = not activity_enabled(activity);
+            settings.save();
+        end
+    end
+
+    imgui.Spacing();
+    imgui.Separator();
     imgui.Spacing();
     imgui.TextDisabled('Skill levels');
     imgui.Spacing();
@@ -684,7 +776,14 @@ local function render_settings(charname)
     if (imgui.Button('Reset Session')) then
         reset_session();
     end
-    imgui.TextDisabled('Clears all personal data for this character.');
+    imgui.TextDisabled('Clears gather and skill up counters.');
+
+    imgui.Spacing();
+
+    if (imgui.Button('Reset All Data')) then
+        reset_all();
+    end
+    imgui.TextDisabled('Clears everything for this character.');
 
     imgui.Spacing();
     imgui.Separator();
@@ -694,6 +793,8 @@ local function render_settings(charname)
 end
 
 ashita.events.register('d3d_present', 'hhelmet_present', function()
+    scan_item_chunk();
+
     if (not state.show) then return; end
 
     local charname  = get_char_name();
@@ -704,7 +805,7 @@ ashita.events.register('d3d_present', 'hhelmet_present', function()
     local isOpen = { state.show };
     if (imgui.Begin('HHelmet', isOpen, ImGuiWindowFlags_AlwaysAutoResize)) then
         imgui.Text(('Character: %s'):fmt(charname));
-        imgui.Text(('Current zone: %s'):fmt(get_zone_name(curZoneId)));
+        imgui.Text(('Current Zone: %s'):fmt(get_zone_name(curZoneId)));
         imgui.Separator();
 
         if (imgui.BeginTabBar('##hhelmet_activity_tabs')) then
@@ -714,32 +815,38 @@ ashita.events.register('d3d_present', 'hhelmet_present', function()
             end
 
             for _, activity in ipairs(ACTIVITIES) do
-                if (imgui.BeginTabItem(activity)) then
+                if (activity_enabled(activity) and imgui.BeginTabItem(activity)) then
                     local zones = TRACKED_ZONES[activity];
 
                     render_skill(charname, activity);
                     imgui.Separator();
                     imgui.Spacing();
 
+                    local fatigued = 0;
                     for _, zone in ipairs(zones) do
-                        render_fatigue(charname, activity, zone.id, zone.name, curZoneId);
+                        if (get_fatigue(charname, activity, zone.id) > 0) then
+                            render_fatigue(charname, activity, zone.id, zone.name);
+                            fatigued = fatigued + 1;
+                        end
+                    end
+
+                    if (fatigued == 0) then
+                        imgui.TextDisabled('No fatigue recorded.');
+                        imgui.Spacing();
                     end
 
                     imgui.Separator();
-                    imgui.TextDisabled('Item drop tracking');
+                    imgui.TextDisabled('Item Tracking');
                     imgui.Spacing();
 
                     for _, zone in ipairs(zones) do
                         local log   = get_item_log(charname, activity, zone.id);
                         local total = count_gathers(log);
 
-                        local heading = zone.name;
-                        if (zone.id == curZoneId) then
-                            heading = heading .. '  (here)';
-                        end
-                        heading = ('%s  -  %d gathers'):fmt(heading, total);
-
-                        if (imgui.CollapsingHeader(heading)) then
+                        if (imgui.CollapsingHeader(zone.name)) then
+                            if (total > 0) then
+                                imgui.TextDisabled(('%d Gathers'):fmt(total));
+                            end
                             render_item_list(log, total);
                             imgui.Spacing();
                         end
@@ -789,8 +896,8 @@ ashita.events.register('command', 'hhelmet_command', function(e)
         local target = args[3] and args[3]:lower() or nil;
 
         if (target == 'all') then
-            reset_session();
-            msg('All fatigue data reset for ' .. charname .. '.');
+            reset_all();
+            msg('All data reset for ' .. charname .. '.');
 
         elseif (target == nil) then
             msg('Usage: /hhelmet reset <all|activity> [zone]');
