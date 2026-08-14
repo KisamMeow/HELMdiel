@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.1] - 2026-08-12
+
+### Added
+
+- **Home Minimum Mode**, a checkbox at the top of Settings. With it on, the Home
+  tab shows only your skill and the current zone's fatigue, dropping the Gathers
+  and Skill Ups counters and the whole item list. Tracking carries on
+  underneath, and the activity tabs are unchanged, so the detail is still there
+  when you want it.
+
+### Changed
+
+- **FATIGUED now appears only when the game says a zone is fatigued**, not
+  when the counter happens to reach 200. The counter drifts if you gather with
+  the addon unloaded, so reaching the cap on its own is not proof.
+- **The fatigue message resyncs the rest of that activity.** When the game
+  tells you a zone is tapped out, every other zone for that activity is set
+  back to zero, which is what capping one zone from empty would have done
+  anyway. This repairs drift from gathering without the addon loaded.
+
+### Fixed
+
+- The first fatigue message after loading the addon is no longer ignored.
+  Attribution used to depend on having seen a gather earlier in the session, so
+  the message was thrown away until you had gathered at least once. The zone
+  now identifies the activity on its own everywhere except Yuhtunga and Yhoator
+  Jungle, which support two activities and still need a gather first.
+
 ## [0.7.0] - 2026-08-12
 
 ### Added
@@ -132,7 +160,8 @@ Initial public release.
   inferred from a two-zone observation, not stress-tested against three or
   more fatigued zones at once.
 
-[Unreleased]: https://github.com/KisamMeow/HHelmet/compare/v0.7.0...HEAD
+[Unreleased]: https://github.com/KisamMeow/HHelmet/compare/v0.7.1...HEAD
+[0.7.1]: https://github.com/KisamMeow/HHelmet/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/KisamMeow/HHelmet/compare/v0.6.1...v0.7.0
 [0.6.1]: https://github.com/KisamMeow/HHelmet/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/KisamMeow/HHelmet/compare/v0.5.1...v0.6.0

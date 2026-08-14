@@ -4,7 +4,7 @@ Tracks HorizonXI's new HELM system released in 2.0.0
 
 This addon is in very early development, there will be bugs and the UI will be reworked as I get closer to being feature complete.
 
-Ashita v4.30+ addon. Version 0.7.0. Released under GPL-3.0. Coded with help from Claude Opus 5.
+Ashita v4.30+ addon. Version 0.7.1. Released under GPL-3.0. Coded with help from Claude Opus 5.
 
 ## Features
 
@@ -16,7 +16,7 @@ Ashita v4.30+ addon. Version 0.7.0. Released under GPL-3.0. Coded with help from
 - Attempt, success, and skill-up counts per zone, so you can see what a zone is
   actually costing you.
 - A Settings tab for your skill levels and the addon's options, including
-  hiding any activities you don't work.
+  hiding any activities you don't work and a minimum mode for the Home tab.
 - Item names shown the way your inventory shows them, not the way the chat log
   writes them.
 - Colored progress bars showing how close each zone is to the 200 cap.
@@ -83,6 +83,16 @@ not a readout of the server's actual numbers. Treat them as a close estimate.
 If you gather without the addon loaded, or on a character you've just started
 tracking, use `/hhelmet set` to bring the counter back in line.
 
+**The game itself corrects the drift.** When it tells you a zone is tapped out,
+HHelmet marks that zone fatigued and sets every other zone for that activity
+back to zero. That is what capping a zone from empty would have done anyway,
+since it takes 200 gathers there and each one decays the others, so a wrong
+count repairs itself the first time you work a zone to the cap.
+
+For the same reason, the red **FATIGUED** label only appears once the game has
+actually said so. A counter sitting at 200 is not proof on its own, because it
+may have drifted while the addon was unloaded.
+
 ## Reading the window
 
 The **Home** tab shows only what applies to the zone you're currently in: your
@@ -119,8 +129,14 @@ The next four tabs are one per activity, showing your skill for that activity
 at the top, then the zones you have fatigue in. Zones sitting at zero are left
 out, so the list stays short until you have actually worked somewhere.
 
-**Settings** is last, and holds a checkbox per activity, a box for each skill
-level, the auto-open toggle, and two reset buttons.
+**Settings** is last, and holds **Home Minimum Mode**, a checkbox per activity,
+a box for each skill level, the auto-open toggle, and two reset buttons.
+
+**Home Minimum Mode** strips Home back to just your skill and the current
+zone's fatigue, dropping the Gathers and Skill Ups counters and the item list.
+Useful if you only want to watch how close a zone is to being tapped out.
+Everything keeps being tracked while it is on, and the activity tabs are
+unchanged, so the detail is still there when you want it.
 
 Unchecking an activity removes its tab and drops it from Home, which is useful
 if you only work one or two of them. It keeps tracking in the background, so

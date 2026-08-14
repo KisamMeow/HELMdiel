@@ -1,6 +1,6 @@
 addon.name    = 'HHelmet';
 addon.author  = 'Masuru';
-addon.version = '0.7.0';
+addon.version = '0.7.1';
 addon.desc    = 'Tracks HELM (Harvesting/Excavation/Logging/Mining) regional gathering fatigue on HorizonXI.';
 addon.link    = 'https://github.com/KisamMeow/HHelmet';
 
@@ -125,7 +125,8 @@ end
 local default_settings = T{
     characters = T{},
     window     = T{
-        auto_popup = true,
+        auto_popup   = true,
+        home_minimum = false,
     },
     activities = T{
         Harvesting = true,
@@ -137,6 +138,7 @@ local default_settings = T{
 
 local helm_settings = settings.load(default_settings);
 helm_settings.activities = helm_settings.activities or T{};
+helm_settings.window     = helm_settings.window or T{};
 
 settings.register('settings', 'settings_update', function(s)
     if (s ~= nil) then
@@ -201,6 +203,10 @@ local function activity_enabled(activity)
     return value;
 end
 
+local function home_minimum()
+    return helm_settings.window.home_minimum == true;
+end
+
 local function match_activity(name)
     if (name == nil) then return nil; end
     for _, activity in ipairs(ACTIVITIES) do
@@ -248,8 +254,8 @@ end
 -- Data access
 ----------------------------------------
 
-local CHARACTER_KEYS = T{ 'fatigue', 'item_log', 'skill', 'skillups',
-                          'attempts', 'successes' };
+local CHARACTER_KEYS = T{ 'fatigue', 'fatigued', 'item_log', 'skill',
+                          'skillups', 'attempts', 'successes' };
 local SESSION_KEYS   = T{ 'skillups', 'attempts', 'successes' };
 
 local function ensure_char(charname)
@@ -308,9 +314,22 @@ local function get_item_log(charname, activity, zoneId)
     return read_zone(charname, 'item_log', activity, zoneId, EMPTY_LOG);
 end
 
+local function is_fatigued(charname, activity, zoneId)
+    return read_zone(charname, 'fatigued', activity, zoneId, false) == true;
+end
+
+local function clear_fatigued(charname, activity, zoneId)
+    local flags, key = ensure_zone(charname, 'fatigued', activity, zoneId);
+    flags[key] = nil;
+end
+
 local function set_fatigue(charname, activity, zoneId, value)
     local group, key = ensure_zone(charname, 'fatigue', activity, zoneId);
     group[key] = math.max(0, math.min(FATIGUE_CAP, value));
+
+    if (group[key] < FATIGUE_CAP) then
+        clear_fatigued(charname, activity, zoneId);
+    end
 end
 
 local function get_skill(charname, activity)
@@ -324,19 +343,38 @@ local function set_skill(charname, activity, value)
 end
 
 local function register_gather(activity, zoneId)
-    local fatigue, key = ensure_zone(get_char_name(), 'fatigue', activity, zoneId);
+    local charname     = get_char_name();
+    local fatigue, key = ensure_zone(charname, 'fatigue', activity, zoneId);
+    local flags        = ensure_zone(charname, 'fatigued', activity, zoneId);
 
     fatigue[key] = math.min(FATIGUE_CAP, (fatigue[key] or 0) + 1);
+    flags[key]   = nil;
 
     for zid, value in pairs(fatigue) do
         if (zid ~= key) then
             fatigue[zid] = math.max(0, value - 1);
+            if (fatigue[zid] < FATIGUE_CAP) then
+                flags[zid] = nil;
+            end
         end
     end
 end
 
 local function register_fatigue_cap(activity, zoneId)
-    set_fatigue(get_char_name(), activity, zoneId, FATIGUE_CAP);
+    local charname     = get_char_name();
+    local fatigue, key = ensure_zone(charname, 'fatigue', activity, zoneId);
+    local flags        = ensure_zone(charname, 'fatigued', activity, zoneId);
+
+    fatigue[key] = FATIGUE_CAP;
+
+    for zid in pairs(fatigue) do
+        if (zid ~= key) then fatigue[zid] = 0; end
+    end
+    for zid in pairs(flags) do
+        flags[zid] = nil;
+    end
+
+    flags[key] = true;
 end
 
 local function register_item_gather(activity, zoneId, itemName)
@@ -441,6 +479,23 @@ local function resolve_failure(text, zoneId)
     return resolve_from(FAILURE_PATTERNS, text, zoneId);
 end
 
+local function resolve_fatigued_activity(zoneId)
+    local tracked = ZONE_ACTIVITIES[zoneId];
+
+    if (tracked ~= nil and #tracked == 1) then
+        return tracked[1];
+    end
+
+    if (tracked ~= nil and state.last_activity ~= nil) then
+        for _, activity in ipairs(tracked) do
+            if (activity == state.last_activity) then return activity; end
+        end
+        return nil;
+    end
+
+    return state.last_activity;
+end
+
 local function resolve_skill(text)
     if (not text:find(SKILL_MARKER, 1, true)) then return nil, nil; end
 
@@ -523,14 +578,15 @@ ashita.events.register('text_in', 'hhelmet_text_in', function(e)
     end
 
     if (text:find(FATIGUE_PATTERN, 1, true)) then
-        if (state.last_activity == nil) then
+        local activity = resolve_fatigued_activity(zoneId);
+        if (activity == nil) then
             if (state.debug) then
-                err('Fatigue message matched but no activity has been attempted yet this session.');
+                err('Fatigue message matched but could not be attributed to an activity.');
             end
             return;
         end
 
-        register_fatigue_cap(state.last_activity, zoneId);
+        register_fatigue_cap(activity, zoneId);
         settings.save();
 
         if (helm_settings.window.auto_popup) then
@@ -558,7 +614,7 @@ local function render_fatigue(charname, activity, zoneId, zoneName)
     imgui.ProgressBar(value / FATIGUE_CAP, { -1, 14 }, '');
     imgui.PopStyleColor(1);
 
-    if (value >= FATIGUE_CAP) then
+    if (is_fatigued(charname, activity, zoneId)) then
         imgui.TextColored(COLOR_FATIGUED, 'FATIGUED');
     end
 
@@ -708,31 +764,42 @@ local function render_home(charname, curZoneId)
             render_fatigue(charname, activity, curZoneId, zoneName);
         end
 
-        local log       = get_item_log(charname, activity, curZoneId);
-        local total     = count_gathers(log);
-        local attempts  = get_attempts(charname, activity, curZoneId);
-        local successes = get_successes(charname, activity, curZoneId);
+        if (not home_minimum()) then
+            local log       = get_item_log(charname, activity, curZoneId);
+            local total     = count_gathers(log);
+            local attempts  = get_attempts(charname, activity, curZoneId);
+            local successes = get_successes(charname, activity, curZoneId);
+            local skillups  = get_skillups(charname, activity, curZoneId);
 
-        local skillups = get_skillups(charname, activity, curZoneId);
+            if (attempts > 0) then
+                imgui.TextDisabled(('Gathers - %d/%d (%.1f%%)')
+                    :fmt(successes, attempts, successes / attempts * 100));
+                imgui.TextDisabled(('Skill Ups - %d/%d (%.1f%%)')
+                    :fmt(skillups, attempts, skillups / attempts * 100));
+            else
+                imgui.TextDisabled('Gathers 0/0');
+                imgui.TextDisabled(('Skill Ups %d/0'):fmt(skillups));
+            end
 
-        if (attempts > 0) then
-            imgui.TextDisabled(('Gathers - %d/%d (%.1f%%)')
-                :fmt(successes, attempts, successes / attempts * 100));
-            imgui.TextDisabled(('Skill Ups - %d/%d (%.1f%%)')
-                :fmt(skillups, attempts, skillups / attempts * 100));
-        else
-            imgui.TextDisabled('Gathers 0/0');
-            imgui.TextDisabled(('Skill Ups %d/0'):fmt(skillups));
+            imgui.Spacing();
+            imgui.TextDisabled(('Items  -  %d logged'):fmt(total));
+            render_item_list(log, total);
+            imgui.Spacing();
         end
-
-        imgui.Spacing();
-        imgui.TextDisabled(('Items  -  %d logged'):fmt(total));
-        render_item_list(log, total);
-        imgui.Spacing();
     end
 end
 
 local function render_settings(charname)
+    imgui.Spacing();
+
+    if (imgui.Checkbox('Home Minimum Mode', { home_minimum() })) then
+        helm_settings.window.home_minimum = not home_minimum();
+        settings.save();
+    end
+    imgui.TextDisabled('Home shows only skill and fatigue.');
+
+    imgui.Spacing();
+    imgui.Separator();
     imgui.Spacing();
     imgui.TextDisabled('Shown activities');
     imgui.Spacing();
