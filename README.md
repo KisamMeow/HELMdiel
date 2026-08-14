@@ -4,7 +4,7 @@ Tracks HorizonXI's new HELM system released in 2.0.0
 
 This addon is in very early development, there will be bugs and the UI will be reworked as I get closer to being feature complete.
 
-Ashita v4.30+ addon. Version 0.7.1. Released under GPL-3.0. Coded with help from Claude Opus 5.
+Ashita v4.30+ addon. Version 0.8.0. Released under GPL-3.0. Coded with help from Claude Opus 5.
 
 ## Features
 
@@ -38,7 +38,7 @@ Planned, in no particular order and with no promised timeline:
 **Requires Ashita v4.30 or newer.**
 
 Download from [github.com/KisamMeow/HHelmet](https://github.com/KisamMeow/HHelmet)
-and copy the `HHelmet` folder into your Ashita `addons` directory, then load it:
+and copy the whole `HHelmet` folder into your Ashita `addons` directory, then load it:
 
 ```
 /addon load HHelmet

@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-08-14
+
+### Changed
+
+- Nothing you can see. The addon was split from one file into six so it stays
+  workable as it grows, and the same test suite passes unchanged. It now ships
+  as `HHelmet.lua` plus `data.lua`, `resources.lua`, `store.lua`, `detect.lua`,
+  and `ui.lua`, so **copy the whole folder when you update**, not just
+  `HHelmet.lua`.
+- Some minor waste removed along the way: closed item foldouts no longer
+  recount their contents every frame, and the window asks the game for your
+  character and zone once per frame instead of twice.
+
 ## [0.7.1] - 2026-08-12
 
 ### Added
@@ -152,7 +165,8 @@ Initial public release.
   inferred from a two-zone observation, not stress-tested against three or
   more fatigued zones at once.
 
-[Unreleased]: https://github.com/KisamMeow/HHelmet/compare/v0.7.1...HEAD
+[Unreleased]: https://github.com/KisamMeow/HHelmet/compare/v0.8.0...HEAD
+[0.8.0]: https://github.com/KisamMeow/HHelmet/compare/v0.7.1...v0.8.0
 [0.7.1]: https://github.com/KisamMeow/HHelmet/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/KisamMeow/HHelmet/compare/v0.6.1...v0.7.0
 [0.6.1]: https://github.com/KisamMeow/HHelmet/compare/v0.6.0...v0.6.1

@@ -1,151 +1,22 @@
 addon.name    = 'HHelmet';
 addon.author  = 'Masuru';
-addon.version = '0.7.1';
+addon.version = '0.8.0';
 addon.desc    = 'Tracks HELM (Harvesting/Excavation/Logging/Mining) regional gathering fatigue on HorizonXI.';
 addon.link    = 'https://github.com/KisamMeow/HHelmet';
 
 require('common');
-local settings = require('settings');
-local imgui    = require('imgui');
 local chat     = require('chat');
 
-----------------------------------------
--- Constants
-----------------------------------------
+local data      = require('data');
+local resources = require('resources');
+local store     = require('store');
+local detect    = require('detect');
+local ui        = require('ui');
 
-local FATIGUE_CAP          = 200;
-local FATIGUE_WARN         = 150;
-local DEDUP_WINDOW_SECONDS = 3.5;
-local SKILL_INPUT_WIDTH    = 70;
-
-local ACTIVITIES = T{ 'Harvesting', 'Excavation', 'Logging', 'Mining' };
-
-local COLOR_LOW       = { 0.40, 0.75, 1.00, 1.00 };
-local COLOR_MID       = { 1.00, 0.90, 0.20, 1.00 };
-local COLOR_HIGH      = { 0.90, 0.20, 0.20, 1.00 };
-local COLOR_FATIGUED  = { 1.00, 0.30, 0.30, 1.00 };
-
-local RARITY_TIERS = T{
-    { rank = 1, name = 'Common',         min_pct = 20 },
-    { rank = 2, name = 'Uncommon',       min_pct = 10 },
-    { rank = 3, name = 'Rare',           min_pct = 5  },
-    { rank = 4, name = 'Very Rare',      min_pct = 1  },
-    { rank = 5, name = 'Extremely Rare', min_pct = 0  },
-};
-
-local TRACKED_ZONES = T{
-    Harvesting = T{
-        { id = 115, name = 'West Sarutabaruta', skill_cap = 10 },
-        { id = 145, name = 'Giddeus',           skill_cap = 20 },
-        { id = 123, name = 'Yuhtunga Jungle',   skill_cap = 30 },
-        { id = 124, name = 'Yhoator Jungle',    skill_cap = 30 },
-        { id = 52,  name = 'Bhaflau Thickets' },
-        { id = 51,  name = 'Wajaom Woodlands' },
-    },
-    Excavation = T{
-        { id = 7,   name = 'Attohwa Chasm' },
-        { id = 173, name = 'Korroloka Tunnel',  skill_cap = 20 },
-        { id = 198, name = 'Maze of Shakhrami', skill_cap = 20 },
-        { id = 117, name = 'Tahrongi Canyon',   skill_cap = 10 },
-    },
-    Logging = T{
-        { id = 118, name = 'Buburimu Peninsula' },
-        { id = 2,   name = "Carpenters' Landing" },
-        { id = 101, name = 'East Ronfaure' },
-        { id = 140, name = 'Ghelsba Outpost' },
-        { id = 104, name = 'Jugner Forest' },
-        { id = 24,  name = 'Lufaise Meadows' },
-        { id = 25,  name = 'Misareaux Coast' },
-        { id = 124, name = 'Yhoator Jungle' },
-        { id = 123, name = 'Yuhtunga Jungle' },
-        { id = 79,  name = 'Caedarva Mire' },
-        { id = 65,  name = 'Mamook' },
-    },
-    Mining = T{
-        { id = 196, name = 'Gusgen Mines' },
-        { id = 205, name = "Ifrit's Cauldron" },
-        { id = 12,  name = 'Newton Movalpolos' },
-        { id = 11,  name = 'Oldton Movalpolos' },
-        { id = 143, name = 'Palborough Mines' },
-        { id = 142, name = 'Yughott Grotto' },
-        { id = 172, name = 'Zeruhn Mines' },
-    },
-};
-
-local MESSAGE_PATTERNS = T{
-    Harvesting = T{ 'You successfully harvest', 'You harvest' },
-    Excavation = T{ 'You successfully dig up', 'You dig up' },
-    Logging    = T{ 'You successfully cut off', 'You cut off' },
-    Mining     = T{ 'You successfully dig up', 'You dig up' },
-};
-
-local FAILURE_PATTERNS = T{
-    Harvesting = T{ 'You are unable to harvest anything', 'Your sickle breaks' },
-    Excavation = T{ 'You are unable to mine anything', 'Your pickaxe breaks' },
-    Logging    = T{ 'You are unable to log anything', 'You are unable to cut off anything',
-                    'Your hatchet breaks' },
-    Mining     = T{ 'You are unable to mine anything', 'Your pickaxe breaks' },
-};
-
-local FATIGUE_PATTERN = 'You sense there is little more to be gained from this area.';
-
-local SKILL_NAMES = T{
-    Harvesting = 'harvesting',
-    Excavation = 'excavating',
-    Logging    = 'logging',
-    Mining     = 'mining',
-};
-
-local SKILL_MARKER        = 'skill has increased';
-local SKILL_VALUE_DECIMAL = 'raising it to (%d+%.%d+)';
-local SKILL_VALUE_INTEGER = 'raising it to (%d+)';
-
-local TRACKED_ZONE_SET  = T{};
-local ZONE_NAMES        = T{};
-local ZONE_ACTIVITIES   = T{};
-local SKILL_PATTERNS    = T{};
-
-for _, activity in ipairs(ACTIVITIES) do
-    local set = T{};
-    for _, zone in ipairs(TRACKED_ZONES[activity]) do
-        set[zone.id]        = true;
-        ZONE_NAMES[zone.id] = zone.name;
-
-        ZONE_ACTIVITIES[zone.id] = ZONE_ACTIVITIES[zone.id] or T{};
-        table.insert(ZONE_ACTIVITIES[zone.id], activity);
-    end
-    TRACKED_ZONE_SET[activity] = set;
-    SKILL_PATTERNS[activity]   = ('Your %s skill has increased'):fmt(SKILL_NAMES[activity]);
-end
 
 ----------------------------------------
--- Settings
+-- Helpers
 ----------------------------------------
-
-local default_settings = T{
-    characters = T{},
-    window     = T{
-        auto_popup   = true,
-        home_minimum = false,
-    },
-    activities = T{
-        Harvesting = true,
-        Excavation = true,
-        Logging    = true,
-        Mining     = true,
-    },
-};
-
-local helm_settings = settings.load(default_settings);
-helm_settings.activities = helm_settings.activities or T{};
-helm_settings.window     = helm_settings.window or T{};
-
-settings.register('settings', 'settings_update', function(s)
-    if (s ~= nil) then
-        helm_settings = s;
-    end
-    settings.save();
-end);
 
 local state = T{
     show                 = false,
@@ -156,10 +27,6 @@ local state = T{
     last_gather_time     = 0,
 };
 
-----------------------------------------
--- Helpers
-----------------------------------------
-
 local function msg(text)
     print(chat.header(addon.name):append(chat.message(text)));
 end
@@ -168,347 +35,13 @@ local function err(text)
     print(chat.header(addon.name):append(chat.error(text)));
 end
 
-local function get_char_name()
-    local party = AshitaCore:GetMemoryManager():GetParty();
-    if (party == nil) then return 'unknown'; end
-    local name = party:GetMemberName(0);
-    if (name == nil or name == '') then return 'unknown'; end
-    return name;
-end
-
-local function get_current_zone_id()
-    local party = AshitaCore:GetMemoryManager():GetParty();
-    if (party == nil) then return 0; end
-    return party:GetMemberZone(0) or 0;
-end
-
-local function get_zone_name(zoneId)
-    local name = ZONE_NAMES[zoneId];
-    if (name ~= nil) then return name; end
-
-    local ok, resolved = pcall(function()
-        return AshitaCore:GetResourceManager():GetString('zones.names', zoneId);
-    end);
-    if (not ok or resolved == nil or resolved == '') then
-        resolved = ('Zone %d'):fmt(zoneId);
-    end
-
-    ZONE_NAMES[zoneId] = resolved;
-    return resolved;
-end
-
-local function activity_enabled(activity)
-    local value = helm_settings.activities[activity];
-    if (value == nil) then return true; end
-    return value;
-end
-
-local function home_minimum()
-    return helm_settings.window.home_minimum == true;
-end
 
 local function match_activity(name)
     if (name == nil) then return nil; end
-    for _, activity in ipairs(ACTIVITIES) do
+    for _, activity in ipairs(data.ACTIVITIES) do
         if (activity:lower() == name) then return activity; end
     end
     return nil;
-end
-
-local function get_fatigue_color(value)
-    if (value >= FATIGUE_CAP) then
-        return COLOR_HIGH;
-    elseif (value >= FATIGUE_WARN) then
-        return COLOR_MID;
-    end
-    return COLOR_LOW;
-end
-
-local EMPTY_LOG  = T{};
-local ZONE_KEYS  = T{};
-local ITEM_NAMES = T{};
-
-local ITEM_LOOKUP     = T{};
-local ITEM_SCAN_CHUNK = 1500;
-local ITEM_SCAN_MAX   = 65535;
-local item_scan_next  = 1;
-local item_scan_done  = false;
-
-local function zone_key(zoneId)
-    local key = ZONE_KEYS[zoneId];
-    if (key == nil) then
-        key = tostring(zoneId);
-        ZONE_KEYS[zoneId] = key;
-    end
-    return key;
-end
-
-local function get_rarity_tier(pct)
-    for _, tier in ipairs(RARITY_TIERS) do
-        if (pct >= tier.min_pct) then return tier; end
-    end
-    return RARITY_TIERS[#RARITY_TIERS];
-end
-
-----------------------------------------
--- Data access
-----------------------------------------
-
-local CHARACTER_KEYS = T{ 'fatigue', 'fatigued', 'item_log', 'skill',
-                          'skillups', 'attempts', 'successes' };
-local SESSION_KEYS   = T{ 'skillups', 'attempts', 'successes' };
-
-local function ensure_char(charname)
-    local char = helm_settings.characters[charname] or T{};
-    helm_settings.characters[charname] = char;
-
-    for _, key in ipairs(CHARACTER_KEYS) do
-        char[key] = char[key] or T{};
-    end
-    return char;
-end
-
-local function ensure_zone(charname, field, activity, zoneId, empty)
-    local group = ensure_char(charname)[field];
-    group[activity] = group[activity] or T{};
-
-    if (zoneId == nil) then return group[activity]; end
-
-    local key = zone_key(zoneId);
-    if (empty ~= nil) then
-        group[activity][key] = group[activity][key] or empty();
-    end
-    return group[activity], key;
-end
-
-local function read_zone(charname, field, activity, zoneId, missing)
-    local char = helm_settings.characters[charname];
-    if (char == nil or char[field] == nil or char[field][activity] == nil) then
-        return missing;
-    end
-    return char[field][activity][zone_key(zoneId)] or missing;
-end
-
-local function bump(field, activity, zoneId)
-    local group, key = ensure_zone(get_char_name(), field, activity, zoneId);
-    group[key] = (group[key] or 0) + 1;
-end
-
-local function get_fatigue(charname, activity, zoneId)
-    return read_zone(charname, 'fatigue', activity, zoneId, 0);
-end
-
-local function get_attempts(charname, activity, zoneId)
-    return read_zone(charname, 'attempts', activity, zoneId, 0);
-end
-
-local function get_successes(charname, activity, zoneId)
-    return read_zone(charname, 'successes', activity, zoneId, 0);
-end
-
-local function get_skillups(charname, activity, zoneId)
-    return read_zone(charname, 'skillups', activity, zoneId, 0);
-end
-
-local function get_item_log(charname, activity, zoneId)
-    return read_zone(charname, 'item_log', activity, zoneId, EMPTY_LOG);
-end
-
-local function is_fatigued(charname, activity, zoneId)
-    return read_zone(charname, 'fatigued', activity, zoneId, false) == true;
-end
-
-local function clear_fatigued(charname, activity, zoneId)
-    local flags, key = ensure_zone(charname, 'fatigued', activity, zoneId);
-    flags[key] = nil;
-end
-
-local function set_fatigue(charname, activity, zoneId, value)
-    local group, key = ensure_zone(charname, 'fatigue', activity, zoneId);
-    group[key] = math.max(0, math.min(FATIGUE_CAP, value));
-
-    if (group[key] < FATIGUE_CAP) then
-        clear_fatigued(charname, activity, zoneId);
-    end
-end
-
-local function get_skill(charname, activity)
-    local char = helm_settings.characters[charname];
-    if (char == nil or char.skill == nil) then return nil; end
-    return char.skill[activity];
-end
-
-local function set_skill(charname, activity, value)
-    ensure_char(charname).skill[activity] = value;
-end
-
-local function register_gather(activity, zoneId)
-    local charname     = get_char_name();
-    local fatigue, key = ensure_zone(charname, 'fatigue', activity, zoneId);
-    local flags        = ensure_zone(charname, 'fatigued', activity, zoneId);
-
-    fatigue[key] = math.min(FATIGUE_CAP, (fatigue[key] or 0) + 1);
-    flags[key]   = nil;
-
-    for zid, value in pairs(fatigue) do
-        if (zid ~= key) then
-            fatigue[zid] = math.max(0, value - 1);
-            if (fatigue[zid] < FATIGUE_CAP) then
-                flags[zid] = nil;
-            end
-        end
-    end
-end
-
-local function register_fatigue_cap(activity, zoneId)
-    local charname     = get_char_name();
-    local fatigue, key = ensure_zone(charname, 'fatigue', activity, zoneId);
-    local flags        = ensure_zone(charname, 'fatigued', activity, zoneId);
-
-    fatigue[key] = FATIGUE_CAP;
-
-    for zid in pairs(fatigue) do
-        if (zid ~= key) then fatigue[zid] = 0; end
-    end
-    for zid in pairs(flags) do
-        flags[zid] = nil;
-    end
-
-    flags[key] = true;
-end
-
-local function register_item_gather(activity, zoneId, itemName)
-    if (itemName == nil) then return; end
-    local group, key = ensure_zone(get_char_name(), 'item_log', activity, zoneId, T);
-    group[key][itemName] = (group[key][itemName] or 0) + 1;
-end
-
-local function register_skill(activity, value)
-    set_skill(get_char_name(), activity, value);
-end
-
-local function register_attempt(activity, zoneId) bump('attempts',  activity, zoneId); end
-local function register_success(activity, zoneId) bump('successes', activity, zoneId); end
-local function register_skillup(activity, zoneId) bump('skillups',  activity, zoneId); end
-
-local function clear_detection_state()
-    state.last_activity        = nil;
-    state.last_gather_activity = nil;
-    state.last_gather_zone     = nil;
-    state.last_gather_time     = 0;
-end
-
-local function reset_session()
-    local char = ensure_char(get_char_name());
-    for _, key in ipairs(SESSION_KEYS) do
-        char[key] = T{};
-    end
-
-    clear_detection_state();
-    settings.save();
-end
-
-local function reset_all()
-    local charname = get_char_name();
-    helm_settings.characters[charname] = nil;
-    ensure_char(charname);
-
-    clear_detection_state();
-    settings.save();
-end
-
-----------------------------------------
--- Item names
-----------------------------------------
-
-local function extract_after(text, prefix)
-    local _, stop = text:find(prefix, 1, true);
-    if (stop == nil) then return nil; end
-
-    local rest = text:sub(stop + 1):gsub('^%s+', ''):gsub('%s+$', ''):gsub('%.$', '');
-    if (rest == '') then return nil; end
-    return rest;
-end
-
-local function clean_item_name(name)
-    if (name == nil) then return nil; end
-
-    local comma = name:find(',', 1, true);
-    if (comma ~= nil) then
-        name = name:sub(1, comma - 1);
-    end
-
-    name = name:gsub("[^%w%s'%-]", '')
-               :gsub('^%s+', '')
-               :gsub('%s+$', '')
-               :gsub('%s%s+', ' ');
-
-    if (name == '') then return nil; end
-    return name;
-end
-
-----------------------------------------
--- Detection
-----------------------------------------
-
-local function resolve_from(patterns, text, zoneId)
-    local fallback_activity, fallback_pattern = nil, nil;
-
-    for _, activity in ipairs(ACTIVITIES) do
-        for _, pattern in ipairs(patterns[activity]) do
-            if (text:find(pattern, 1, true)) then
-                if (TRACKED_ZONE_SET[activity][zoneId]) then
-                    return activity, pattern;
-                end
-                if (fallback_activity == nil) then
-                    fallback_activity, fallback_pattern = activity, pattern;
-                end
-                break;
-            end
-        end
-    end
-
-    return fallback_activity, fallback_pattern;
-end
-
-local function resolve_gather(text, zoneId)
-    return resolve_from(MESSAGE_PATTERNS, text, zoneId);
-end
-
-local function resolve_failure(text, zoneId)
-    return resolve_from(FAILURE_PATTERNS, text, zoneId);
-end
-
-local function resolve_fatigued_activity(zoneId)
-    local tracked = ZONE_ACTIVITIES[zoneId];
-
-    if (tracked ~= nil and #tracked == 1) then
-        return tracked[1];
-    end
-
-    if (tracked ~= nil and state.last_activity ~= nil) then
-        for _, activity in ipairs(tracked) do
-            if (activity == state.last_activity) then return activity; end
-        end
-        return nil;
-    end
-
-    return state.last_activity;
-end
-
-local function resolve_skill(text)
-    if (not text:find(SKILL_MARKER, 1, true)) then return nil, nil; end
-
-    for _, activity in ipairs(ACTIVITIES) do
-        if (text:find(SKILL_PATTERNS[activity], 1, true)) then
-            local value = tonumber(text:match(SKILL_VALUE_DECIMAL))
-                       or tonumber(text:match(SKILL_VALUE_INTEGER));
-            if (value ~= nil) then
-                return activity, value;
-            end
-        end
-    end
-    return nil, nil;
 end
 
 ----------------------------------------
@@ -523,21 +56,21 @@ ashita.events.register('text_in', 'hhelmet_text_in', function(e)
         msg(('[mode %d] %s'):fmt(e.mode, text));
     end
 
-    local zoneId = get_current_zone_id();
+    local zoneId = store.zone_id();
 
-    local skill_activity, skill_value = resolve_skill(text);
+    local skill_activity, skill_value = detect.skill(text);
     if (skill_activity ~= nil) then
-        register_skill(skill_activity, skill_value);
-        register_skillup(skill_activity, zoneId);
-        settings.save();
+        store.register_skill(skill_activity, skill_value);
+        store.register_skillup(skill_activity, zoneId);
+        store.save();
         return;
     end
 
-    local activity, matched = resolve_gather(text, zoneId);
+    local activity, matched = detect.gather(text, zoneId);
     local failed = false;
 
     if (activity == nil) then
-        activity = resolve_failure(text, zoneId);
+        activity = detect.failure(text, zoneId);
         failed   = (activity ~= nil);
     end
 
@@ -547,7 +80,7 @@ ashita.events.register('text_in', 'hhelmet_text_in', function(e)
         local now = os.clock();
         if (activity == state.last_gather_activity
             and zoneId == state.last_gather_zone
-            and (now - state.last_gather_time) < DEDUP_WINDOW_SECONDS) then
+            and (now - state.last_gather_time) < data.DEDUP_WINDOW_SECONDS) then
             if (state.debug) then
                 msg('[dedup] ignored duplicate ' .. activity .. ' event');
             end
@@ -558,27 +91,27 @@ ashita.events.register('text_in', 'hhelmet_text_in', function(e)
         state.last_gather_zone     = zoneId;
         state.last_gather_time     = now;
 
-        register_attempt(activity, zoneId);
+        store.register_attempt(activity, zoneId);
 
         if (not failed) then
-            register_success(activity, zoneId);
-            register_gather(activity, zoneId);
+            store.register_success(activity, zoneId);
+            store.register_gather(activity, zoneId);
 
-            if (TRACKED_ZONE_SET[activity][zoneId]) then
-                register_item_gather(activity, zoneId, clean_item_name(extract_after(text, matched)));
+            if (data.TRACKED_ZONE_SET[activity][zoneId]) then
+                store.register_item_gather(activity, zoneId, detect.clean_item_name(detect.extract_after(text, matched)));
             end
         end
 
-        settings.save();
+        store.save();
 
-        if (helm_settings.window.auto_popup) then
-            state.show = true;
+        if (store.auto_popup()) then
+            ui.visible = true;
         end
         return;
     end
 
-    if (text:find(FATIGUE_PATTERN, 1, true)) then
-        local activity = resolve_fatigued_activity(zoneId);
+    if (detect.is_fatigue_message(text)) then
+        local activity = detect.fatigued_activity(zoneId, state.last_activity);
         if (activity == nil) then
             if (state.debug) then
                 err('Fatigue message matched but could not be attributed to an activity.');
@@ -586,354 +119,36 @@ ashita.events.register('text_in', 'hhelmet_text_in', function(e)
             return;
         end
 
-        register_fatigue_cap(activity, zoneId);
-        settings.save();
+        store.register_fatigue_cap(activity, zoneId);
+        store.save();
 
-        if (helm_settings.window.auto_popup) then
-            state.show = true;
+        if (store.auto_popup()) then
+            ui.visible = true;
         end
     end
 end);
 
-local function render_skill(charname, activity)
-    local skill = get_skill(charname, activity);
-    if (skill == nil) then
-        imgui.TextDisabled(('%s Skill: unknown'):fmt(activity));
-    else
-        imgui.Text(('%s Skill: %.1f'):fmt(activity, skill));
-    end
+local function clear_detection_state()
+    state.last_activity        = nil;
+    state.last_gather_activity = nil;
+    state.last_gather_zone     = nil;
+    state.last_gather_time     = 0;
 end
 
-local function render_fatigue(charname, activity, zoneId, zoneName)
-    local value = get_fatigue(charname, activity, zoneId);
-    local color = get_fatigue_color(value);
-
-    imgui.TextColored(color, ('%s: %d / %d'):fmt(zoneName, value, FATIGUE_CAP));
-
-    imgui.PushStyleColor(ImGuiCol_PlotHistogram, color);
-    imgui.ProgressBar(value / FATIGUE_CAP, { -1, 14 }, '');
-    imgui.PopStyleColor(1);
-
-    if (is_fatigued(charname, activity, zoneId)) then
-        imgui.TextColored(COLOR_FATIGUED, 'FATIGUED');
-    end
-
-    imgui.Spacing();
+local function reset_session()
+    store.reset_session();
+    clear_detection_state();
 end
 
-local function count_gathers(log)
-    local total = 0;
-    for _, count in pairs(log) do
-        total = total + count;
-    end
-    return total;
+local function reset_all()
+    store.reset_all();
+    clear_detection_state();
 end
 
-local function item_key(text)
-    if (type(text) ~= 'string') then return ''; end
-    return (text:lower():gsub('%p', ' '):gsub('%s+', ' '):match('^%s*(.-)%s*$') or '');
-end
-
-local function item_string(field)
-    if (field == nil) then return nil; end
-    for index = 1, 4 do
-        local value = field[index];
-        if (type(value) == 'string' and value ~= '') then return value; end
-    end
-    return nil;
-end
-
-local function index_item(item)
-    local shown = item_string(item.Name);
-    if (shown == nil) then return; end
-
-    local logged = item_key(item_string(item.LogNameSingular));
-    if (logged ~= '' and ITEM_LOOKUP[logged] == nil) then
-        ITEM_LOOKUP[logged] = shown;
-    end
-
-    local named = item_key(shown);
-    if (named ~= '' and ITEM_LOOKUP[named] == nil) then
-        ITEM_LOOKUP[named] = shown;
-    end
-end
-
-local function scan_item_chunk()
-    if (item_scan_done) then return; end
-
-    local resources = AshitaCore:GetResourceManager();
-    if (resources == nil) then item_scan_done = true; return; end
-
-    local lookup = resources.GetItemById;
-    local last   = math.min(item_scan_next + ITEM_SCAN_CHUNK - 1, ITEM_SCAN_MAX);
-
-    for id = item_scan_next, last do
-        local ok, item = pcall(lookup, resources, id);
-        if (ok and item ~= nil) then
-            pcall(index_item, item);
-        end
-    end
-
-    item_scan_next = last + 1;
-    if (last >= ITEM_SCAN_MAX) then item_scan_done = true; end
-end
-
-local function display_item_name(name)
-    local cached = ITEM_NAMES[name];
-    if (cached ~= nil) then return cached; end
-
-    local bare  = name:gsub('^[Aa]n?%s+', '');
-    local shown = ITEM_LOOKUP[item_key(bare)] or (bare:gsub('^%l', string.upper));
-
-    if (item_scan_done) then
-        ITEM_NAMES[name] = shown;
-    end
-    return shown;
-end
-
-local function render_item_list(log, total)
-    if (total == 0) then
-        imgui.TextDisabled('  No gathers recorded yet.');
-        return;
-    end
-
-    local items = T{};
-    for itemName, count in pairs(log) do
-        local pct = count / total * 100;
-        table.insert(items, {
-            name  = display_item_name(itemName),
-            count = count,
-            pct   = pct,
-            tier  = get_rarity_tier(pct),
-        });
-    end
-
-    table.sort(items, function(a, b)
-        if (a.count ~= b.count) then
-            return a.count > b.count;
-        end
-        return a.name < b.name;
-    end);
-
-    local last_rank = nil;
-    for _, item in ipairs(items) do
-        if (item.tier.rank ~= last_rank) then
-            imgui.Spacing();
-            imgui.TextDisabled(item.tier.name);
-            last_rank = item.tier.rank;
-        end
-        imgui.Text(('    %s: %d  (%.1f%%)'):fmt(item.name, item.count, item.pct));
-    end
-end
-
-local function render_home(charname, curZoneId)
-    local tracked = ZONE_ACTIVITIES[curZoneId];
-
-    imgui.Spacing();
-    if (tracked == nil or #tracked == 0) then
-        imgui.TextDisabled('No HELM activity is tracked in this zone.');
-        imgui.Spacing();
-        return;
-    end
-
-    local activities = T{};
-    for _, activity in ipairs(tracked) do
-        if (activity_enabled(activity)) then
-            table.insert(activities, activity);
-        end
-    end
-
-    if (#activities == 0) then
-        imgui.TextDisabled('All activities here are hidden.');
-        imgui.Spacing();
-        return;
-    end
-
-    local zoneName = get_zone_name(curZoneId);
-
-    for index, activity in ipairs(activities) do
-        if (index > 1) then
-            imgui.Separator();
-            imgui.Spacing();
-        end
-
-        render_skill(charname, activity);
-        imgui.Spacing();
-
-        if (get_fatigue(charname, activity, curZoneId) > 0) then
-            render_fatigue(charname, activity, curZoneId, zoneName);
-        end
-
-        if (not home_minimum()) then
-            local log       = get_item_log(charname, activity, curZoneId);
-            local total     = count_gathers(log);
-            local attempts  = get_attempts(charname, activity, curZoneId);
-            local successes = get_successes(charname, activity, curZoneId);
-            local skillups  = get_skillups(charname, activity, curZoneId);
-
-            if (attempts > 0) then
-                imgui.TextDisabled(('Gathers - %d/%d (%.1f%%)')
-                    :fmt(successes, attempts, successes / attempts * 100));
-                imgui.TextDisabled(('Skill Ups - %d/%d (%.1f%%)')
-                    :fmt(skillups, attempts, skillups / attempts * 100));
-            else
-                imgui.TextDisabled('Gathers 0/0');
-                imgui.TextDisabled(('Skill Ups %d/0'):fmt(skillups));
-            end
-
-            imgui.Spacing();
-            imgui.TextDisabled(('Items  -  %d logged'):fmt(total));
-            render_item_list(log, total);
-            imgui.Spacing();
-        end
-    end
-end
-
-local function render_settings(charname)
-    imgui.Spacing();
-
-    if (imgui.Checkbox('Home Minimum Mode', { home_minimum() })) then
-        helm_settings.window.home_minimum = not home_minimum();
-        settings.save();
-    end
-    imgui.TextDisabled('Home shows only skill and fatigue.');
-
-    imgui.Spacing();
-    imgui.Separator();
-    imgui.Spacing();
-    imgui.TextDisabled('Shown activities');
-    imgui.Spacing();
-
-    for _, activity in ipairs(ACTIVITIES) do
-        if (imgui.Checkbox(('%s##show'):fmt(activity), { activity_enabled(activity) })) then
-            helm_settings.activities[activity] = not activity_enabled(activity);
-            settings.save();
-        end
-    end
-
-    imgui.Spacing();
-    imgui.Separator();
-    imgui.Spacing();
-    imgui.TextDisabled('Skill levels');
-    imgui.Spacing();
-
-    imgui.PushItemWidth(SKILL_INPUT_WIDTH);
-    for _, activity in ipairs(ACTIVITIES) do
-        local buffer = { get_skill(charname, activity) or 0 };
-        if (imgui.InputFloat(activity, buffer, 0, 0, '%.1f')) then
-            set_skill(charname, activity, math.max(0, buffer[1]));
-            settings.save();
-        end
-    end
-    imgui.PopItemWidth();
-
-    imgui.Spacing();
-    imgui.Separator();
-    imgui.Spacing();
-
-    if (imgui.Checkbox('Auto-open on gather', { helm_settings.window.auto_popup })) then
-        helm_settings.window.auto_popup = not helm_settings.window.auto_popup;
-        settings.save();
-    end
-
-    imgui.Spacing();
-    imgui.Separator();
-    imgui.Spacing();
-
-    if (imgui.Button('Reset Session')) then
-        reset_session();
-    end
-    imgui.TextDisabled('Clears gather and skill up counters.');
-
-    imgui.Spacing();
-
-    if (imgui.Button('Reset All Data')) then
-        reset_all();
-    end
-    imgui.TextDisabled('Clears everything for this character.');
-
-    imgui.Spacing();
-    imgui.Separator();
-    imgui.Spacing();
-    imgui.TextDisabled('Exporting Coming Soon');
-    imgui.Spacing();
-end
+ui.set_actions(T{ reset_session = reset_session, reset_all = reset_all });
 
 ashita.events.register('d3d_present', 'hhelmet_present', function()
-    scan_item_chunk();
-
-    if (not state.show) then return; end
-
-    local charname  = get_char_name();
-    local curZoneId = get_current_zone_id();
-
-    imgui.SetNextWindowSize({ 360, 0, }, ImGuiCond_FirstUseEver);
-
-    local isOpen = { state.show };
-    if (imgui.Begin('HHelmet', isOpen, ImGuiWindowFlags_AlwaysAutoResize)) then
-        imgui.Text(('Character: %s'):fmt(charname));
-        imgui.Text(('Current Zone: %s'):fmt(get_zone_name(curZoneId)));
-        imgui.Separator();
-
-        if (imgui.BeginTabBar('##hhelmet_activity_tabs')) then
-            if (imgui.BeginTabItem('Home')) then
-                render_home(charname, curZoneId);
-                imgui.EndTabItem();
-            end
-
-            for _, activity in ipairs(ACTIVITIES) do
-                if (activity_enabled(activity) and imgui.BeginTabItem(activity)) then
-                    local zones = TRACKED_ZONES[activity];
-
-                    render_skill(charname, activity);
-                    imgui.Separator();
-                    imgui.Spacing();
-
-                    local fatigued = 0;
-                    for _, zone in ipairs(zones) do
-                        if (get_fatigue(charname, activity, zone.id) > 0) then
-                            render_fatigue(charname, activity, zone.id, zone.name);
-                            fatigued = fatigued + 1;
-                        end
-                    end
-
-                    if (fatigued == 0) then
-                        imgui.TextDisabled('No fatigue recorded.');
-                        imgui.Spacing();
-                    end
-
-                    imgui.Separator();
-                    imgui.TextDisabled('Item Tracking');
-                    imgui.Spacing();
-
-                    for _, zone in ipairs(zones) do
-                        local log   = get_item_log(charname, activity, zone.id);
-                        local total = count_gathers(log);
-
-                        if (imgui.CollapsingHeader(zone.name)) then
-                            if (total > 0) then
-                                imgui.TextDisabled(('%d Gathers'):fmt(total));
-                            end
-                            render_item_list(log, total);
-                            imgui.Spacing();
-                        end
-                    end
-
-                    imgui.EndTabItem();
-                end
-            end
-
-            if (imgui.BeginTabItem('Settings')) then
-                render_settings(charname);
-                imgui.EndTabItem();
-            end
-
-            imgui.EndTabBar();
-        end
-    end
-    imgui.End();
-
-    state.show = isOpen[1];
+    ui.render(store.player());
 end);
 
 ashita.events.register('command', 'hhelmet_command', function(e)
@@ -943,17 +158,17 @@ ashita.events.register('command', 'hhelmet_command', function(e)
     e.blocked = true;
 
     local sub      = args[2] and args[2]:lower() or nil;
-    local charname = get_char_name();
-    local zoneId   = get_current_zone_id();
+    local charname = store.char_name();
+    local zoneId   = store.zone_id();
 
     if (sub == nil) then
-        state.show = not state.show;
+        ui.visible = not ui.visible;
 
     elseif (sub == 'show') then
-        state.show = true;
+        ui.visible = true;
 
     elseif (sub == 'hide') then
-        state.show = false;
+        ui.visible = false;
 
     elseif (sub == 'debug') then
         state.debug = not state.debug;
@@ -974,12 +189,12 @@ ashita.events.register('command', 'hhelmet_command', function(e)
             if (activity == nil) then
                 err('Unknown activity. Use: Harvesting, Excavation, Logging, or Mining.');
             elseif (args[4] and args[4]:lower() == 'zone') then
-                set_fatigue(charname, activity, zoneId, 0);
-                settings.save();
-                msg(('%s fatigue reset for %s in %s.'):fmt(activity, charname, get_zone_name(zoneId)));
+                store.set_fatigue(charname, activity, zoneId, 0);
+                store.save();
+                msg(('%s fatigue reset for %s in %s.'):fmt(activity, charname, resources.zone_name(zoneId)));
             else
-                ensure_char(charname).fatigue[activity] = T{};
-                settings.save();
+                store.reset_activity(charname, activity);
+                store.save();
                 msg(('%s fatigue reset for %s (all zones).'):fmt(activity, charname));
             end
         end
@@ -991,9 +206,9 @@ ashita.events.register('command', 'hhelmet_command', function(e)
         if (activity == nil or value == nil) then
             msg('Usage: /hhelmet set <activity> <0-200>');
         else
-            set_fatigue(charname, activity, zoneId, value);
-            settings.save();
-            msg(('%s fatigue in %s set to %d.'):fmt(activity, get_zone_name(zoneId), value));
+            store.set_fatigue(charname, activity, zoneId, value);
+            store.save();
+            msg(('%s fatigue in %s set to %d.'):fmt(activity, resources.zone_name(zoneId), value));
         end
 
     elseif (sub == 'skill') then
@@ -1003,8 +218,8 @@ ashita.events.register('command', 'hhelmet_command', function(e)
         if (activity == nil or value == nil or value < 0) then
             msg('Usage: /hhelmet skill <activity> <value>');
         else
-            set_skill(charname, activity, value);
-            settings.save();
+            store.set_skill(charname, activity, value);
+            store.save();
             msg(('%s skill set to %.1f.'):fmt(activity, value));
         end
 
@@ -1018,5 +233,5 @@ ashita.events.register('load', 'hhelmet_load', function()
 end);
 
 ashita.events.register('unload', 'hhelmet_unload', function()
-    settings.save();
+    store.save();
 end);
