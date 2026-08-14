@@ -27,14 +27,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   back to zero, which is what capping one zone from empty would have done
   anyway. This repairs drift from gathering without the addon loaded.
 
-### Fixed
-
-- The first fatigue message after loading the addon is no longer ignored.
-  Attribution used to depend on having seen a gather earlier in the session, so
-  the message was thrown away until you had gathered at least once. The zone
-  now identifies the activity on its own everywhere except Yuhtunga and Yhoator
-  Jungle, which support two activities and still need a gather first.
-
 ## [0.7.0] - 2026-08-12
 
 ### Added
