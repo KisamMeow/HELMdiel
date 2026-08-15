@@ -21,15 +21,24 @@ local function field(value)
     return '"' .. text:gsub('"', '""') .. '"';
 end
 
--- Counted against the header rather than walked with ipairs. Skill is nil
--- until the first skill up, and a nil ends a Lua array, so ipairs would emit
--- a row one column short and silently shift every value after it in the
--- spreadsheet. This way a missing value is an empty cell and every row has
--- exactly as many fields as the header.
-local function row(values)
+-- Driven by the header rather than by the record. Skill is nil until the
+-- first skill up, and a nil ends a Lua array, so walking the values would
+-- emit a row one column short and silently shift every value after it in the
+-- spreadsheet. Projecting through the header means a missing value is an
+-- empty cell and every row has exactly as many fields as the header, whether
+-- that is the full set or the Minimum Data subset.
+local function row(header, record)
     local out = T{};
-    for index = 1, #data.EXPORT_HEADER do
-        table.insert(out, field(values[index]));
+    for _, column in ipairs(header) do
+        table.insert(out, field(record[column]));
+    end
+    return table.concat(out, ',');
+end
+
+local function header_row(header)
+    local out = T{};
+    for _, column in ipairs(header) do
+        table.insert(out, field(column));
     end
     return table.concat(out, ',');
 end
@@ -46,8 +55,9 @@ end
 -- pivots directly in a spreadsheet, which a section per activity would not.
 -- A zone with counters but nothing logged still gets a row, with the item
 -- columns blank, so turning fatigue into a row never loses it.
-function export.build(charname)
-    local lines = T{ row(data.EXPORT_HEADER) };
+function export.build(charname, minimal)
+    local header = minimal and data.EXPORT_HEADER_MIN or data.EXPORT_HEADER;
+    local lines  = T{ header_row(header) };
 
     for _, activity in ipairs(data.ACTIVITIES) do
         local skill = store.get_skill(charname, activity);
@@ -78,18 +88,32 @@ function export.build(charname)
                 return a.name < b.name;
             end);
 
+            local zone_row = {
+                ['Character']    = charname,
+                ['Activity']     = activity,
+                ['Zone']         = zone.name,
+                ['Zone Gathers'] = gathers,
+                ['Fatigue']      = fatigue,
+                ['Attempts']     = attempts,
+                ['Successes']    = successes,
+                ['Skill Ups']    = skillups,
+                ['Skill']        = skill,
+            };
+
             if (#items == 0) then
-                if (fatigue > 0 or attempts > 0 or gathers > 0) then
-                    table.insert(lines, row(T{ charname, activity, zone.name,
-                        '', '', 0, '', fatigue, attempts, successes, skillups,
-                        skill }));
+                -- A zone with counters but nothing logged is worth a row, so
+                -- turning fatigue into a row never loses it. Under Minimum
+                -- Data every column that row would carry is gone, so it would
+                -- say nothing but the zone's name.
+                if (not minimal and (fatigue > 0 or attempts > 0 or gathers > 0)) then
+                    table.insert(lines, row(header, zone_row));
                 end
             else
                 for _, item in ipairs(items) do
-                    local rate = ('%.1f'):fmt(item.count / gathers * 100);
-                    table.insert(lines, row(T{ charname, activity, zone.name,
-                        item.name, item.count, gathers, rate, fatigue,
-                        attempts, successes, skillups, skill }));
+                    zone_row['Item']      = item.name;
+                    zone_row['Count']     = item.count;
+                    zone_row['Drop Rate'] = ('%.1f'):fmt(item.count / gathers * 100);
+                    table.insert(lines, row(header, zone_row));
                 end
             end
         end
@@ -104,7 +128,7 @@ function export.write(charname)
     local ok, handle = pcall(io.open, path, 'w');
     if (not ok or handle == nil) then return false, path, 0; end
 
-    local text, rows = export.build(charname);
+    local text, rows = export.build(charname, store.export_minimal());
 
     handle:write(text);
     handle:close();

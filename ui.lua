@@ -583,6 +583,20 @@ local function render_settings(charname)
 
     divider();
 
+    if (success_button('Export CSV')) then
+        actions.export();
+    end
+    imgui.TextDisabled('Writes a spreadsheet beside your settings.');
+
+    imgui.Spacing();
+
+    if (imgui.Checkbox('Minimum Data', { store.export_minimal() })) then
+        store.toggle_export_minimal();
+    end
+    imgui.TextDisabled('Drops your name and personal counters.');
+
+    divider();
+
     if (danger_button('Reset Gather/Skill Ups')) then
         actions.reset_session();
     end
@@ -594,13 +608,6 @@ local function render_settings(charname)
         actions.reset_all();
     end
     imgui.TextDisabled('Clears everything for this character.');
-
-    divider();
-
-    if (success_button('Export CSV')) then
-        actions.export();
-    end
-    imgui.TextDisabled('Writes a spreadsheet beside your settings.');
     imgui.Spacing();
 end
 

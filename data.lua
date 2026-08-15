@@ -64,9 +64,17 @@ data.COLOR_SUCCESS        = { 0.16, 0.42, 0.20, 0.90 };
 data.COLOR_SUCCESS_HOVER  = { 0.22, 0.56, 0.26, 0.95 };
 data.COLOR_SUCCESS_ACTIVE = { 0.28, 0.68, 0.32, 1.00 };
 
+-- Rows are built as a record keyed by column name and then projected through
+-- whichever header is in use, so the two lists cannot fall out of step and a
+-- column missing from a record is simply an empty cell.
 data.EXPORT_HEADER = T{ 'Character', 'Activity', 'Zone', 'Item', 'Count',
                         'Zone Gathers', 'Drop Rate', 'Fatigue', 'Attempts',
                         'Successes', 'Skill Ups', 'Skill' };
+
+-- Minimum Data: the drop sample and nothing identifying. No character name,
+-- and none of the counters that describe how one player happened to play.
+data.EXPORT_HEADER_MIN = T{ 'Activity', 'Zone', 'Item', 'Count',
+                            'Zone Gathers', 'Drop Rate' };
 
 -- Fatigue bar: a hard three-way step, not a gradient.
 data.COLOR_LOW      = { 0.40, 0.75, 1.00, 1.00 };

@@ -128,6 +128,17 @@ function store.toggle_auto_resize()
     settings.save();
 end
 
+-- Defaults off: an export is for the player first, and the trimmed one is
+-- the deliberate choice you make before handing the file to someone else.
+function store.export_minimal()
+    return helm_settings.window.export_minimal == true;
+end
+
+function store.toggle_export_minimal()
+    helm_settings.window.export_minimal = not store.export_minimal();
+    settings.save();
+end
+
 -- Dropdown settings all work the same way: the chosen value is stored, never
 -- the menu position, so reordering or extending a list later cannot silently
 -- change what an existing settings file means. Anything not on the list reads

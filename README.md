@@ -4,7 +4,7 @@ Tracks HorizonXI's HELM system: Harvesting, Excavation, Logging and Mining.
 
 This addon is in very early development, there will be bugs and the UI will be reworked as I get closer to being feature complete.
 
-Ashita v4.30+ addon. Version 0.9.0. Released under GPL-3.0. Coded with help from Claude Opus 5.
+Ashita v4.30+ addon. Version 0.9.1. Released under GPL-3.0. Coded with help from Claude Opus 5.
 
 ## Features
 
@@ -144,12 +144,7 @@ and logging out.
 | Auto-open on gather | The window pops up when you gather |
 | Auto-Resize Window | On, it fits its contents. Off, drag the gold corner yourself |
 
-Three buttons:
-
-- **Reset Gather/Skill Ups** clears the Home counters and the Spoils tab. Your
-  fatigue, drop history and skill levels are kept. This starts a new session.
-- **Reset All Data** clears everything for this character.
-- **Export CSV** writes a spreadsheet and prints its path in chat:
+**Export CSV** writes a spreadsheet and prints its path in chat:
 
 ```
 Ashita/config/addons/HELMdiel/<Character>_export.csv
@@ -157,6 +152,18 @@ Ashita/config/addons/HELMdiel/<Character>_export.csv
 
 One row per item per zone, with that zone's drop rate, fatigue and counters
 alongside, which drops straight into a pivot table.
+
+**Minimum Data**, the checkbox under it, cuts the export down to Activity,
+Zone, Item, Count, Zone Gathers and Drop Rate. Your character name, fatigue,
+attempts, successes, skill ups and skill level are all left out, so you can
+share your drop data without attaching who you are or how you play. It is the
+half most people want anyway.
+
+Two reset buttons:
+
+- **Reset Gather/Skill Ups** clears the Home counters and the Spoils tab. Your
+  fatigue, drop history and skill levels are kept. This starts a new session.
+- **Reset All Data** clears everything for this character.
 
 ## Detection status
 

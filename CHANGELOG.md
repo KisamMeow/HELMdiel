@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.1] - 2026-08-14
+
+### Added
+
+- **A Minimum Data checkbox** under Export CSV. It cuts the export to Activity,
+  Zone, Item, Count, Zone Gathers and Drop Rate, leaving out your character
+  name and every figure describing how you play, so you can share drop data
+  without attaching yourself to it.
+
+### Changed
+
+- **Export CSV** has moved above the reset buttons, out from under the two
+  buttons that throw data away.
+
 ## [0.9.0] - 2026-08-14
 
 ### Renamed to HELMdiel
@@ -197,7 +211,8 @@ Initial public release.
 - The rule that a gather decays *all* other zones for that activity was
   inferred from a two-zone observation.
 
-[Unreleased]: https://github.com/KisamMeow/HELMdiel/compare/v0.9.0...HEAD
+[Unreleased]: https://github.com/KisamMeow/HELMdiel/compare/v0.9.1...HEAD
+[0.9.1]: https://github.com/KisamMeow/HELMdiel/compare/v0.9.0...v0.9.1
 [0.9.0]: https://github.com/KisamMeow/HELMdiel/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/KisamMeow/HELMdiel/compare/v0.7.1...v0.8.0
 [0.7.1]: https://github.com/KisamMeow/HELMdiel/compare/v0.7.0...v0.7.1
