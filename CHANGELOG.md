@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.1] - 2026-08-14
+
 ### Fixed
 
 - **Back-to-back gathers were sometimes not counted.** The window that
@@ -14,13 +16,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   real gathering cooldown of about 4, so working a point at full speed could
   have the second gather swallowed. It is 1 second now. Reported by a tester
   logging two Yew logs in a row.
-
-### Changed
-
-- `/helmdiel debug` now prints how long after the previous one each gathering
-  event arrived, for both the ones it counts and the ones it discards.
-
-## [0.9.1] - 2026-08-14
 
 ### Added
 
@@ -33,6 +28,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Export CSV** has moved above the reset buttons, out from under the two
   buttons that throw data away.
+- `/helmdiel debug` now prints how long after the previous one each gathering
+  event arrived, for both the ones it counts and the ones it discards.
 
 ## [0.9.0] - 2026-08-14
 
