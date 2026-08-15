@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Releases now carry a `HELMdiel.zip` that extracts to a folder named
+  `HELMdiel`**, ready to drop straight into `addons`. The generated `Source
+  code` archives extract to `HELMdiel-<version>`, which Ashita will not load
+  until it is renamed. Take the `HELMdiel.zip` asset instead.
+
 ### Fixed
 
 - **Minimum Data now keeps your character name off the filename too**, not just

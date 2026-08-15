@@ -1,0 +1,77 @@
+# Attaches a HELMdiel.zip to each release.
+#
+# GitHub's generated "Source code (zip)" extracts to HELMdiel-<version>/, and
+# that prefix is not configurable. Ashita requires the addon's folder name, its
+# .lua filename and addon.name to match exactly, so that archive does not load
+# until it is renamed by hand. git archive --prefix is the knob GitHub's does
+# not expose, and it honors the export-ignore rules in .gitattributes, so the
+# shipped file list stays defined in one place rather than repeated here.
+
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # addon.version has named a stale version twice before. A tag disagreeing
+      # with it means the zip is mislabelled, so fail before anything publishes.
+      - name: Check the tag matches addon.version
+        run: |
+          tag_version="${GITHUB_REF_NAME#v}"
+          addon_version="$(sed -n "s/^addon\.version *= *'\([^']*\)'.*/\1/p" HELMdiel.lua)"
+
+          if [ -z "$addon_version" ]; then
+            echo "Could not read addon.version from HELMdiel.lua." >&2
+            exit 1
+          fi
+
+          if [ "$tag_version" != "$addon_version" ]; then
+            echo "Tag $GITHUB_REF_NAME implies $tag_version, but HELMdiel.lua says $addon_version." >&2
+            exit 1
+          fi
+
+          echo "Tag and addon.version agree on $addon_version."
+
+      - name: Build HELMdiel.zip
+        run: |
+          git archive --format=zip --prefix=HELMdiel/ -o HELMdiel.zip HEAD
+          unzip -l HELMdiel.zip
+
+          if ! unzip -l HELMdiel.zip | grep -q 'HELMdiel/HELMdiel\.lua'; then
+            echo "HELMdiel/HELMdiel.lua is missing from the archive." >&2
+            exit 1
+          fi
+
+      - name: Publish it on the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Backticks are escaped: this heredoc is unquoted so the variables
+          # expand, which leaves backticks as command substitution otherwise.
+          cat > release-notes.md <<EOF
+          See [CHANGELOG.md](https://github.com/${GITHUB_REPOSITORY}/blob/${GITHUB_REF_NAME}/CHANGELOG.md) for what changed.
+
+          Download **HELMdiel.zip** below. It extracts to a folder named \`HELMdiel\`, ready to drop straight into Ashita's \`addons\` directory.
+
+          The generated source archives below it extract to \`HELMdiel-${GITHUB_REF_NAME#v}\` instead, which Ashita will not load until the folder is renamed.
+          EOF
+
+          # The release already exists when it was cut from the web UI, and does
+          # not when the tag was pushed from the command line. Either is fine.
+          gh release create "$GITHUB_REF_NAME" \
+            --title "$GITHUB_REF_NAME" \
+            --notes-file release-notes.md \
+            || echo "Release already exists, uploading to it."
+
+          gh release upload "$GITHUB_REF_NAME" HELMdiel.zip --clobber

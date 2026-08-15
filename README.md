@@ -27,13 +27,18 @@ No promised timeline:
 
 **Requires Ashita v4.30 or newer.**
 
-Download from
-[github.com/KisamMeow/HELMdiel](https://github.com/KisamMeow/HELMdiel), copy
-the whole `HELMdiel` folder into your Ashita `addons` directory, then:
+Download **HELMdiel.zip** from the
+[latest release](https://github.com/KisamMeow/HELMdiel/releases/latest) and
+extract it into your Ashita `addons` directory. It unpacks to a folder named
+`HELMdiel`, which is the name Ashita needs. Then:
 
 ```
 /addon load HELMdiel
 ```
+
+Take the `HELMdiel.zip` asset rather than the `Source code` archives below it.
+Those extract to a folder with the version number attached, and Ashita will
+not load the addon until it is renamed to plain `HELMdiel`.
 
 To load it every time, add that line to `Ashita/scripts/default.txt`.
 
