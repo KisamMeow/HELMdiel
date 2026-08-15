@@ -5,7 +5,7 @@ local data = T{};
 -- The mechanic
 data.FATIGUE_CAP          = 200;
 data.FATIGUE_WARN         = 150;
-data.DEDUP_WINDOW_SECONDS = 3.5;
+data.DEDUP_WINDOW_SECONDS = 1.0;
 
 data.ACTIVITIES = T{ 'Harvesting', 'Excavation', 'Logging', 'Mining' };
 

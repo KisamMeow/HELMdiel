@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Back-to-back gathers were sometimes not counted.** The window that
+  collapses duplicate chat lines into one event was 3.5 seconds, against a
+  real gathering cooldown of about 4, so working a point at full speed could
+  have the second gather swallowed. It is 1 second now. Reported by a tester
+  logging two Yew logs in a row.
+
+### Changed
+
+- `/helmdiel debug` now prints how long after the previous one each gathering
+  event arrived, for both the ones it counts and the ones it discards.
+
 ## [0.9.1] - 2026-08-14
 
 ### Added

@@ -79,13 +79,22 @@ ashita.events.register('text_in', 'helmdiel_text_in', function(e)
         state.last_activity = activity;
 
         local now = os.clock();
+        local since = now - state.last_gather_time;
+
         if (activity == state.last_gather_activity
             and zoneId == state.last_gather_zone
-            and (now - state.last_gather_time) < data.DEDUP_WINDOW_SECONDS) then
+            and since < data.DEDUP_WINDOW_SECONDS) then
             if (state.debug) then
-                msg('[dedup] ignored duplicate ' .. activity .. ' event');
+                msg(('[dedup] ignored %s event %.2fs after the last one')
+                    :fmt(activity, since));
             end
             return;
+        end
+
+        if (state.debug and activity == state.last_gather_activity
+            and zoneId == state.last_gather_zone) then
+            msg(('[dedup] counted %s event %.2fs after the last one')
+                :fmt(activity, since));
         end
 
         state.last_gather_activity = activity;
