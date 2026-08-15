@@ -11,25 +11,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- **Back-to-back gathers were sometimes not counted.** The window that
-  collapses duplicate chat lines into one event was 3.5 seconds, against a
-  real gathering cooldown of about 4, so working a point at full speed could
-  have the second gather swallowed. It is 1 second now. Reported by a tester
-  logging two Yew logs in a row.
+- **Back-to-back gathers are no longer missed** when working a point at full
+  speed.
 
 ### Added
 
-- **A Minimum Data checkbox** under Export CSV. It cuts the export to Activity,
-  Zone, Item, Count, Zone Gathers and Drop Rate, leaving out your character
-  name and every figure describing how you play, so you can share drop data
-  without attaching yourself to it.
+- **A Minimum Data checkbox** under Export CSV. Cuts the export to Activity,
+  Zone, Item, Count, Zone Gathers and Drop Rate, so you can share it without
+  your character name attached.
 
 ### Changed
 
-- **Export CSV** has moved above the reset buttons, out from under the two
-  buttons that throw data away.
-- `/helmdiel debug` now prints how long after the previous one each gathering
-  event arrived, for both the ones it counts and the ones it discards.
+- **Export CSV** has moved above the reset buttons.
+- `/helmdiel debug` now prints the gap between gathering events.
 
 ## [0.9.0] - 2026-08-14
 
@@ -58,41 +52,33 @@ releases as it settles, with 1.0 as the point where it stops moving.
 ### Added
 
 - **Item icons**, drawn from the game's own art, so there is nothing extra to
-  download. Anything the game has no art for keeps an empty frame in its
-  place, so the rows stay lined up, and the Item Icons setting turns them off
-  entirely.
+  download.
 - **Rarity colours** on each item's name and border: white Common, green
   Uncommon, blue Rare, purple Very Rare, orange Extremely Rare. They replace
-  the old `Common` and `Uncommon` headings.
+  the `Common` and `Uncommon` headings.
 - **A Spoils tab**, before Settings: an alphabetical tally of everything
-  gathered this session with a count beside each item, whatever zone or
-  activity it came from. It survives reloading and has its own reset button.
-- **Export CSV**, the green button at the bottom of Settings. It writes a
-  spreadsheet next to your settings, one row per item per zone with that
-  zone's drop rate, fatigue and counters alongside, and prints the path in
-  chat. Opens in Excel or Sheets and pivots without rearranging.
+  gathered this session, with its own reset button.
+- **Export CSV** at the bottom of Settings. Writes a spreadsheet next to your
+  settings, one row per item per zone, and prints the path in chat.
 - **The addon version in the title bar.**
-- New Settings: **Item Icons**, **Icon Size** at Large or Small, **Item Style**
-  as Grid or List, an **Opacity** slider, **UI Scale** at 75%, 100% or 125%,
-  and **Auto-Resize Window**.
+- New Settings: **Item Icons**, **Icon Size** (Large or Small), **Item Style**
+  (Grid or List), **Opacity**, **UI Scale** (75%, 100%, 125%) and
+  **Auto-Resize Window**.
 
 ### Changed
 
 - **Gathered items are cards rather than lines of text**: an icon in a
-  rarity-coloured border, with the name and drop rate beside it. Three to a
-  row as a Grid, or one per row as a List. The per-item counts are gone, the
-  drop rate having replaced them.
+  rarity-coloured border with the name and drop rate beside it, three to a row
+  as a Grid or one per row as a List. Per-item counts are gone.
 - **The window is semi-transparent black with rounded corners**, in Segoe UI
-  Bold with gold labels, and neutral charcoal buttons and zone foldouts in
-  place of Ashita's default red. Buttons that throw data away are red.
+  Bold with gold labels and charcoal chrome. Destructive buttons are red.
 - **The tabs are a row of buttons** rather than an attached strip.
-- **The window is wider**, from the larger font and the item cards. Turn off
-  Auto-Resize Window to size it yourself by dragging the gold corner, or pick
-  Small icons and the List style to win the width back.
+- **The window is wider.** Turn off Auto-Resize Window, or pick Small icons and
+  the List style, to bring it back down.
 - **Settings is shorter**, with the activity checkboxes and skill boxes two to
   a row.
-- The reset button is now **Reset Gather/Skill Ups**, and it empties the
-  Spoils tab as well.
+- The reset button is now **Reset Gather/Skill Ups**, and it clears the Spoils
+  tab too.
 - Home shows Gathers and Skill Ups on one line. The `Items logged` total and
   the `Current Zone` line are gone, though both are still tracked.
 
