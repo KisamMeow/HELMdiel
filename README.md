@@ -29,16 +29,15 @@ No promised timeline:
 
 Download **HELMdiel.zip** from the
 [latest release](https://github.com/KisamMeow/HELMdiel/releases/latest) and
-extract it into your Ashita `addons` directory. It unpacks to a folder named
-`HELMdiel`, which is the name Ashita needs. Then:
+extract it into your Ashita `addons` directory, then:
 
 ```
 /addon load HELMdiel
 ```
 
-Take the `HELMdiel.zip` asset rather than the `Source code` archives below it.
-Those extract to a folder with the version number attached, and Ashita will
-not load the addon until it is renamed to plain `HELMdiel`.
+Take `HELMdiel.zip`, not the `Source code` archives. Those extract to a folder
+with the version number attached, which Ashita will not load until it is
+renamed.
 
 To load it every time, add that line to `Ashita/scripts/default.txt`.
 
@@ -164,16 +163,9 @@ attempts, successes, skill ups and skill level are all left out, so you can
 share your drop data without attaching who you are or how you play. It is the
 half most people want anyway.
 
-Your name comes off the filename with it, so a minimal export lands here
-instead:
-
-```
-Ashita/config/addons/HELMdiel/HELMdiel_export.csv
-```
-
-That name is fixed rather than per-character, since the contents are anonymous
-either way. It does mean a minimal export overwrites the last one whichever
-character made it, so send one on before exporting again from someone else.
+Your name comes off the filename too, so a minimal export writes
+`HELMdiel_export.csv`. That name is fixed, so it overwrites the last one
+whichever character made it.
 
 Two reset buttons:
 

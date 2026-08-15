@@ -11,17 +11,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- **Releases now carry a `HELMdiel.zip` that extracts to a folder named
-  `HELMdiel`**, ready to drop straight into `addons`. The generated `Source
-  code` archives extract to `HELMdiel-<version>`, which Ashita will not load
-  until it is renamed. Take the `HELMdiel.zip` asset instead.
+- **Releases now carry a `HELMdiel.zip`** that extracts to a folder named
+  `HELMdiel`, ready to drop into `addons` without renaming.
 
 ### Fixed
 
-- **Minimum Data now keeps your character name off the filename too**, not just
-  out of the rows. A minimal export writes `HELMdiel_export.csv` instead of
-  `<Character>_export.csv`. That name is fixed, so a minimal export overwrites
-  the last one whichever character made it.
+- **Minimum Data keeps your character name off the filename too**, not just out
+  of the rows. It writes `HELMdiel_export.csv`.
 
 ## [0.9.1] - 2026-08-14
 
