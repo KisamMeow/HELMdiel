@@ -4,8 +4,10 @@ local data = require('data');
 
 local resources = T{};
 
-local ZONE_NAMES = T{};
-local ITEM_NAMES = T{};
+local ZONE_NAMES      = T{};
+local ITEM_NAMES      = T{};
+local ITEM_IDS        = T{};
+local ITEM_IDS_BY_NAME = T{};
 
 local ITEM_LOOKUP     = T{};
 local ITEM_SCAN_CHUNK = 1500;
@@ -50,14 +52,18 @@ local function index_item(item)
     local shown = first_string(item.Name);
     if (shown == nil) then return; end
 
+    local id = item.Id;
+
     local logged = item_key(first_string(item.LogNameSingular));
     if (logged ~= '' and ITEM_LOOKUP[logged] == nil) then
         ITEM_LOOKUP[logged] = shown;
+        ITEM_IDS[logged]    = id;
     end
 
     local named = item_key(shown);
     if (named ~= '' and ITEM_LOOKUP[named] == nil) then
         ITEM_LOOKUP[named] = shown;
+        ITEM_IDS[named]    = id;
     end
 end
 
@@ -92,6 +98,32 @@ function resources.item_name(name)
         ITEM_NAMES[name] = shown;
     end
     return shown;
+end
+
+function resources.item_id(name)
+    local cached = ITEM_IDS_BY_NAME[name];
+    if (cached ~= nil) then
+        if (cached == false) then return nil; end
+        return cached;
+    end
+
+    local bare = name:gsub('^[Aa]n?%s+', '');
+    local id   = ITEM_IDS[item_key(bare)];
+
+    if (item_scan_done) then
+        ITEM_IDS_BY_NAME[name] = id or false;
+    end
+    return id;
+end
+
+function resources.item_bitmap(id)
+    local manager = AshitaCore:GetResourceManager();
+    if (manager == nil) then return nil, nil; end
+
+    local ok, item = pcall(manager.GetItemById, manager, id);
+    if (not ok or item == nil) then return nil, nil; end
+
+    return item.Bitmap, item.ImageSize;
 end
 
 return resources;

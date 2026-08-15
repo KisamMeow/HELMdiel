@@ -1,139 +1,177 @@
 # Changelog
 
-All notable changes to HHelmet are documented here.
+All notable changes to HELMdiel are documented here.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-08-14
+
+### Renamed to HELMdiel
+
+HHelmet is now HELMdiel, and `/hhelmet` is now `/helmdiel`.
+
+If you were running the old version, **your gathered data does not move on its
+own.** With the game closed:
+
+1. Rename `config/addons/HHelmet` to `config/addons/HELMdiel`.
+2. Delete the old `addons/HHelmet` folder and install `HELMdiel` in its place.
+
+That config folder holds everything you have gathered, on every character.
+Load the new addon before renaming that folder and it will start an empty file
+and overwrite whatever you move in afterwards.
+
+Everything below this point shipped as HHelmet, and still is HHelmet if you
+download one of those releases. Those entries name it accordingly.
+
+### UI Rework
+
+The window is being rebuilt. Expect it to keep changing through the 0.9.x
+releases as it settles, with 1.0 as the point where it stops moving.
+
+### Added
+
+- **Item icons**, drawn from the game's own art, so there is nothing extra to
+  download. Anything the game has no art for keeps an empty frame in its
+  place, so the rows stay lined up, and the Item Icons setting turns them off
+  entirely.
+- **Rarity colours** on each item's name and border: white Common, green
+  Uncommon, blue Rare, purple Very Rare, orange Extremely Rare. They replace
+  the old `Common` and `Uncommon` headings.
+- **A Spoils tab**, before Settings: an alphabetical tally of everything
+  gathered this session with a count beside each item, whatever zone or
+  activity it came from. It survives reloading and has its own reset button.
+- **Export CSV**, the green button at the bottom of Settings. It writes a
+  spreadsheet next to your settings, one row per item per zone with that
+  zone's drop rate, fatigue and counters alongside, and prints the path in
+  chat. Opens in Excel or Sheets and pivots without rearranging.
+- **The addon version in the title bar.**
+- New Settings: **Item Icons**, **Icon Size** at Large or Small, **Item Style**
+  as Grid or List, an **Opacity** slider, **UI Scale** at 75%, 100% or 125%,
+  and **Auto-Resize Window**.
+
+### Changed
+
+- **Gathered items are cards rather than lines of text**: an icon in a
+  rarity-coloured border, with the name and drop rate beside it. Three to a
+  row as a Grid, or one per row as a List. The per-item counts are gone, the
+  drop rate having replaced them.
+- **The window is semi-transparent black with rounded corners**, in Segoe UI
+  Bold with gold labels, and neutral charcoal buttons and zone foldouts in
+  place of Ashita's default red. Buttons that throw data away are red.
+- **The tabs are a row of buttons** rather than an attached strip.
+- **The window is wider**, from the larger font and the item cards. Turn off
+  Auto-Resize Window to size it yourself by dragging the gold corner, or pick
+  Small icons and the List style to win the width back.
+- **Settings is shorter**, with the activity checkboxes and skill boxes two to
+  a row.
+- The reset button is now **Reset Gather/Skill Ups**, and it empties the
+  Spoils tab as well.
+- Home shows Gathers and Skill Ups on one line. The `Items logged` total and
+  the `Current Zone` line are gone, though both are still tracked.
+
 ## [0.8.0] - 2026-08-14
 
 ### Changed
 
-- Nothing you can see. The addon was split from one file into six so it stays
-  workable as it grows, and the same test suite passes unchanged. It now ships
-  as `HHelmet.lua` plus `data.lua`, `resources.lua`, `store.lua`, `detect.lua`,
-  and `ui.lua`, so **copy the whole folder when you update**, not just
-  `HHelmet.lua`.
-- Some minor waste removed along the way: closed item foldouts no longer
-  recount their contents every frame, and the window asks the game for your
-  character and zone once per frame instead of twice.
+- Nothing you can see. The addon was split from one file into six, so **copy
+  the whole folder when you update**, not just `HHelmet.lua`.
+- Closed item foldouts no longer recount their contents every frame.
 
 ## [0.7.1] - 2026-08-12
 
 ### Added
 
-- **Home Minimum Mode**, a checkbox at the top of Settings. With it on, the Home
-  tab shows only your skill and the current zone's fatigue, dropping the Gathers
-  and Skill Ups counters and the whole item list. Tracking carries on
-  underneath, and the activity tabs are unchanged, so the detail is still there
-  when you want it.
+- **Home Minimum Mode** in Settings, leaving Home with just your skill and the
+  current zone's fatigue. Tracking carries on underneath.
 
 ### Changed
 
-- **FATIGUED now appears only when the game says a zone is fatigued**, not
-  when the counter happens to reach 200. The counter drifts if you gather with
-  the addon unloaded, so reaching the cap on its own is not proof.
-- **The fatigue message resyncs the rest of that activity.** When the game
-  tells you a zone is tapped out, every other zone for that activity is set
-  back to zero, which is what capping one zone from empty would have done
-  anyway. This repairs drift from gathering without the addon loaded.
+- **FATIGUED appears only when the game says a zone is tapped out**, not when
+  the counter reaches 200. The counter drifts if you gather with the addon
+  unloaded, so the cap alone is not proof.
+- The fatigue message now resets every other zone for that activity to zero,
+  which repairs that drift.
 
 ## [0.7.0] - 2026-08-12
 
 ### Added
 
-- **Show or hide each activity.** The Settings tab has a checkbox per activity;
-  unchecking one removes its tab and drops it from Home. Hiding does not stop
-  tracking, so nothing is lost by tidying the window.
-- A second reset button. **Reset Session** clears only the Gathers and Skill ups
-  counters, keeping your fatigue, gathered items, and skill levels, so you can
-  start a fresh measurement without losing anything. **Reset All Data** clears
-  everything, as the old single button did.
+- **A checkbox per activity** in Settings to remove it from the window. Hiding
+  does not stop tracking.
+- **Reset Session**, clearing only the Gathers and Skill ups counters and
+  keeping your fatigue, items and skill. **Reset All Data** still clears
+  everything.
 
 ### Changed
 
-- **Item names now read the way they do in your inventory**, abbreviations
-  included, rather than the way they appear in the chat log. Names are looked up
-  in the game's own item data, so nothing is hardcoded.
-- Items are sorted by how often they drop, most common first, instead of
-  alphabetically. The rarity sections are unchanged.
-- Zones with no fatigue are hidden, so the lists show only what you have
-  actually worked.
-- The window is narrower. Gathers and Skill ups sit on their own lines, the
-  gather count moved out of each foldout title, the `(here)` marker is gone, and
-  the activity name no longer repeats above its own skill line.
+- **Item names read the way your inventory shows them**, abbreviations
+  included, looked up from the game's own item data.
+- Items sort by how often they drop, most common first, instead of
+  alphabetically.
+- Zones with no fatigue are hidden.
+- The window is narrower.
 
 ### Fixed
 
-- Breaking a tool now counts as a gathering attempt. Previously a break that
-  yielded nothing was ignored, so those attempts were missing from your success
-  rate and from the attempts each skill up took.
+- Breaking a tool counts as a gathering attempt. Breaks that yielded nothing
+  were missing from your success rate.
 
 ## [0.6.1] - 2026-08-12
 
 ### Added
 
-- The Home tab now tracks your attempts, not just your successes. It shows how
-  many gathers gave you an item out of how many you tried, with a success rate.
-- Skill ups earned in the current zone are shown against that same attempt
-  count, with a percentage. Every skill up counts as one, whether it raised
-  your skill by 0.1 or 0.3, and skill ups from failed gathers count too.
-- Failed gathers are now detected so they can be counted as attempts. They
-  still do not affect fatigue.
+- Home counts attempts as well as successes, with a success rate, and shows
+  skill ups against the same attempt count. Every skill up counts as one
+  whatever its size, and skill ups from failed gathers count too.
+- Failed gathers are detected so they count as attempts. They still do not
+  affect fatigue.
 
 ### Changed
 
-- The item drop list on Home is now labelled with its own total, which is
-  separate from the gather counters. Drop history is kept so percentages stay
-  meaningful, while the gather counters measure effort from when counting
-  began, so the two numbers differ on purpose.
+- The item drop list carries its own total. Drop history is kept across resets
+  so percentages stay meaningful, so it deliberately differs from the gather
+  counters.
 
 ### Known limitations
 
-- Skill up rates are likely tied to your skill level against each zone's skill
-  range, which HHelmet does not track. Rates recorded at different skill levels
-  are not directly comparable.
-- Two of Logging's messages are unverified: its failure, and the one for
-  breaking a hatchet while still getting a log. Failed logging attempts may go
-  uncounted, and a logging gather that breaks your hatchet may be missed.
+- Skill up rates are likely tied to your skill against each zone's skill range,
+  which HHelmet does not track. Rates from different skill levels are not
+  comparable.
+- Two of Logging's messages are unverified: its failure, and breaking a hatchet
+  while still getting a log. Either may go uncounted.
 
 ## [0.6.0] - 2026-08-11
 
 ### Added
 
-- **Home tab**, shown first, covering only the zone you're standing in: skill,
-  fatigue, and gathered items. Zones supporting two activities (Yuhtunga and
-  Yhoator Jungle) get a section for each.
-- **Settings tab**, holding a box for each skill level, the auto-open toggle,
-  and the Reset Session button.
-- **Skill tracking.** Skill levels are read from skill-up messages and shown at
-  the top of each activity tab.
-- `/hhelmet skill <activity> <value>` to set a skill level manually, since the
-  game only reveals your skill when it increases.
+- **Home tab**, shown first, covering only the zone you are standing in. Zones
+  supporting two activities get a section for each.
+- **Settings tab**, holding the skill boxes, the auto-open toggle and the reset
+  button.
+- **Skill tracking**, read from skill-up messages, with
+  `/hhelmet skill <activity> <value>` to set a level manually.
 
 ### Fixed
 
-- Every gather wrote your settings file to disk twice instead of once.
-- Having the window open added empty entries to your settings file for
-  activities and zones you had never gathered in.
+- Every gather wrote your settings file to disk twice.
+- Opening the window added empty entries for activities and zones you had never
+  gathered in.
 
 ## [0.5.1] - 2026-08-11
 
 ### Fixed
 
-- Excavation, Logging, and Mining now detect gathers. All three shipped with
-  guessed chat patterns that never matched anything, so their counters stayed
-  at zero. Confirmed strings are `You successfully dig up` (Excavation and
-  Mining) and `You successfully cut off` (Logging).
-- Mining gathers are no longer counted as Excavation. The two activities emit
-  identical success text, and the first match won; the current zone now
-  decides between them.
+- **Excavation, Logging and Mining now detect gathers.** All three shipped with
+  guessed chat patterns that never matched, so their counters stayed at zero.
+- Mining gathers are no longer counted as Excavation. The two emit identical
+  text, so the current zone decides between them.
 
 ### Changed
 
-- Detection is no longer affected by chat addons that prefix lines with a
+- Detection is no longer broken by chat addons that prefix lines with a
   timestamp.
 
 ## [0.5.0] - 2026-08-11
@@ -142,34 +180,29 @@ Initial public release.
 
 ### Added
 
-- Per-zone fatigue tracking for all four HELM activities (Harvesting,
-  Excavation, Logging, Mining), capped at 200 and persisted per character.
-- ImGui window with one tab per activity, a colored progress bar per tracked
-  zone, and a `(here)` marker on your current zone.
-- Item drop logging per zone, grouped into rarity tiers (Common through
-  Extremely Rare) and sorted by tier, then alphabetically.
-- `/hhelmet` command set: `show`, `hide`, `debug`, `reset all`,
+- Per-zone fatigue tracking for all four HELM activities, capped at 200 and
+  persisted per character.
+- An ImGui window with a tab per activity and a coloured bar per tracked zone.
+- Item drop logging per zone, grouped into rarity tiers.
+- The `/hhelmet` command set: `show`, `hide`, `debug`, `reset all`,
   `reset <activity>`, `reset <activity> zone`, and `set <activity> <0-200>`.
-- Auto-open on gather, toggleable from the window.
-- `debug` mode that prints raw incoming chat lines, for calibrating message
-  detection against the live server.
+- Auto-open on gather.
 
 ### Known limitations
 
 - Only Harvesting's chat patterns are confirmed against real HorizonXI text.
-  Excavation, Logging, and Mining use unverified best guesses and may not
-  count correctly. See the README for how to report the real strings.
+  The other three use best guesses and may not count correctly.
 - Zone IDs use standard retail-compatible numbering and have not been checked
-  one-by-one against HorizonXI's server.
+  against HorizonXI's server.
 - The rule that a gather decays *all* other zones for that activity was
-  inferred from a two-zone observation, not stress-tested against three or
-  more fatigued zones at once.
+  inferred from a two-zone observation.
 
-[Unreleased]: https://github.com/KisamMeow/HHelmet/compare/v0.8.0...HEAD
-[0.8.0]: https://github.com/KisamMeow/HHelmet/compare/v0.7.1...v0.8.0
-[0.7.1]: https://github.com/KisamMeow/HHelmet/compare/v0.7.0...v0.7.1
-[0.7.0]: https://github.com/KisamMeow/HHelmet/compare/v0.6.1...v0.7.0
-[0.6.1]: https://github.com/KisamMeow/HHelmet/compare/v0.6.0...v0.6.1
-[0.6.0]: https://github.com/KisamMeow/HHelmet/compare/v0.5.1...v0.6.0
-[0.5.1]: https://github.com/KisamMeow/HHelmet/compare/v0.5.0...v0.5.1
-[0.5.0]: https://github.com/KisamMeow/HHelmet/releases/tag/v0.5.0
+[Unreleased]: https://github.com/KisamMeow/HELMdiel/compare/v0.9.0...HEAD
+[0.9.0]: https://github.com/KisamMeow/HELMdiel/compare/v0.8.0...v0.9.0
+[0.8.0]: https://github.com/KisamMeow/HELMdiel/compare/v0.7.1...v0.8.0
+[0.7.1]: https://github.com/KisamMeow/HELMdiel/compare/v0.7.0...v0.7.1
+[0.7.0]: https://github.com/KisamMeow/HELMdiel/compare/v0.6.1...v0.7.0
+[0.6.1]: https://github.com/KisamMeow/HELMdiel/compare/v0.6.0...v0.6.1
+[0.6.0]: https://github.com/KisamMeow/HELMdiel/compare/v0.5.1...v0.6.0
+[0.5.1]: https://github.com/KisamMeow/HELMdiel/compare/v0.5.0...v0.5.1
+[0.5.0]: https://github.com/KisamMeow/HELMdiel/releases/tag/v0.5.0

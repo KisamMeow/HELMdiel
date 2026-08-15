@@ -1,8 +1,8 @@
-addon.name    = 'HHelmet';
+addon.name    = 'HELMdiel';
 addon.author  = 'Masuru';
-addon.version = '0.8.0';
+addon.version = '0.9.0';
 addon.desc    = 'Tracks HELM (Harvesting/Excavation/Logging/Mining) regional gathering fatigue on HorizonXI.';
-addon.link    = 'https://github.com/KisamMeow/HHelmet';
+addon.link    = 'https://github.com/KisamMeow/HELMdiel';
 
 require('common');
 local chat     = require('chat');
@@ -11,6 +11,7 @@ local data      = require('data');
 local resources = require('resources');
 local store     = require('store');
 local detect    = require('detect');
+local export    = require('export');
 local ui        = require('ui');
 
 
@@ -48,7 +49,7 @@ end
 -- Events
 ----------------------------------------
 
-ashita.events.register('text_in', 'hhelmet_text_in', function(e)
+ashita.events.register('text_in', 'helmdiel_text_in', function(e)
     local text = e.message;
     if (text == nil or text == '' or e.injected) then return; end
 
@@ -145,15 +146,27 @@ local function reset_all()
     clear_detection_state();
 end
 
-ui.set_actions(T{ reset_session = reset_session, reset_all = reset_all });
+-- Reported here rather than in ui, which owns no way to talk to the player.
+local function export_csv()
+    local ok, path, rows = export.write(store.char_name());
+    if (ok) then
+        msg(('Exported %d rows to %s'):fmt(rows, path));
+    else
+        err(('Could not write %s'):fmt(path));
+    end
+end
 
-ashita.events.register('d3d_present', 'hhelmet_present', function()
+ui.set_actions(T{ reset_session = reset_session, reset_all = reset_all,
+                  export = export_csv });
+ui.set_title(addon.version);
+
+ashita.events.register('d3d_present', 'helmdiel_present', function()
     ui.render(store.player());
 end);
 
-ashita.events.register('command', 'hhelmet_command', function(e)
+ashita.events.register('command', 'helmdiel_command', function(e)
     local args = e.command:args();
-    if (#args == 0 or args[1]:lower() ~= '/hhelmet') then return; end
+    if (#args == 0 or args[1]:lower() ~= '/helmdiel') then return; end
 
     e.blocked = true;
 
@@ -182,7 +195,7 @@ ashita.events.register('command', 'hhelmet_command', function(e)
             msg('All data reset for ' .. charname .. '.');
 
         elseif (target == nil) then
-            msg('Usage: /hhelmet reset <all|activity> [zone]');
+            msg('Usage: /helmdiel reset <all|activity> [zone]');
 
         else
             local activity = match_activity(target);
@@ -204,7 +217,7 @@ ashita.events.register('command', 'hhelmet_command', function(e)
         local value    = tonumber(args[4]);
 
         if (activity == nil or value == nil) then
-            msg('Usage: /hhelmet set <activity> <0-200>');
+            msg('Usage: /helmdiel set <activity> <0-200>');
         else
             store.set_fatigue(charname, activity, zoneId, value);
             store.save();
@@ -216,7 +229,7 @@ ashita.events.register('command', 'hhelmet_command', function(e)
         local value    = tonumber(args[4]);
 
         if (activity == nil or value == nil or value < 0) then
-            msg('Usage: /hhelmet skill <activity> <value>');
+            msg('Usage: /helmdiel skill <activity> <value>');
         else
             store.set_skill(charname, activity, value);
             store.save();
@@ -224,14 +237,17 @@ ashita.events.register('command', 'hhelmet_command', function(e)
         end
 
     else
-        msg('Usage: /hhelmet [show|hide|debug|reset <all|activity> [zone]|set <activity> <0-200>|skill <activity> <value>]');
+        msg('Usage: /helmdiel [show|hide|debug|reset <all|activity> [zone]|set <activity> <0-200>|skill <activity> <value>]');
     end
 end);
 
-ashita.events.register('load', 'hhelmet_load', function()
-    msg(('v%s loaded. Use /hhelmet debug to calibrate message detection.'):fmt(addon.version));
+ashita.events.register('load', 'helmdiel_load', function()
+    if (not ui.load_font()) then
+        err(('Could not load %s. Using the default font.'):fmt(data.FONT_PATH));
+    end
+    msg(('v%s loaded. Use /helmdiel debug to calibrate message detection.'):fmt(addon.version));
 end);
 
-ashita.events.register('unload', 'hhelmet_unload', function()
+ashita.events.register('unload', 'helmdiel_unload', function()
     store.save();
 end);

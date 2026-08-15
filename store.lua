@@ -10,6 +10,9 @@ local default_settings = T{
     window     = T{
         auto_popup   = true,
         home_minimum = false,
+        item_icons   = true,
+        auto_resize  = true,
+        opacity      = data.WINDOW_OPACITY,
     },
     activities = T{
         Harvesting = true,
@@ -61,6 +64,14 @@ function store.char_name()
     return name;
 end
 
+-- Where the settings library already keeps this character's data, so an
+-- export lands beside it rather than somewhere the user has to hunt for.
+-- Here rather than in export.lua because this is one of the only two
+-- modules allowed to touch AshitaCore.
+function store.config_path()
+    return ('%s/config/addons/%s/'):fmt(AshitaCore:GetInstallPath(), addon.name);
+end
+
 function store.zone_id()
     local _, zoneId = store.player();
     return zoneId;
@@ -99,6 +110,103 @@ function store.toggle_home_minimum()
     settings.save();
 end
 
+function store.item_icons()
+    return helm_settings.window.item_icons ~= false;
+end
+
+function store.toggle_item_icons()
+    helm_settings.window.item_icons = not store.item_icons();
+    settings.save();
+end
+
+function store.auto_resize()
+    return helm_settings.window.auto_resize ~= false;
+end
+
+function store.toggle_auto_resize()
+    helm_settings.window.auto_resize = not store.auto_resize();
+    settings.save();
+end
+
+-- Dropdown settings all work the same way: the chosen value is stored, never
+-- the menu position, so reordering or extending a list later cannot silently
+-- change what an existing settings file means. Anything not on the list reads
+-- as the default, so removing an option cannot strand a user on it either.
+local function choice(key, options, fallback)
+    local value = helm_settings.window[key];
+    for _, option in ipairs(options) do
+        if (value == option) then return value; end
+    end
+    return fallback;
+end
+
+local function choice_index(key, options, fallback)
+    local current = choice(key, options, fallback);
+    for index, option in ipairs(options) do
+        if (option == current) then return index; end
+    end
+    return 1;
+end
+
+local function set_choice(key, options, index)
+    local value = options[index];
+    if (value == nil) then return; end
+    helm_settings.window[key] = value;
+    settings.save();
+end
+
+function store.ui_scale()
+    return choice('ui_scale', data.UI_SCALES, data.UI_SCALE_DEFAULT);
+end
+
+function store.ui_scale_index()
+    return choice_index('ui_scale', data.UI_SCALES, data.UI_SCALE_DEFAULT);
+end
+
+function store.set_ui_scale_index(index)
+    set_choice('ui_scale', data.UI_SCALES, index);
+end
+
+function store.icon_size()
+    return choice('icon_size', data.ICON_SIZES, data.ICON_SIZE_DEFAULT);
+end
+
+function store.icon_size_index()
+    return choice_index('icon_size', data.ICON_SIZES, data.ICON_SIZE_DEFAULT);
+end
+
+function store.set_icon_size_index(index)
+    set_choice('icon_size', data.ICON_SIZES, index);
+end
+
+function store.item_style()
+    return choice('item_style', data.ITEM_STYLES, data.ITEM_STYLE_DEFAULT);
+end
+
+function store.item_style_index()
+    return choice_index('item_style', data.ITEM_STYLES, data.ITEM_STYLE_DEFAULT);
+end
+
+function store.set_item_style_index(index)
+    set_choice('item_style', data.ITEM_STYLES, index);
+end
+
+local function clamp_opacity(value)
+    return math.min(data.OPACITY_MAX, math.max(data.OPACITY_MIN, value));
+end
+
+function store.window_opacity()
+    local value = helm_settings.window.opacity;
+    if (type(value) ~= 'number') then return data.WINDOW_OPACITY; end
+    return clamp_opacity(value);
+end
+
+function store.set_window_opacity(value)
+    if (type(value) ~= 'number') then return; end
+    helm_settings.window.opacity = clamp_opacity(value);
+    settings.save();
+end
+
 ----------------------------------------
 -- Character records
 ----------------------------------------
@@ -113,17 +221,20 @@ local function ensure_char(charname)
     return char;
 end
 
+-- Returns the character record as a third value so a caller that needs both a
+-- zone table and something else off the record does not ensure it twice.
 local function ensure_zone(charname, field, activity, zoneId, empty)
-    local group = ensure_char(charname)[field];
+    local char  = ensure_char(charname);
+    local group = char[field];
     group[activity] = group[activity] or T{};
 
-    if (zoneId == nil) then return group[activity]; end
+    if (zoneId == nil) then return group[activity], nil, char; end
 
     local key = zone_key(zoneId);
     if (empty ~= nil) then
         group[activity][key] = group[activity][key] or empty();
     end
-    return group[activity], key;
+    return group[activity], key, char;
 end
 
 local function read_zone(charname, field, activity, zoneId, missing)
@@ -222,10 +333,19 @@ function store.register_fatigue_cap(activity, zoneId)
     flags[key] = true;
 end
 
+function store.get_spoils(charname)
+    local char = helm_settings.characters[charname];
+    if (char == nil or char.spoils == nil) then return EMPTY_LOG; end
+    return char.spoils;
+end
+
 function store.register_item_gather(activity, zoneId, itemName)
     if (itemName == nil) then return; end
-    local group, key = ensure_zone(store.char_name(), 'item_log', activity, zoneId, T);
-    group[key][itemName] = (group[key][itemName] or 0) + 1;
+
+    local group, key, char = ensure_zone(store.char_name(), 'item_log',
+                                         activity, zoneId, T);
+    group[key][itemName]  = (group[key][itemName] or 0) + 1;
+    char.spoils[itemName] = (char.spoils[itemName] or 0) + 1;
 end
 
 function store.register_skill(activity, value)
@@ -245,6 +365,11 @@ function store.reset_session()
     for _, key in ipairs(data.SESSION_KEYS) do
         char[key] = T{};
     end
+    settings.save();
+end
+
+function store.reset_spoils()
+    ensure_char(store.char_name()).spoils = T{};
     settings.save();
 end
 
