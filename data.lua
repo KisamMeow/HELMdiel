@@ -180,6 +180,13 @@ data.FAILURE_PATTERNS = T{
     Mining     = T{ 'You are unable to mine anything', 'Your pickaxe breaks' },
 };
 
+data.BARREN_PATTERNS = T{
+    Harvesting = T{},
+    Excavation = T{},
+    Logging    = T{ 'Rotting timber splinters' },
+    Mining     = T{},
+};
+
 data.FATIGUE_PATTERN = 'You sense there is little more to be gained from this area.';
 
 local SKILL_NAMES = T{

@@ -183,12 +183,10 @@ them apart by the zone you are in. That works because no zone appears in both
 lists. Gather either in an untracked zone and it may be filed under the wrong
 one.
 
-Three messages have not been seen directly yet:
+Two messages have not been seen directly yet:
 
-- **Logging's failure message**, and **Logging's message for breaking a
-  hatchet while still getting a log.** Both match what the older `hgather`
-  addon uses. If Logging's success rate sits at a permanent 100%, the failure
-  pattern is wrong rather than your luck being remarkable.
+- **Logging's message for breaking a hatchet while still getting a log.** It
+  matches what the older `hgather` addon uses.
 - **The fatigue-cap message**, verified for Harvesting and assumed shared.
 
 If something is not being counted, run `/helmdiel debug`, gather with the tool

@@ -69,6 +69,15 @@ ashita.events.register('text_in', 'helmdiel_text_in', function(e)
 
     local activity, matched = detect.gather(text, zoneId);
     local failed = false;
+    local barren = false;
+
+    if (activity == nil) then
+        activity = detect.barren(text, zoneId);
+        if (activity ~= nil) then
+            barren = true;
+            failed = true;
+        end
+    end
 
     if (activity == nil) then
         activity = detect.failure(text, zoneId);
@@ -110,6 +119,8 @@ ashita.events.register('text_in', 'helmdiel_text_in', function(e)
             if (data.TRACKED_ZONE_SET[activity][zoneId]) then
                 store.register_item_gather(activity, zoneId, detect.clean_item_name(detect.extract_after(text, matched)));
             end
+        elseif (barren) then
+            store.register_gather(activity, zoneId);
         end
 
         store.save();

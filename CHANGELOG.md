@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Rotting timber is now counted.** It yields nothing but still adds fatigue,
+  so it is tracked as an attempt that raises your counter without logging an
+  item.
+
 ## [0.9.2] - 2026-08-15
 
 ### Changed

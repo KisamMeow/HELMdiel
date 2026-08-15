@@ -32,6 +32,10 @@ function detect.failure(text, zoneId)
     return resolve_from(data.FAILURE_PATTERNS, text, zoneId);
 end
 
+function detect.barren(text, zoneId)
+    return resolve_from(data.BARREN_PATTERNS, text, zoneId);
+end
+
 function detect.is_fatigue_message(text)
     return text:find(data.FATIGUE_PATTERN, 1, true) ~= nil;
 end
