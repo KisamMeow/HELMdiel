@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Minimum Data now keeps your character name off the filename too**, not just
+  out of the rows. A minimal export writes `HELMdiel_export.csv` instead of
+  `<Character>_export.csv`. That name is fixed, so a minimal export overwrites
+  the last one whichever character made it.
+
 ## [0.9.1] - 2026-08-14
 
 ### Fixed

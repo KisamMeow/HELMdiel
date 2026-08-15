@@ -159,6 +159,17 @@ attempts, successes, skill ups and skill level are all left out, so you can
 share your drop data without attaching who you are or how you play. It is the
 half most people want anyway.
 
+Your name comes off the filename with it, so a minimal export lands here
+instead:
+
+```
+Ashita/config/addons/HELMdiel/HELMdiel_export.csv
+```
+
+That name is fixed rather than per-character, since the contents are anonymous
+either way. It does mean a minimal export overwrites the last one whichever
+character made it, so send one on before exporting again from someone else.
+
 Two reset buttons:
 
 - **Reset Gather/Skill Ups** clears the Home counters and the Spoils tab. Your

@@ -8,6 +8,15 @@ local export = T{};
 
 local NEWLINE = '\r\n';
 
+-- Minimum Data exists to make a file safe to hand to someone else, so the
+-- character name comes out of the filename as well as out of the rows.
+-- Leaving it on the file would hand back exactly what the columns strip.
+-- A fixed stem means two characters share one file, which is the point: the
+-- contents are anonymous, so a per-character copy would only put the name
+-- back. The consequence is that a minimal export overwrites the previous
+-- one whichever character made it.
+local SHARED_STEM = 'HELMdiel';
+
 -- RFC 4180: quote only when the value could otherwise break the row, and
 -- double any quote inside it. clean_item_name currently strips commas and
 -- quotes out of item names, so nothing needs it today. It costs one compare
@@ -123,12 +132,14 @@ function export.build(charname, minimal)
 end
 
 function export.write(charname)
-    local path = ('%s%s_export.csv'):fmt(store.config_path(), charname);
+    local minimal = store.export_minimal();
+    local path    = ('%s%s_export.csv'):fmt(store.config_path(),
+                                            minimal and SHARED_STEM or charname);
 
     local ok, handle = pcall(io.open, path, 'w');
     if (not ok or handle == nil) then return false, path, 0; end
 
-    local text, rows = export.build(charname, store.export_minimal());
+    local text, rows = export.build(charname, minimal);
 
     handle:write(text);
     handle:close();
