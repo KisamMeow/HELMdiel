@@ -15,6 +15,16 @@ Ashita v4.30+ addon. Version 0.9.5. Released under GPL-3.0. Coded with help from
 - A Spoils tab tallying everything gathered this session.
 - Export to CSV for Excel or Sheets.
 
+## Screenshots
+
+| Home | Activity tab | Settings |
+|---|---|---|
+| ![Home tab, showing the current zone's skill, fatigue bar and item grid](docs/screenshots/home.png) | ![Harvesting tab, showing a fatigue bar per zone and a foldout per zone](docs/screenshots/activity.png) | ![Settings tab](docs/screenshots/settings.png) |
+
+**Home** covers the zone you are standing in. **Activity tabs** cover every
+zone for one activity, with each zone's drops behind a foldout. **Settings**
+holds the display options and the export.
+
 ## Coming soon
 
 No promised timeline:

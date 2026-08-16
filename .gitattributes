@@ -4,8 +4,13 @@
 .gitattributes     export-ignore
 .gitignore         export-ignore
 .github            export-ignore
+docs               export-ignore
 
 # Normalize line endings so the addon doesn't churn between Windows checkouts
 # and anything reading it on another platform.
 *.lua   text eol=lf
 *.md    text eol=lf
+
+# Never run screenshots through line-ending conversion; it corrupts them.
+*.png   binary
+*.jpg   binary
