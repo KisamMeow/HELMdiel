@@ -4,7 +4,7 @@ Tracks HorizonXI's HELM system: Harvesting, Excavation, Logging and Mining.
 
 This addon is in very early development, there will be bugs and the UI will be reworked as I get closer to being feature complete.
 
-Ashita v4.30+ addon. Version 0.9.4. Released under GPL-3.0. Coded with help from Claude Opus 5.
+Ashita v4.30+ addon. Version 0.9.5. Released under GPL-3.0. Coded with help from Claude Opus 5.
 
 ## Features
 
@@ -160,10 +160,10 @@ One row per item per zone, with that zone's drop rate, fatigue and counters
 alongside, which drops straight into a pivot table.
 
 **Minimum Data**, the checkbox under it, cuts the export down to Activity,
-Zone, Item, Count, Zone Gathers and Drop Rate. Your character name, fatigue,
-attempts, successes, skill ups and skill level are all left out, so you can
-share your drop data without attaching who you are or how you play. It is the
-half most people want anyway.
+Zone, Item, Count, Zone Gathers, Drop Rate and Skill. Your character name,
+fatigue, attempts, successes and skill ups are left out, so you can share your
+drop data without attaching who you are. Skill stays because drop and skill-up
+rates only mean something against the skill they were gathered at.
 
 Your name comes off the filename too, so a minimal export writes
 `HELMdiel_export.csv`. That name is fixed, so it overwrites the last one

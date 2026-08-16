@@ -68,7 +68,7 @@ data.EXPORT_HEADER = T{ 'Character', 'Activity', 'Zone', 'Item', 'Count',
                         'Successes', 'Skill Ups', 'Skill' };
 
 data.EXPORT_HEADER_MIN = T{ 'Activity', 'Zone', 'Item', 'Count',
-                            'Zone Gathers', 'Drop Rate' };
+                            'Zone Gathers', 'Drop Rate', 'Skill' };
 
 -- Fatigue bar
 data.COLOR_BAR_BG   = { 0.16, 0.16, 0.18, 0.85 };
