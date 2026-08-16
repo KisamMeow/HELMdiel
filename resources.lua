@@ -10,7 +10,7 @@ local ITEM_IDS        = T{};
 local ITEM_IDS_BY_NAME = T{};
 
 local ITEM_LOOKUP     = T{};
-local ITEM_SCAN_CHUNK = 1500;
+local ITEM_SCAN_CHUNK = 500;
 local ITEM_SCAN_MAX   = 65535;
 local item_scan_next  = 1;
 local item_scan_done  = false;

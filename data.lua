@@ -9,15 +9,13 @@ data.DEDUP_WINDOW_SECONDS = 1.0;
 
 data.ACTIVITIES = T{ 'Harvesting', 'Excavation', 'Logging', 'Mining' };
 
--- Nav order: the leading tabs, then whichever activities are enabled, then
--- the trailing ones. NAV_LEADING[1] is also the fallback when the open panel
--- disappears, so Home has to stay first.
+-- Nav order
 data.NAV_LEADING  = T{ 'Home' };
 data.NAV_TRAILING = T{ 'Spoils', 'Settings' };
 
--- Pixel sizes. Every one of these is multiplied by the UI Scale setting at
--- draw time, so they are the sizes at 100% rather than absolutes.
-data.SKILL_INPUT_WIDTH = 70;
+-- Pixel sizes
+data.SKILL_INPUT_WIDTH  = 70;
+data.FATIGUE_BAR_HEIGHT = 14.0;
 data.ICON_SIZE         = 32;
 data.SPOILS_ICON_SIZE  = 16;
 data.ITEMS_PER_ROW     = 3;
@@ -32,17 +30,20 @@ data.TITLE_ALIGN       = { 0.5, 0.5 };
 data.FONT_PATH = 'C:\\Windows\\Fonts\\segoeuib.ttf';
 data.FONT_SIZE = 18.0;
 
+data.SMALL_ICON_FONT_DROP = 2.0;
+data.ITEM_LINE_GAP        = 1.0;
+
 data.WINDOW_OPACITY = 0.75;
 data.OPACITY_MIN    = 0.10;
 data.OPACITY_MAX    = 1.00;
 
--- Gold is the only accent. Window chrome is deliberately hueless so it never
--- competes with the rarity colours or the fatigue warning.
+-- Gold accent and resize grip
 data.COLOR_GOLD        = { 1.00, 0.84, 0.20, 1.00 };
 data.COLOR_GRIP        = { 1.00, 0.84, 0.20, 0.85 };
 data.COLOR_GRIP_HOVER  = { 1.00, 0.90, 0.45, 1.00 };
 data.COLOR_GRIP_ACTIVE = { 1.00, 1.00, 0.75, 1.00 };
 
+-- Chrome
 data.COLOR_BUTTON        = { 0.14, 0.14, 0.15, 0.90 };
 data.COLOR_BUTTON_HOVER  = { 0.26, 0.26, 0.28, 0.95 };
 data.COLOR_BUTTON_ACTIVE = { 0.33, 0.33, 0.35, 1.00 };
@@ -51,41 +52,32 @@ data.COLOR_HEADER        = { 0.19, 0.19, 0.20, 0.65 };
 data.COLOR_HEADER_HOVER  = { 0.28, 0.28, 0.30, 0.85 };
 data.COLOR_HEADER_ACTIVE = { 0.34, 0.34, 0.36, 0.95 };
 
--- Destructive buttons only. Red already means "stop" in this window, on the
--- FATIGUED label and the capped fatigue bar, so it carries over rather than
--- competing.
+-- Destructive buttons
 data.COLOR_DANGER        = { 0.45, 0.16, 0.16, 0.90 };
 data.COLOR_DANGER_HOVER  = { 0.60, 0.20, 0.20, 0.95 };
 data.COLOR_DANGER_ACTIVE = { 0.72, 0.24, 0.24, 1.00 };
 
--- Export only. Deliberately darker and duller than the Uncommon rarity
--- green so a button never reads as a rarity swatch.
+-- Export button
 data.COLOR_SUCCESS        = { 0.16, 0.42, 0.20, 0.90 };
 data.COLOR_SUCCESS_HOVER  = { 0.22, 0.56, 0.26, 0.95 };
 data.COLOR_SUCCESS_ACTIVE = { 0.28, 0.68, 0.32, 1.00 };
 
--- Rows are built as a record keyed by column name and then projected through
--- whichever header is in use, so the two lists cannot fall out of step and a
--- column missing from a record is simply an empty cell.
+-- CSV export columns
 data.EXPORT_HEADER = T{ 'Character', 'Activity', 'Zone', 'Item', 'Count',
                         'Zone Gathers', 'Drop Rate', 'Fatigue', 'Attempts',
                         'Successes', 'Skill Ups', 'Skill' };
 
--- Minimum Data: the drop sample and nothing identifying. No character name,
--- and none of the counters that describe how one player happened to play.
 data.EXPORT_HEADER_MIN = T{ 'Activity', 'Zone', 'Item', 'Count',
                             'Zone Gathers', 'Drop Rate' };
 
--- Fatigue bar: a hard three-way step, not a gradient.
+-- Fatigue bar
+data.COLOR_BAR_BG   = { 0.16, 0.16, 0.18, 0.85 };
 data.COLOR_LOW      = { 0.40, 0.75, 1.00, 1.00 };
 data.COLOR_MID      = { 1.00, 0.90, 0.20, 1.00 };
 data.COLOR_HIGH     = { 0.90, 0.20, 0.20, 1.00 };
 data.COLOR_FATIGUED = { 1.00, 0.30, 0.30, 1.00 };
 
--- imgui.Combo wants its options as one string of NUL-separated entries with a
--- second NUL closing the list. Built with string.char(0) rather than a '\0'
--- escape: Lua reads up to three digits after a backslash, so '75%\0100%'
--- would parse as '\010' followed by '0' and quietly produce a newline.
+-- Dropdown options
 local function combo_string(labels)
     local nul = string.char(0);
     local out = '';
@@ -95,15 +87,11 @@ local function combo_string(labels)
     return out .. nul;
 end
 
--- Each of these pairs a list of stored values with a list of labels. Entry n
--- in one must describe entry n in the other; the combo returns an index into
--- both. The labels are local because only the combo string reads them.
 data.UI_SCALES        = T{ 0.75, 1.00, 1.25 };
 data.UI_SCALE_DEFAULT = 1.00;
 local UI_SCALE_LABELS = T{ '75%', '100%', '125%' };
 data.UI_SCALE_COMBO   = combo_string(UI_SCALE_LABELS);
 
--- Small is the size Spoils uses, so the two agree by construction.
 data.ICON_SIZES        = T{ data.ICON_SIZE, data.SPOILS_ICON_SIZE };
 data.ICON_SIZE_DEFAULT = data.ICON_SIZE;
 local ICON_SIZE_LABELS = T{ 'Large', 'Small' };
@@ -130,8 +118,8 @@ data.TRACKED_ZONES = T{
     Harvesting = T{
         { id = 115, name = 'West Sarutabaruta', skill_cap = 10 },
         { id = 145, name = 'Giddeus',           skill_cap = 20 },
-        { id = 123, name = 'Yuhtunga Jungle',   skill_cap = 30 },
-        { id = 124, name = 'Yhoator Jungle',    skill_cap = 30 },
+        { id = 123, name = 'Yuhtunga Jungle',   skill_cap = 40 },
+        { id = 124, name = 'Yhoator Jungle',    skill_cap = 40 },
         { id = 52,  name = 'Bhaflau Thickets' },
         { id = 51,  name = 'Wajaom Woodlands' },
     },
@@ -201,24 +189,34 @@ data.SKILL_VALUE_DECIMAL = 'raising it to (%d+%.%d+)';
 data.SKILL_VALUE_INTEGER = 'raising it to (%d+)';
 
 data.CHARACTER_KEYS = T{ 'fatigue', 'fatigued', 'item_log', 'skill',
-                         'skillups', 'attempts', 'successes', 'spoils' };
-data.SESSION_KEYS   = T{ 'skillups', 'attempts', 'successes', 'spoils' };
+                         'skillups', 'attempts', 'successes', 'spoils',
+                         'since_skillup' };
+data.SESSION_KEYS   = T{ 'skillups', 'attempts', 'successes', 'spoils',
+                         'since_skillup' };
 
 data.TRACKED_ZONE_SET = T{};
 data.ZONE_ACTIVITIES  = T{};
 data.SKILL_PATTERNS   = T{};
 data.ZONE_LABELS      = T{};
 
+data.SKILL_CAPS = T{};
+
 for _, activity in ipairs(data.ACTIVITIES) do
-    local set = T{};
+    local set  = T{};
+    local caps = T{};
     for _, zone in ipairs(data.TRACKED_ZONES[activity]) do
         set[zone.id]             = true;
         data.ZONE_LABELS[zone.id] = zone.name;
+
+        if (zone.skill_cap ~= nil) then
+            caps[zone.id] = zone.skill_cap;
+        end
 
         data.ZONE_ACTIVITIES[zone.id] = data.ZONE_ACTIVITIES[zone.id] or T{};
         table.insert(data.ZONE_ACTIVITIES[zone.id], activity);
     end
     data.TRACKED_ZONE_SET[activity] = set;
+    data.SKILL_CAPS[activity]       = caps;
     data.SKILL_PATTERNS[activity]   =
         ('Your %s skill has increased'):fmt(SKILL_NAMES[activity]);
 end

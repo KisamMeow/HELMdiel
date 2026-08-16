@@ -8,8 +8,6 @@ local icons     = require('icons');
 
 local ui = T{};
 
--- Window state, neither persisted. The window starts closed, and it opens on
--- Home every session because that is where a player wants to start.
 ui.visible    = false;
 ui.active_tab = 'Home';
 
@@ -17,31 +15,80 @@ local actions = T{};
 
 local WINDOW_BG = { 0, 0, 0, 1 };
 
--- Set once per frame from the stored setting. Every pixel measurement in this
--- file goes through px() so one setting moves all of them together; a constant
--- used raw would stay put while everything around it grew.
 local scale = 1.0;
 
 local function px(value)
     return value * scale;
 end
 
--- Every bordered icon box is an ImGui child, and child ids must be unique
--- within a window. Numbering them by their position in one zone's item list
--- reuses '##hhitem1' for every open foldout on an activity tab, and ImGui
--- then refuses to draw the duplicates: the first zone renders and the rest
--- lose their icons and their alignment. Counted across the whole frame
--- instead, and reset at the top of ui.render.
 local cell_id = 0;
+
+-- Reused per-frame scratch
+local ITEMS = T{};
+local SLOTS = {};
+
+local function item_slot(index)
+    local slot = SLOTS[index];
+    if (slot == nil) then
+        slot = {};
+        SLOTS[index] = slot;
+    end
+    return slot;
+end
+
+local function by_count_then_name(a, b)
+    if (a.count ~= b.count) then return a.count > b.count; end
+    return a.name < b.name;
+end
+
+local function by_name(a, b)
+    return a.name < b.name;
+end
+
+local CELL_IDS = {};
 
 local function next_cell_id()
     cell_id = cell_id + 1;
-    return ('##hhitem%d'):fmt(cell_id);
+    local id = CELL_IDS[cell_id];
+    if (id == nil) then
+        id = ('##hhitem%d'):fmt(cell_id);
+        CELL_IDS[cell_id] = id;
+    end
+    return id;
 end
 
--- Built on first render rather than at load, because Ashita defines the
--- ImGuiCol_ globals when imgui is required and data.lua is required first.
--- WINDOW_BG appears by reference, so updating its alpha updates it here too.
+local NAV_LABELS = {};
+
+local function nav_label(name)
+    local label = NAV_LABELS[name];
+    if (label == nil) then
+        label = ('%s##nav'):fmt(name);
+        NAV_LABELS[name] = label;
+    end
+    return label;
+end
+
+local SPOILS      = T{};
+local SPOIL_SLOTS = {};
+
+local function spoil_slot(index)
+    local slot = SPOIL_SLOTS[index];
+    if (slot == nil) then
+        slot = {};
+        SPOIL_SLOTS[index] = slot;
+    end
+    return slot;
+end
+
+local FIRST_SIZE = { 360, 0 };
+local IS_OPEN    = { false };
+local TABS       = T{};
+local SPOIL_ICON = { 0, 0 };
+local CELL_PAD   = { 0, 0 };
+local BOX_SIZE   = { 0, 0 };
+local ART_SIZE   = { 0, 0 };
+local LINE_GAP   = { 0, 0 };
+
 local STYLE_COLORS;
 local STYLE_VARS;
 
@@ -123,15 +170,44 @@ local function render_skill(charname, activity)
     end
 end
 
+-- Fatigue bar
+local bar_fill = nil;
+
+local function fill_bar(fraction, color)
+    local list = imgui.GetWindowDrawList();
+    local w    = imgui.GetContentRegionAvail();
+    local x, y = imgui.GetCursorScreenPos();
+    local h    = px(data.FATIGUE_BAR_HEIGHT);
+    local r    = px(data.FRAME_ROUNDING);
+
+    list:AddRectFilled({ x, y }, { x + w, y + h },
+        imgui.GetColorU32(data.COLOR_BAR_BG), r);
+
+    if (fraction > 0) then
+        list:AddRectFilled({ x, y }, { x + w * fraction, y + h },
+            imgui.GetColorU32(color), r);
+    end
+
+    imgui.Dummy({ 0, h });
+end
+
 local function render_fatigue(charname, activity, zoneId, zoneName)
     local value = store.get_fatigue(charname, activity, zoneId);
     local color = get_fatigue_color(value);
 
     imgui.TextColored(color, ('%s: %d / %d'):fmt(zoneName, value, data.FATIGUE_CAP));
 
-    imgui.PushStyleColor(ImGuiCol_PlotHistogram, color);
-    imgui.ProgressBar(value / data.FATIGUE_CAP, { -1, px(14) }, '');
-    imgui.PopStyleColor(1);
+    local fraction = value / data.FATIGUE_CAP;
+
+    if (bar_fill ~= false) then
+        bar_fill = pcall(fill_bar, fraction, color);
+    end
+
+    if (not bar_fill) then
+        imgui.PushStyleColor(ImGuiCol_PlotHistogram, color);
+        imgui.ProgressBar(fraction, { -1, px(data.FATIGUE_BAR_HEIGHT) }, '');
+        imgui.PopStyleColor(1);
+    end
 
     if (store.is_fatigued(charname, activity, zoneId)) then
         imgui.TextColored(data.COLOR_FATIGUED, 'FATIGUED');
@@ -148,9 +224,7 @@ local function count_gathers(log)
     return total;
 end
 
--- All three states are pushed, or the button reverts to charcoal on hover,
--- which is when its colour matters most. Defined up here because Spoils
--- uses a tinted button well before Settings does.
+-- Tinted buttons
 local function tinted_button(label, base, hover, active)
     imgui.PushStyleColor(ImGuiCol_Button,        base);
     imgui.PushStyleColor(ImGuiCol_ButtonHovered, hover);
@@ -174,20 +248,24 @@ local function success_button(label)
         data.COLOR_SUCCESS_HOVER, data.COLOR_SUCCESS_ACTIVE);
 end
 
--- The border is the rarity marker, so it is drawn at whichever icon size is
--- selected rather than only at the large one.
 local function render_item_icon(item, box, art)
     imgui.PushStyleColor(ImGuiCol_Border, item.tier.color);
     imgui.PushStyleVar(ImGuiStyleVar_ChildBorderSize, px(data.CELL_BORDER));
-    imgui.PushStyleVar(ImGuiStyleVar_WindowPadding,
-        { px(data.CELL_PADDING), px(data.CELL_PADDING) });
 
-    if (imgui.BeginChild(next_cell_id(), { box, box },
-                         ImGuiChildFlags_Borders)) then
+    CELL_PAD[1] = px(data.CELL_PADDING);
+    CELL_PAD[2] = CELL_PAD[1];
+    imgui.PushStyleVar(ImGuiStyleVar_WindowPadding, CELL_PAD);
+
+    BOX_SIZE[1] = box;
+    BOX_SIZE[2] = box;
+    ART_SIZE[1] = art;
+    ART_SIZE[2] = art;
+
+    if (imgui.BeginChild(next_cell_id(), BOX_SIZE, ImGuiChildFlags_Borders)) then
         if (item.icon ~= nil) then
-            imgui.Image(item.icon.handle, { art, art });
+            imgui.Image(item.icon.handle, ART_SIZE);
         else
-            imgui.Dummy({ art, art });
+            imgui.Dummy(ART_SIZE);
         end
     end
     imgui.EndChild();
@@ -196,36 +274,28 @@ local function render_item_icon(item, box, art)
     imgui.PopStyleColor(1);
 end
 
--- Grid: name above its percentage, three across.
 local function render_item(item, show_icons, box, art)
     imgui.BeginGroup();
 
     if (show_icons) then
+        local text_h = imgui.GetTextLineHeight() * 2 + px(data.ITEM_LINE_GAP);
+        local top    = imgui.GetCursorPosY();
+
+        imgui.SetCursorPosY(top + math.max(0, (text_h - box) * 0.5));
         render_item_icon(item, box, art);
         imgui.SameLine();
+        imgui.SetCursorPosY(top + math.max(0, (box - text_h) * 0.5));
     end
+
+    LINE_GAP[2] = px(data.ITEM_LINE_GAP);
+    imgui.PushStyleVar(ImGuiStyleVar_ItemSpacing, LINE_GAP);
 
     imgui.BeginGroup();
     imgui.TextColored(item.tier.color, item.name);
     imgui.TextDisabled(item.label);
     imgui.EndGroup();
 
-    imgui.EndGroup();
-end
-
--- List: one item per row, percentages aligned in a column.
-local function render_item_row(item, show_icons, box, art, widest)
-    imgui.BeginGroup();
-
-    if (show_icons) then
-        render_item_icon(item, box, art);
-        imgui.SameLine();
-    end
-
-    imgui.TextColored(item.tier.color, item.name);
-    imgui.SameLine(0, widest - item.name_w + px(data.CELL_GUTTER));
-    imgui.TextDisabled(item.label);
-
+    imgui.PopStyleVar(1);
     imgui.EndGroup();
 end
 
@@ -237,41 +307,38 @@ local function render_item_list(log, total)
 
     local show_icons = store.item_icons();
 
-    local items  = T{};
+    local scaled = (store.icon_size() == data.SPOILS_ICON_SIZE) and font ~= nil;
+    if (scaled) then
+        imgui.PushFont(font, px(data.FONT_SIZE - data.SMALL_ICON_FONT_DROP));
+    end
+
+    local items  = ITEMS;
     local widest = 0;
+    local count_n = 0;
     for itemName, count in pairs(log) do
         local pct  = count / total * 100;
         local name = resources.item_name(itemName);
 
-        -- Built here rather than at draw time because its width sets the
-        -- column, so the measured string and the drawn string must be one.
         local label = ('%.1f%%'):fmt(pct);
 
-        -- The name and the label are stacked, so the wider of the two decides
-        -- the column. A short name with a long label would otherwise overhang
-        -- its column and push the next one out of line.
-        local name_width = imgui.CalcTextSize(name);
-        local text_width = math.max(name_width, imgui.CalcTextSize(label));
+        local text_width = math.max(imgui.CalcTextSize(name),
+                                    imgui.CalcTextSize(label));
 
         if (text_width > widest) then widest = text_width; end
 
-        table.insert(items, {
-            name   = name,
-            count  = count,
-            label  = label,
-            name_w = name_width,
-            text_w = text_width,
-            tier   = get_rarity_tier(pct),
-            icon   = show_icons and icons.texture(resources.item_id(itemName)) or nil,
-        });
+        count_n = count_n + 1;
+        local slot = item_slot(count_n);
+        slot.name   = name;
+        slot.count  = count;
+        slot.label  = label;
+        slot.text_w = text_width;
+        slot.tier   = get_rarity_tier(pct);
+        slot.icon   = show_icons and icons.texture(resources.item_id(itemName)) or nil;
+        items[count_n] = slot;
     end
+    for index = count_n + 1, #items do items[index] = nil; end
 
-    table.sort(items, function(a, b)
-        if (a.count ~= b.count) then
-            return a.count > b.count;
-        end
-        return a.name < b.name;
-    end);
+    table.sort(items, by_count_then_name);
 
     local art  = px(store.icon_size());
     local box  = art + px(data.CELL_PADDING * 2 + data.CELL_BORDER * 2);
@@ -280,9 +347,6 @@ local function render_item_list(log, total)
     local last_rank = nil;
     local column    = 0;
     for index, item in ipairs(items) do
-        -- No tier heading: the rarity is carried by the item name's colour and
-        -- its border. The blank line and the row break are what keep the
-        -- tiers reading as separate blocks, so both must stay.
         if (item.tier.rank ~= last_rank) then
             imgui.Spacing();
             imgui.Spacing();
@@ -290,29 +354,36 @@ local function render_item_list(log, total)
             column    = 0;
         end
 
-        if (list) then
-            render_item_row(item, show_icons, box, art, widest);
-        else
-            -- Padding the gap by however much narrower the previous item's
-            -- text was keeps every column starting at the same x, without
-            -- needing to box the text in a fixed-width child.
-            if (column > 0) then
-                local previous = items[index - 1];
-                imgui.SameLine(0, widest - previous.text_w + px(data.CELL_GUTTER));
-            end
+        if (not list and column > 0) then
+            local previous = items[index - 1];
+            imgui.SameLine(0, widest - previous.text_w + px(data.CELL_GUTTER));
+        end
 
-            render_item(item, show_icons, box, art);
+        render_item(item, show_icons, box, art);
 
+        if (not list) then
             column = column + 1;
             if (column >= data.ITEMS_PER_ROW) then column = 0; end
         end
     end
+
+    if (scaled) then imgui.PopFont(); end
 end
 
 local function divider()
     imgui.Spacing();
     imgui.Separator();
     imgui.Spacing();
+end
+
+local function last_skillup_label(charname, activity, zoneId)
+    local cap   = data.SKILL_CAPS[activity][zoneId];
+    local skill = store.get_skill(charname, activity);
+
+    if (cap ~= nil and skill ~= nil and skill >= cap) then
+        return ('Cap (%d)'):fmt(cap);
+    end
+    return tostring(store.get_since_skillup(charname, activity));
 end
 
 local function render_activity(charname, activity, curZoneId, zoneName)
@@ -325,19 +396,11 @@ local function render_activity(charname, activity, curZoneId, zoneName)
 
     if (store.home_minimum()) then return; end
 
-    local log       = store.get_item_log(charname, activity, curZoneId);
-    local total     = count_gathers(log);
-    local attempts  = store.get_attempts(charname, activity, curZoneId);
-    local successes = store.get_successes(charname, activity, curZoneId);
-    local skillups  = store.get_skillups(charname, activity, curZoneId);
+    local log   = store.get_item_log(charname, activity, curZoneId);
+    local total = count_gathers(log);
 
-    if (attempts > 0) then
-        imgui.TextDisabled(('Gathers - %d/%d (%.1f%%)   Skill Ups - %d/%d (%.1f%%)')
-            :fmt(successes, attempts, successes / attempts * 100,
-                 skillups, attempts, skillups / attempts * 100));
-    else
-        imgui.TextDisabled(('Gathers 0/0   Skill Ups %d/0'):fmt(skillups));
-    end
+    imgui.TextDisabled(('Items Collected - %d   Last Skill Up - %s')
+        :fmt(total, last_skillup_label(charname, activity, curZoneId)));
 
     imgui.Spacing();
     render_item_list(log, total);
@@ -381,34 +444,39 @@ local function render_spoils(charname)
 
     imgui.Spacing();
 
-    local items  = T{};
+    local items  = SPOILS;
     local widest = 0;
+    local n      = 0;
     for itemName, count in pairs(spoils) do
         local name = resources.item_name(itemName);
         local width = imgui.CalcTextSize(name);
         if (width > widest) then widest = width; end
 
-        table.insert(items, {
-            key    = itemName,
-            name   = name,
-            count  = count,
-            name_w = width,
-        });
+        n = n + 1;
+        local slot = spoil_slot(n);
+        slot.key    = itemName;
+        slot.name   = name;
+        slot.count  = count;
+        slot.name_w = width;
+        items[n] = slot;
     end
+    for index = n + 1, #items do items[index] = nil; end
 
-    if (#items == 0) then
+    if (n == 0) then
         imgui.TextDisabled('Nothing gathered this session.');
     else
-        table.sort(items, function(a, b) return a.name < b.name; end);
+        table.sort(items, by_name);
+
+        SPOIL_ICON[1] = px(data.SPOILS_ICON_SIZE);
+        SPOIL_ICON[2] = SPOIL_ICON[1];
 
         for _, item in ipairs(items) do
             if (show_icons) then
                 local icon = icons.texture(resources.item_id(item.key));
                 if (icon ~= nil) then
-                    imgui.Image(icon.handle,
-                        { px(data.SPOILS_ICON_SIZE), px(data.SPOILS_ICON_SIZE) });
+                    imgui.Image(icon.handle, SPOIL_ICON);
                 else
-                    imgui.Dummy({ px(data.SPOILS_ICON_SIZE), px(data.SPOILS_ICON_SIZE) });
+                    imgui.Dummy(SPOIL_ICON);
                 end
                 imgui.SameLine();
             end
@@ -449,26 +517,25 @@ local function render_activity_tab(charname, activity)
     end
 
     imgui.Separator();
-    imgui.TextDisabled('Item Tracking');
     imgui.Spacing();
 
     for _, zone in ipairs(zones) do
-        if (imgui.CollapsingHeader(zone.name)) then
-            local log   = store.get_item_log(charname, activity, zone.id);
-            local total = count_gathers(log);
+        local log   = store.get_item_log(charname, activity, zone.id);
+        local total = count_gathers(log);
 
-            if (total > 0) then
-                imgui.TextDisabled(('%d Gathers'):fmt(total));
-            end
+        local label = zone.name;
+        if (total > 0) then
+            label = ('%s - %d Items Collected'):fmt(zone.name, total);
+        end
+
+        if (imgui.CollapsingHeader(('%s###hh%s%d'):fmt(label, activity, zone.id))) then
             render_item_list(log, total);
             imgui.Spacing();
         end
     end
 end
 
--- Activities are laid out two per row. The pad is measured rather than fixed
--- so the right-hand column starts at the same x on both rows whatever the
--- label lengths and whatever the UI Scale.
+-- Activities, two per row
 local function activity_pairs()
     local widest = 0;
     for _, activity in ipairs(data.ACTIVITIES) do
@@ -528,9 +595,6 @@ local function render_settings(charname)
     imgui.Spacing();
 
     imgui.PushItemWidth(px(data.SKILL_INPUT_WIDTH));
-    -- Combo indexes from zero; store keeps a Lua 1-based index. Converting at
-    -- this boundary is the whole of it, and getting it wrong is quiet: the
-    -- menu shows the wrong row and picking the first entry writes nil.
     local chosen = { store.ui_scale_index() - 1 };
     if (imgui.Combo('UI Scale', chosen, data.UI_SCALE_COMBO)) then
         store.set_ui_scale_index(chosen[1] + 1);
@@ -613,19 +677,23 @@ end
 
 
 local function visible_tabs()
-    local tabs = T{};
+    local n = 0;
     for _, name in ipairs(data.NAV_LEADING) do
-        table.insert(tabs, name);
+        n = n + 1;
+        TABS[n] = name;
     end
     for _, activity in ipairs(data.ACTIVITIES) do
         if (store.activity_enabled(activity)) then
-            table.insert(tabs, activity);
+            n = n + 1;
+            TABS[n] = activity;
         end
     end
     for _, name in ipairs(data.NAV_TRAILING) do
-        table.insert(tabs, name);
+        n = n + 1;
+        TABS[n] = name;
     end
-    return tabs;
+    for index = n + 1, #TABS do TABS[index] = nil; end
+    return TABS;
 end
 
 local function render_nav(tabs)
@@ -643,9 +711,7 @@ local function render_nav(tabs)
             imgui.PushStyleColor(ImGuiCol_Button, data.COLOR_NAV_SELECTED);
         end
 
-        -- The ##nav suffix is hidden from the label but keeps each id unique
-        -- against the reset buttons, which can share a panel with these.
-        if (imgui.Button(('%s##nav'):fmt(name))) then
+        if (imgui.Button(nav_label(name))) then
             ui.active_tab = name;
         end
 
@@ -672,13 +738,13 @@ function ui.render(charname, curZoneId)
 
     if (font ~= nil) then imgui.PushFont(font, px(data.FONT_SIZE)); end
 
-    imgui.SetNextWindowSize({ 360, 0, }, ImGuiCond_FirstUseEver);
+    imgui.SetNextWindowSize(FIRST_SIZE, ImGuiCond_FirstUseEver);
 
     local flags = ImGuiWindowFlags_None;
     if (store.auto_resize()) then flags = ImGuiWindowFlags_AlwaysAutoResize; end
 
-    local isOpen = { ui.visible };
-    if (imgui.Begin(title, isOpen, flags)) then
+    IS_OPEN[1] = ui.visible;
+    if (imgui.Begin(title, IS_OPEN, flags)) then
         imgui.Text(('Character: %s'):fmt(charname));
         imgui.Separator();
 
@@ -703,7 +769,7 @@ function ui.render(charname, curZoneId)
     imgui.PopStyleVar(#STYLE_VARS);
     imgui.PopStyleColor(#STYLE_COLORS);
 
-    ui.visible = isOpen[1];
+    ui.visible = IS_OPEN[1];
 end
 
 return ui;

@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.4] - 2026-08-15
+
+### Fixed
+
+- **The window resizes immediately** when moving from a wide tab to a narrow
+  one, instead of creeping down over several seconds. The fatigue bar still
+  stretches to the full width.
+
+### Changed
+
+- **Home shows Items Collected and Last Skill Up**, replacing the
+  Gathers and Skill Ups rates. Both barely moved, so the space went to figures
+  that do. Everything behind them is still tracked and still exported.
+- **Last Skill Up reads Cap (20)** once your skill reaches the zone's ceiling.
+  Only a few zones have a known cap; the rest show the count as before.
+- **Gathers is now Items Collected** on the activity tabs, the same figure
+  under a clearer name, and it has moved into each zone's foldout title so a
+  closed zone still shows its total.
+- **The Item Tracking heading is gone** from the activity tabs.
+- **List mode now stacks the drop rate under the item name**, matching Grid.
+- **Item names and their drop rates sit closer together**, and the icon and
+  its text are centred on each other.
+- **Small icons draw the item text two points smaller.**
+
 ## [0.9.3] - 2026-08-15
 
 ### Fixed
@@ -227,7 +251,8 @@ Initial public release.
 - The rule that a gather decays *all* other zones for that activity was
   inferred from a two-zone observation.
 
-[Unreleased]: https://github.com/KisamMeow/HELMdiel/compare/v0.9.3...HEAD
+[Unreleased]: https://github.com/KisamMeow/HELMdiel/compare/v0.9.4...HEAD
+[0.9.4]: https://github.com/KisamMeow/HELMdiel/compare/v0.9.3...v0.9.4
 [0.9.3]: https://github.com/KisamMeow/HELMdiel/compare/v0.9.2...v0.9.3
 [0.9.2]: https://github.com/KisamMeow/HELMdiel/compare/v0.9.1...v0.9.2
 [0.9.1]: https://github.com/KisamMeow/HELMdiel/compare/v0.9.0...v0.9.1

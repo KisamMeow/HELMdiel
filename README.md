@@ -4,7 +4,7 @@ Tracks HorizonXI's HELM system: Harvesting, Excavation, Logging and Mining.
 
 This addon is in very early development, there will be bugs and the UI will be reworked as I get closer to being feature complete.
 
-Ashita v4.30+ addon. Version 0.9.3. Released under GPL-3.0. Coded with help from Claude Opus 5.
+Ashita v4.30+ addon. Version 0.9.4. Released under GPL-3.0. Coded with help from Claude Opus 5.
 
 ## Features
 
@@ -83,15 +83,17 @@ drifted.
 (Yuhtunga and Yhoator Jungle) get a section for each.
 
 ```
-Gathers - 24/28 (85.7%)   Skill Ups - 2/28 (7.1%)
+Items Collected - 241   Last Skill Up - 12
 ```
 
-**Gathers** is how many attempts gave you an item. **Skill Ups** is how many
-you earned, against the same attempt count. Failed attempts and broken tools
-count in both, because they cost you time and can still skill you up.
+**Items Collected** is everything logged in this zone, and it survives resets
+so your drop percentages stay meaningful. **Last Skill Up** is how many swings
+ago it was, failures and broken tools included, and it carries across zones
+because your skill does.
 
-The item grid below is counted separately: it survives resets so your drop
-percentages stay meaningful. The two numbers are meant to differ.
+It reads **Cap (20)** once your skill reaches the zone's ceiling, naming the
+cap, since the count is then measuring a drought the zone cannot end. Only a
+few zones have a known cap; the rest show the count regardless.
 
 Fatigue bar colours:
 

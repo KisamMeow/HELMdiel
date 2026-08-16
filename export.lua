@@ -6,21 +6,9 @@ local resources = require('resources');
 
 local export = T{};
 
-local NEWLINE = '\r\n';
-
--- Minimum Data exists to make a file safe to hand to someone else, so the
--- character name comes out of the filename as well as out of the rows.
--- Leaving it on the file would hand back exactly what the columns strip.
--- A fixed stem means two characters share one file, which is the point: the
--- contents are anonymous, so a per-character copy would only put the name
--- back. The consequence is that a minimal export overwrites the previous
--- one whichever character made it.
+local NEWLINE     = '\r\n';
 local SHARED_STEM = 'HELMdiel';
 
--- RFC 4180: quote only when the value could otherwise break the row, and
--- double any quote inside it. clean_item_name currently strips commas and
--- quotes out of item names, so nothing needs it today. It costs one compare
--- per field to stay correct if that ever changes.
 local function field(value)
     if (value == nil) then return ''; end
 
@@ -30,12 +18,6 @@ local function field(value)
     return '"' .. text:gsub('"', '""') .. '"';
 end
 
--- Driven by the header rather than by the record. Skill is nil until the
--- first skill up, and a nil ends a Lua array, so walking the values would
--- emit a row one column short and silently shift every value after it in the
--- spreadsheet. Projecting through the header means a missing value is an
--- empty cell and every row has exactly as many fields as the header, whether
--- that is the full set or the Minimum Data subset.
 local function row(header, record)
     local out = T{};
     for _, column in ipairs(header) do
@@ -60,10 +42,6 @@ local function count_items(log)
     return total;
 end
 
--- One row per item, with its zone's figures repeated alongside. That shape
--- pivots directly in a spreadsheet, which a section per activity would not.
--- A zone with counters but nothing logged still gets a row, with the item
--- columns blank, so turning fatigue into a row never loses it.
 function export.build(charname, minimal)
     local header = minimal and data.EXPORT_HEADER_MIN or data.EXPORT_HEADER;
     local lines  = T{ header_row(header) };
@@ -79,9 +57,6 @@ function export.build(charname, minimal)
             local successes = store.get_successes(charname, activity, zone.id);
             local skillups  = store.get_skillups(charname, activity, zone.id);
 
-            -- The displayed inventory name, not the chat-log key the log is
-            -- stored under, so the spreadsheet reads the way the game and
-            -- the window do.
             local items = T{};
             for name, count in pairs(log) do
                 table.insert(items, {
@@ -90,8 +65,6 @@ function export.build(charname, minimal)
                 });
             end
 
-            -- pairs() order is not stable between runs, so sort or two
-            -- exports of identical data would not diff against each other.
             table.sort(items, function(a, b)
                 if (a.count ~= b.count) then return a.count > b.count; end
                 return a.name < b.name;
@@ -110,10 +83,6 @@ function export.build(charname, minimal)
             };
 
             if (#items == 0) then
-                -- A zone with counters but nothing logged is worth a row, so
-                -- turning fatigue into a row never loses it. Under Minimum
-                -- Data every column that row would carry is gone, so it would
-                -- say nothing but the zone's name.
                 if (not minimal and (fatigue > 0 or attempts > 0 or gathers > 0)) then
                     table.insert(lines, row(header, zone_row));
                 end

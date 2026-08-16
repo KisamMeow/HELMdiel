@@ -1,6 +1,6 @@
 addon.name    = 'HELMdiel';
 addon.author  = 'Masuru';
-addon.version = '0.9.3';
+addon.version = '0.9.4';
 addon.desc    = 'Tracks HELM (Harvesting/Excavation/Logging/Mining) regional gathering fatigue on HorizonXI.';
 addon.link    = 'https://github.com/KisamMeow/HELMdiel';
 
@@ -63,6 +63,7 @@ ashita.events.register('text_in', 'helmdiel_text_in', function(e)
     if (skill_activity ~= nil) then
         store.register_skill(skill_activity, skill_value);
         store.register_skillup(skill_activity, zoneId);
+        store.reset_since_skillup(skill_activity);
         store.save();
         return;
     end
@@ -111,6 +112,7 @@ ashita.events.register('text_in', 'helmdiel_text_in', function(e)
         state.last_gather_time     = now;
 
         store.register_attempt(activity, zoneId);
+        store.bump_since_skillup(activity);
 
         if (not failed) then
             store.register_success(activity, zoneId);
@@ -166,7 +168,6 @@ local function reset_all()
     clear_detection_state();
 end
 
--- Reported here rather than in ui, which owns no way to talk to the player.
 local function export_csv()
     local ok, path, rows = export.write(store.char_name());
     if (ok) then

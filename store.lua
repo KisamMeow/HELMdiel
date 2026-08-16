@@ -64,10 +64,6 @@ function store.char_name()
     return name;
 end
 
--- Where the settings library already keeps this character's data, so an
--- export lands beside it rather than somewhere the user has to hunt for.
--- Here rather than in export.lua because this is one of the only two
--- modules allowed to touch AshitaCore.
 function store.config_path()
     return ('%s/config/addons/%s/'):fmt(AshitaCore:GetInstallPath(), addon.name);
 end
@@ -128,8 +124,6 @@ function store.toggle_auto_resize()
     settings.save();
 end
 
--- Defaults off: an export is for the player first, and the trimmed one is
--- the deliberate choice you make before handing the file to someone else.
 function store.export_minimal()
     return helm_settings.window.export_minimal == true;
 end
@@ -139,10 +133,6 @@ function store.toggle_export_minimal()
     settings.save();
 end
 
--- Dropdown settings all work the same way: the chosen value is stored, never
--- the menu position, so reordering or extending a list later cannot silently
--- change what an existing settings file means. Anything not on the list reads
--- as the default, so removing an option cannot strand a user on it either.
 local function choice(key, options, fallback)
     local value = helm_settings.window[key];
     for _, option in ipairs(options) do
@@ -232,8 +222,6 @@ local function ensure_char(charname)
     return char;
 end
 
--- Returns the character record as a third value so a caller that needs both a
--- zone table and something else off the record does not ensure it twice.
 local function ensure_zone(charname, field, activity, zoneId, empty)
     local char  = ensure_char(charname);
     local group = char[field];
@@ -283,6 +271,12 @@ end
 
 function store.is_fatigued(charname, activity, zoneId)
     return read_zone(charname, 'fatigued', activity, zoneId, false) == true;
+end
+
+function store.get_since_skillup(charname, activity)
+    local char = helm_settings.characters[charname];
+    if (char == nil or char.since_skillup == nil) then return 0; end
+    return char.since_skillup[activity] or 0;
 end
 
 function store.get_skill(charname, activity)
@@ -366,6 +360,15 @@ end
 function store.register_attempt(activity, zoneId) bump('attempts',  activity, zoneId); end
 function store.register_success(activity, zoneId) bump('successes', activity, zoneId); end
 function store.register_skillup(activity, zoneId) bump('skillups',  activity, zoneId); end
+
+function store.bump_since_skillup(activity)
+    local char = ensure_char(store.char_name());
+    char.since_skillup[activity] = (char.since_skillup[activity] or 0) + 1;
+end
+
+function store.reset_since_skillup(activity)
+    ensure_char(store.char_name()).since_skillup[activity] = 0;
+end
 
 ----------------------------------------
 -- Resets
