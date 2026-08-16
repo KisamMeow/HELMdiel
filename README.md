@@ -4,7 +4,7 @@ Tracks HorizonXI's HELM system: Harvesting, Excavation, Logging and Mining.
 
 This addon is in very early development, there will be bugs and the UI will be reworked as I get closer to being feature complete.
 
-Ashita v4.30+ addon. Version 0.9.5. Released under GPL-3.0. Coded with help from Claude Opus 5.
+Ashita v4.30+ addon. Version 0.9.6. Released under GPL-3.0. Coded with help from Claude Opus 5.
 
 ## Features
 
@@ -52,6 +52,8 @@ renamed.
 To load it every time, add that line to `Ashita/scripts/default.txt`.
 
 ## Commands
+
+`/hd` is a short alias for `/helmdiel` and takes all the same arguments.
 
 | Command | What it does |
 |---|---|
@@ -104,6 +106,17 @@ because your skill does.
 It reads **Cap (20)** once your skill reaches the zone's ceiling, naming the
 cap, since the count is then measuring a drought the zone cannot end. Only a
 few zones have a known cap; the rest show the count regardless.
+
+Under each skill is how often that activity's special skills fire, in this
+zone. **Gatherer's Discipline**, **Gold Rush** and **Motherlode** count against
+the Items Collected figure below them. **Practiced Technique** counts against
+the pickaxes that broke or would have, since it fires instead of a break.
+Logging's are not known yet, so it shows none.
+
+These start counting from 0.9.6, while Items Collected goes back as far as your
+drop history does. **If you gathered before 0.9.6, use Reset All Data for an
+accurate rate**, after exporting if you want to keep the drop data. Reset
+Gather/Skill Ups deliberately keeps both, so it will not fix this.
 
 Fatigue bar colours:
 
@@ -182,7 +195,9 @@ whichever character made it.
 Two reset buttons:
 
 - **Reset Gather/Skill Ups** clears the Home counters and the Spoils tab. Your
-  fatigue, drop history and skill levels are kept. This starts a new session.
+  fatigue, drop history, skill levels and special skill counts are kept, since
+  those last two are measured against the drop history. This starts a new
+  session.
 - **Reset All Data** clears everything for this character.
 
 ## Detection status

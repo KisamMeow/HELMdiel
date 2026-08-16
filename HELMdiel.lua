@@ -1,6 +1,6 @@
 addon.name    = 'HELMdiel';
 addon.author  = 'Masuru';
-addon.version = '0.9.5';
+addon.version = '0.9.6';
 addon.desc    = 'Tracks HELM (Harvesting/Excavation/Logging/Mining) regional gathering fatigue on HorizonXI.';
 addon.link    = 'https://github.com/KisamMeow/HELMdiel';
 
@@ -28,6 +28,27 @@ local state = T{
     last_gather_time     = 0,
 };
 
+local recent_break       = {};
+local recent_proc        = {};
+local recent_skill_value = {};
+local recent_skill_time  = {};
+
+local function repeated(seen, key, now)
+    local last = seen[key];
+    seen[key] = now;
+    return last ~= nil and (now - last) < data.DEDUP_WINDOW_SECONDS;
+end
+
+local function repeated_skill(activity, value, now)
+    local same = recent_skill_value[activity] == value
+             and recent_skill_time[activity] ~= nil
+             and (now - recent_skill_time[activity]) < data.DEDUP_WINDOW_SECONDS;
+
+    recent_skill_value[activity] = value;
+    recent_skill_time[activity]  = now;
+    return same;
+end
+
 local function msg(text)
     print(chat.header(addon.name):append(chat.message(text)));
 end
@@ -53,18 +74,52 @@ ashita.events.register('text_in', 'helmdiel_text_in', function(e)
     local text = e.message;
     if (text == nil or text == '' or e.injected) then return; end
 
+    local mode = (e.mode or 0) % data.CHAT_MODE_MASK;
+    if (data.PLAYER_CHAT_MODES[mode]) then return; end
+
+    if (detect.has_codes(text)) then
+        text = detect.strip_codes(text);
+    end
+
     if (state.debug) then
-        msg(('[mode %d] %s'):fmt(e.mode, text));
+        msg(('[mode %d raw %d] %s'):fmt(mode, e.mode or 0, text));
     end
 
     local zoneId = store.zone_id();
+    local now    = os.clock();
 
     local skill_activity, skill_value = detect.skill(text);
     if (skill_activity ~= nil) then
+        if (repeated_skill(skill_activity, skill_value, now)) then
+            if (state.debug) then
+                msg(('[dedup] ignored a repeat %s skill up at %.1f')
+                    :fmt(skill_activity, skill_value));
+            end
+            return;
+        end
+
         store.register_skill(skill_activity, skill_value);
         store.register_skillup(skill_activity, zoneId);
         store.reset_since_skillup(skill_activity);
         store.save();
+        return;
+    end
+
+    local broke = detect.tool_break(text, zoneId);
+    if (broke ~= nil and not repeated(recent_break, broke, now)) then
+        store.register_break(broke, zoneId);
+        if (state.debug) then msg(('[break] counted a %s tool break'):fmt(broke)); end
+    end
+
+    local proc_activity, proc_name = detect.proc(text, zoneId);
+    if (proc_name ~= nil) then
+        state.last_activity = proc_activity;
+
+        if (not repeated(recent_proc, proc_name, now)) then
+            store.register_proc(proc_name, zoneId);
+            store.save();
+            if (state.debug) then msg(('[proc] counted %s'):fmt(proc_name)); end
+        end
         return;
     end
 
@@ -88,13 +143,12 @@ ashita.events.register('text_in', 'helmdiel_text_in', function(e)
     if (activity ~= nil) then
         state.last_activity = activity;
 
-        local now = os.clock();
         local since = now - state.last_gather_time;
 
         if (activity == state.last_gather_activity
             and zoneId == state.last_gather_zone
             and since < data.DEDUP_WINDOW_SECONDS) then
-            if (state.debug) then
+            if (state.debug and since >= data.DEDUP_QUIET_SECONDS) then
                 msg(('[dedup] ignored %s event %.2fs after the last one')
                     :fmt(activity, since));
             end
@@ -156,6 +210,11 @@ local function clear_detection_state()
     state.last_gather_activity = nil;
     state.last_gather_zone     = nil;
     state.last_gather_time     = 0;
+
+    recent_break       = {};
+    recent_proc        = {};
+    recent_skill_value = {};
+    recent_skill_time  = {};
 end
 
 local function reset_session()
@@ -187,7 +246,10 @@ end);
 
 ashita.events.register('command', 'helmdiel_command', function(e)
     local args = e.command:args();
-    if (#args == 0 or args[1]:lower() ~= '/helmdiel') then return; end
+    if (#args == 0) then return; end
+
+    local entered = args[1]:lower();
+    if (entered ~= '/helmdiel' and entered ~= '/hd') then return; end
 
     e.blocked = true;
 
@@ -258,7 +320,7 @@ ashita.events.register('command', 'helmdiel_command', function(e)
         end
 
     else
-        msg('Usage: /helmdiel [show|hide|debug|reset <all|activity> [zone]|set <activity> <0-200>|skill <activity> <value>]');
+        msg('Usage: /helmdiel or /hd [show|hide|debug|reset <all|activity> [zone]|set <activity> <0-200>|skill <activity> <value>]');
     end
 end);
 

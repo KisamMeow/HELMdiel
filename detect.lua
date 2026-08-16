@@ -24,6 +24,16 @@ local function resolve_from(patterns, text, zoneId)
     return fallback_activity, fallback_pattern;
 end
 
+local CODE_BYTES = '[\30\31\127]';
+
+function detect.has_codes(text)
+    return text:find(CODE_BYTES) ~= nil;
+end
+
+function detect.strip_codes(text)
+    return (text:gsub(CODE_BYTES .. '.', ''));
+end
+
 function detect.gather(text, zoneId)
     return resolve_from(data.MESSAGE_PATTERNS, text, zoneId);
 end
@@ -34,6 +44,16 @@ end
 
 function detect.barren(text, zoneId)
     return resolve_from(data.BARREN_PATTERNS, text, zoneId);
+end
+
+function detect.tool_break(text, zoneId)
+    return resolve_from(data.BREAK_PATTERNS, text, zoneId);
+end
+
+function detect.proc(text, zoneId)
+    local activity, pattern = resolve_from(data.PROC_PATTERNS, text, zoneId);
+    if (activity == nil) then return nil, nil; end
+    return activity, data.PROC_NAMES[pattern];
 end
 
 function detect.is_fatigue_message(text)

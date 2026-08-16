@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.6] - 2026-08-16
+
+### Added
+
+- **`/hd` as a short alias for `/helmdiel`**, taking the same arguments.
+- **Special skill activation rates on Home**, under each activity's skill and
+  scoped to the zone you are in: Gatherer's Discipline, Gold Rush and
+  Motherlode against the Items Collected figure below them, and Practiced
+  Technique against the pickaxes that broke or would have. Logging's are not
+  known yet. **If you gathered before 0.9.6, Reset All Data for an accurate
+  rate**, after exporting if you want to keep the drop data.
+
+### Fixed
+
+- **Someone typing a gather or skill-up message in chat can no longer move
+  your counters.** Anything arriving on a chat channel a player can type on is
+  ignored.
+- **Breaking a tool is finally counted.** The tool's name is highlighted in
+  that message, and the highlighting was hiding it from detection, so every
+  broken sickle, pickaxe and hatchet went unrecorded. Your success rate was
+  overstated by that much.
+- **Tool breaks and special skills are no longer counted more than once.** One
+  gather can reach the addon three times; only the first counts.
+
 ## [0.9.5] - 2026-08-16
 
 ### Changed
@@ -258,7 +282,8 @@ Initial public release.
 - The rule that a gather decays *all* other zones for that activity was
   inferred from a two-zone observation.
 
-[Unreleased]: https://github.com/KisamMeow/HELMdiel/compare/v0.9.5...HEAD
+[Unreleased]: https://github.com/KisamMeow/HELMdiel/compare/v0.9.6...HEAD
+[0.9.6]: https://github.com/KisamMeow/HELMdiel/compare/v0.9.5...v0.9.6
 [0.9.5]: https://github.com/KisamMeow/HELMdiel/compare/v0.9.4...v0.9.5
 [0.9.4]: https://github.com/KisamMeow/HELMdiel/compare/v0.9.3...v0.9.4
 [0.9.3]: https://github.com/KisamMeow/HELMdiel/compare/v0.9.2...v0.9.3

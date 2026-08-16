@@ -217,7 +217,7 @@ local function ensure_char(charname)
     helm_settings.characters[charname] = char;
 
     for _, key in ipairs(data.CHARACTER_KEYS) do
-        char[key] = char[key] or T{};
+        if (type(char[key]) ~= 'table') then char[key] = T{}; end
     end
     return char;
 end
@@ -225,7 +225,7 @@ end
 local function ensure_zone(charname, field, activity, zoneId, empty)
     local char  = ensure_char(charname);
     local group = char[field];
-    group[activity] = group[activity] or T{};
+    if (type(group[activity]) ~= 'table') then group[activity] = T{}; end
 
     if (zoneId == nil) then return group[activity], nil, char; end
 
@@ -238,7 +238,8 @@ end
 
 local function read_zone(charname, field, activity, zoneId, missing)
     local char = helm_settings.characters[charname];
-    if (char == nil or char[field] == nil or char[field][activity] == nil) then
+    if (char == nil or char[field] == nil
+        or type(char[field][activity]) ~= 'table') then
         return missing;
     end
     return char[field][activity][zone_key(zoneId)] or missing;
@@ -277,6 +278,14 @@ function store.get_since_skillup(charname, activity)
     local char = helm_settings.characters[charname];
     if (char == nil or char.since_skillup == nil) then return 0; end
     return char.since_skillup[activity] or 0;
+end
+
+function store.get_breaks(charname, activity, zoneId)
+    return read_zone(charname, 'breaks', activity, zoneId, 0);
+end
+
+function store.get_proc(charname, name, zoneId)
+    return read_zone(charname, 'procs', name, zoneId, 0);
 end
 
 function store.get_skill(charname, activity)
@@ -365,6 +374,9 @@ function store.bump_since_skillup(activity)
     local char = ensure_char(store.char_name());
     char.since_skillup[activity] = (char.since_skillup[activity] or 0) + 1;
 end
+
+function store.register_break(activity, zoneId) bump('breaks', activity, zoneId); end
+function store.register_proc(name, zoneId)      bump('procs',  name,     zoneId); end
 
 function store.reset_since_skillup(activity)
     ensure_char(store.char_name()).since_skillup[activity] = 0;

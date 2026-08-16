@@ -191,6 +191,31 @@ local function fill_bar(fraction, color)
     imgui.Dummy({ 0, h });
 end
 
+local function render_procs(charname, activity, zoneId, collected)
+    local abilities = data.PROC_ABILITIES[activity];
+    if (#abilities == 0) then return; end
+
+    local line = '';
+    for index, ability in ipairs(abilities) do
+        if (index > 1) then line = line .. '   '; end
+
+        local fired = store.get_proc(charname, ability.name, zoneId);
+
+        local outof = collected;
+        if (ability.basis == 'breaks') then
+            outof = fired + store.get_breaks(charname, activity, zoneId);
+        end
+
+        if (outof > 0) then
+            line = line .. ('%s - %d/%d (%.1f%%)')
+                :fmt(ability.name, fired, outof, fired / outof * 100);
+        else
+            line = line .. ('%s - %d/0'):fmt(ability.name, fired);
+        end
+    end
+    imgui.TextDisabled(line);
+end
+
 local function render_fatigue(charname, activity, zoneId, zoneName)
     local value = store.get_fatigue(charname, activity, zoneId);
     local color = get_fatigue_color(value);
@@ -387,7 +412,13 @@ local function last_skillup_label(charname, activity, zoneId)
 end
 
 local function render_activity(charname, activity, curZoneId, zoneName)
+    local log   = store.get_item_log(charname, activity, curZoneId);
+    local total = count_gathers(log);
+
     render_skill(charname, activity);
+    if (not store.home_minimum()) then
+        render_procs(charname, activity, curZoneId, total);
+    end
     imgui.Spacing();
 
     if (store.get_fatigue(charname, activity, curZoneId) > 0) then
@@ -395,9 +426,6 @@ local function render_activity(charname, activity, curZoneId, zoneName)
     end
 
     if (store.home_minimum()) then return; end
-
-    local log   = store.get_item_log(charname, activity, curZoneId);
-    local total = count_gathers(log);
 
     imgui.TextDisabled(('Items Collected - %d   Last Skill Up - %s')
         :fmt(total, last_skillup_label(charname, activity, curZoneId)));

@@ -6,8 +6,40 @@ local data = T{};
 data.FATIGUE_CAP          = 200;
 data.FATIGUE_WARN         = 150;
 data.DEDUP_WINDOW_SECONDS = 1.0;
+data.DEDUP_QUIET_SECONDS  = 0.10;
 
 data.ACTIVITIES = T{ 'Harvesting', 'Excavation', 'Logging', 'Mining' };
+
+-- Chat modes a player can type on. Anything arriving on one of these is
+-- somebody talking, never the game reporting a gather.
+data.CHAT_MODE_MASK = 256;
+
+data.PLAYER_CHAT_MODES = T{
+    -- Outgoing 1-6, incoming 9-14, the same channels eight apart. 7 and 8 are
+    -- unobserved and blocked with them: the whole low block is social chat and
+    -- every system message seen sits at 121 or above.
+    [1]   = true,   -- say, outgoing
+    [2]   = true,   -- shout, outgoing
+    [3]   = true,   -- yell, outgoing
+    [4]   = true,   -- tell, outgoing
+    [5]   = true,   -- party, outgoing
+    [6]   = true,   -- linkshell, outgoing
+    [7]   = true,
+    [8]   = true,
+    [9]   = true,   -- say
+    [10]  = true,   -- shout
+    [11]  = true,   -- yell
+    [12]  = true,   -- tell
+    [13]  = true,   -- party
+    [14]  = true,   -- linkshell
+
+    [157] = true,   -- the echo of a command you typed
+    [212] = true,   -- unity
+    [213] = true,   -- linkshell 2, outgoing
+    [214] = true,   -- linkshell 2
+    [220] = true,   -- assist, ja
+    [222] = true,   -- assist, en
+};
 
 -- Nav order
 data.NAV_LEADING  = T{ 'Home' };
@@ -175,6 +207,35 @@ data.BARREN_PATTERNS = T{
     Mining     = T{},
 };
 
+-- Special skills, counted when they fire. Logging's are not known yet.
+data.PROC_ABILITIES = T{
+    Harvesting = T{
+        { name = "Gatherer's Discipline", pattern = 'practiced discipline preserves',
+          basis = 'successes' },
+    },
+    Excavation = T{
+        { name = 'Practiced Technique',   pattern = 'practiced technique preserves',
+          basis = 'breaks' },
+
+    },
+    Logging    = T{},
+    Mining     = T{
+        { name = 'Gold Rush',  pattern = 'Gold Rush!',
+          basis = 'successes' },
+        { name = 'Motherlode', pattern = 'You hit the mother lode',
+          basis = 'successes' },
+    },
+};
+
+-- Counted alongside whatever else the line is. Matches both shapes: the
+-- standalone break and the one folded into a successful gather.
+data.BREAK_PATTERNS = T{
+    Harvesting = T{ 'sickle breaks' },
+    Excavation = T{ 'pickaxe breaks' },
+    Logging    = T{ 'hatchet breaks' },
+    Mining     = T{ 'pickaxe breaks' },
+};
+
 data.FATIGUE_PATTERN = 'You sense there is little more to be gained from this area.';
 
 local SKILL_NAMES = T{
@@ -190,7 +251,7 @@ data.SKILL_VALUE_INTEGER = 'raising it to (%d+)';
 
 data.CHARACTER_KEYS = T{ 'fatigue', 'fatigued', 'item_log', 'skill',
                          'skillups', 'attempts', 'successes', 'spoils',
-                         'since_skillup' };
+                         'since_skillup', 'procs', 'breaks' };
 data.SESSION_KEYS   = T{ 'skillups', 'attempts', 'successes', 'spoils',
                          'since_skillup' };
 
@@ -199,9 +260,18 @@ data.ZONE_ACTIVITIES  = T{};
 data.SKILL_PATTERNS   = T{};
 data.ZONE_LABELS      = T{};
 
-data.SKILL_CAPS = T{};
+data.SKILL_CAPS    = T{};
+data.PROC_PATTERNS = T{};
+data.PROC_NAMES    = T{};
 
 for _, activity in ipairs(data.ACTIVITIES) do
+    local procs = T{};
+    for _, ability in ipairs(data.PROC_ABILITIES[activity]) do
+        table.insert(procs, ability.pattern);
+        data.PROC_NAMES[ability.pattern] = ability.name;
+    end
+    data.PROC_PATTERNS[activity] = procs;
+
     local set  = T{};
     local caps = T{};
     for _, zone in ipairs(data.TRACKED_ZONES[activity]) do
