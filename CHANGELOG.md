@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.7] - 2026-08-17
+
+### Added
+
+- **The skill up rate is back on Home**, in light blue on the same line as your
+  skill, counted against your swings in the current zone.
+- **And inside each zone's foldout** on the activity tabs, against that zone's
+  swings.
+
+### Changed
+
+- **Exports are stamped with the date and time**, so they collect beside each
+  other in date order instead of overwriting the last one.
+- **Home always shows the fatigue bar**, including at zero. Activities you have
+  unchecked in Settings still stay hidden.
+
 ## [0.9.6] - 2026-08-16
 
 ### Added
@@ -282,7 +298,8 @@ Initial public release.
 - The rule that a gather decays *all* other zones for that activity was
   inferred from a two-zone observation.
 
-[Unreleased]: https://github.com/KisamMeow/HELMdiel/compare/v0.9.6...HEAD
+[Unreleased]: https://github.com/KisamMeow/HELMdiel/compare/v0.9.7...HEAD
+[0.9.7]: https://github.com/KisamMeow/HELMdiel/compare/v0.9.6...v0.9.7
 [0.9.6]: https://github.com/KisamMeow/HELMdiel/compare/v0.9.5...v0.9.6
 [0.9.5]: https://github.com/KisamMeow/HELMdiel/compare/v0.9.4...v0.9.5
 [0.9.4]: https://github.com/KisamMeow/HELMdiel/compare/v0.9.3...v0.9.4

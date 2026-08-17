@@ -102,8 +102,9 @@ end
 
 function export.write(charname)
     local minimal = store.export_minimal();
-    local path    = ('%s%s_export.csv'):fmt(store.config_path(),
-                                            minimal and SHARED_STEM or charname);
+    local path    = ('%s%s_export_%s.csv'):fmt(store.config_path(),
+                                               minimal and SHARED_STEM or charname,
+                                               os.date('%Y-%m-%d_%H%M%S'));
 
     local ok, handle = pcall(io.open, path, 'w');
     if (not ok or handle == nil) then return false, path, 0; end

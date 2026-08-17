@@ -4,7 +4,7 @@ Tracks HorizonXI's HELM system: Harvesting, Excavation, Logging and Mining.
 
 This addon is in very early development, there will be bugs and the UI will be reworked as I get closer to being feature complete.
 
-Ashita v4.30+ addon. Version 0.9.6. Released under GPL-3.0. Coded with help from Claude Opus 5.
+Ashita v4.30+ addon. Version 0.9.7. Released under GPL-3.0. Coded with help from Claude Opus 5.
 
 ## Features
 
@@ -95,8 +95,11 @@ drifted.
 (Yuhtunga and Yhoator Jungle) get a section for each.
 
 ```
-Items Collected - 241   Last Skill Up - 12
+Harvesting Skill: 31.3   Skill Ups - 2/28 (7.1%)
+Items Collected - 241    Last Skill Up - 12
 ```
+
+**Skill Ups** is how often a swing in this zone raised your skill.
 
 **Items Collected** is everything logged in this zone, and it survives resets
 so your drop percentages stay meaningful. **Last Skill Up** is how many swings
@@ -176,11 +179,14 @@ and logging out.
 **Export CSV** writes a spreadsheet and prints its path in chat:
 
 ```
-Ashita/config/addons/HELMdiel/<Character>_export.csv
+Ashita/config/addons/HELMdiel/<Character>_export_2026-08-16_134501.csv
 ```
 
 One row per item per zone, with that zone's drop rate, fatigue and counters
 alongside, which drops straight into a pivot table.
+
+Every export is stamped with the date and time, so they pile up beside each
+other in date order rather than overwriting.
 
 **Minimum Data**, the checkbox under it, cuts the export down to Activity,
 Zone, Item, Count, Zone Gathers, Drop Rate and Skill. Your character name,
@@ -189,8 +195,7 @@ drop data without attaching who you are. Skill stays because drop and skill-up
 rates only mean something against the skill they were gathered at.
 
 Your name comes off the filename too, so a minimal export writes
-`HELMdiel_export.csv`. That name is fixed, so it overwrites the last one
-whichever character made it.
+`HELMdiel_export_<date>_<time>.csv` instead.
 
 Two reset buttons:
 

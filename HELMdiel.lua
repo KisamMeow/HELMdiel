@@ -1,6 +1,6 @@
 addon.name    = 'HELMdiel';
 addon.author  = 'Masuru';
-addon.version = '0.9.6';
+addon.version = '0.9.7';
 addon.desc    = 'Tracks HELM (Harvesting/Excavation/Logging/Mining) regional gathering fatigue on HorizonXI.';
 addon.link    = 'https://github.com/KisamMeow/HELMdiel';
 

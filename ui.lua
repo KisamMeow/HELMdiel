@@ -161,12 +161,25 @@ local function get_rarity_tier(pct)
     return data.RARITY_TIERS[#data.RARITY_TIERS];
 end
 
-local function render_skill(charname, activity)
+local function render_skill(charname, activity, zoneId)
     local skill = store.get_skill(charname, activity);
     if (skill == nil) then
         imgui.TextDisabled(('%s Skill: unknown'):fmt(activity));
     else
         imgui.Text(('%s Skill: %.1f'):fmt(activity, skill));
+    end
+
+    if (zoneId == nil) then return; end
+
+    local ups   = store.get_skillups(charname, activity, zoneId);
+    local swings = store.get_attempts(charname, activity, zoneId);
+
+    imgui.SameLine(0, px(data.CELL_GUTTER));
+    if (swings > 0) then
+        imgui.TextColored(data.COLOR_SKILLUP,
+            ('Skill Ups - %d/%d (%.1f%%)'):fmt(ups, swings, ups / swings * 100));
+    else
+        imgui.TextColored(data.COLOR_SKILLUP, ('Skill Ups - %d/0'):fmt(ups));
     end
 end
 
@@ -415,15 +428,13 @@ local function render_activity(charname, activity, curZoneId, zoneName)
     local log   = store.get_item_log(charname, activity, curZoneId);
     local total = count_gathers(log);
 
-    render_skill(charname, activity);
+    render_skill(charname, activity, curZoneId);
     if (not store.home_minimum()) then
         render_procs(charname, activity, curZoneId, total);
     end
     imgui.Spacing();
 
-    if (store.get_fatigue(charname, activity, curZoneId) > 0) then
-        render_fatigue(charname, activity, curZoneId, zoneName);
-    end
+    render_fatigue(charname, activity, curZoneId, zoneName);
 
     if (store.home_minimum()) then return; end
 
@@ -557,6 +568,14 @@ local function render_activity_tab(charname, activity)
         end
 
         if (imgui.CollapsingHeader(('%s###hh%s%d'):fmt(label, activity, zone.id))) then
+            local ups    = store.get_skillups(charname, activity, zone.id);
+            local swings = store.get_attempts(charname, activity, zone.id);
+            if (swings > 0) then
+                imgui.TextColored(data.COLOR_SKILLUP,
+                    ('Skill Ups - %d/%d (%.1f%%)'):fmt(ups, swings,
+                                                       ups / swings * 100));
+            end
+
             render_item_list(log, total);
             imgui.Spacing();
         end
