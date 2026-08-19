@@ -145,10 +145,10 @@ function ui.set_title(version)
     title = ('HELMdiel v%s###HELMdiel'):fmt(version);
 end
 
-local function get_fatigue_color(value)
-    if (value >= data.FATIGUE_CAP) then
+local function get_fatigue_color(value, cap)
+    if (value >= cap) then
         return data.COLOR_HIGH;
-    elseif (value >= data.FATIGUE_WARN) then
+    elseif (value >= cap * data.FATIGUE_WARN_RATIO) then
         return data.COLOR_MID;
     end
     return data.COLOR_LOW;
@@ -204,11 +204,13 @@ local function fill_bar(fraction, color)
     imgui.Dummy({ 0, h });
 end
 
-local function render_procs(charname, activity, zoneId, collected)
+local function render_procs(charname, activity, zoneId, collected, quiet)
     local abilities = data.PROC_ABILITIES[activity];
     if (#abilities == 0) then return; end
 
-    local line = '';
+    local line  = '';
+    local shown = false;
+
     for index, ability in ipairs(abilities) do
         if (index > 1) then line = line .. '   '; end
 
@@ -219,6 +221,8 @@ local function render_procs(charname, activity, zoneId, collected)
             outof = fired + store.get_breaks(charname, activity, zoneId);
         end
 
+        if (fired > 0 or outof > 0) then shown = true; end
+
         if (outof > 0) then
             line = line .. ('%s - %d/%d (%.1f%%)')
                 :fmt(ability.name, fired, outof, fired / outof * 100);
@@ -226,16 +230,19 @@ local function render_procs(charname, activity, zoneId, collected)
             line = line .. ('%s - %d/0'):fmt(ability.name, fired);
         end
     end
+
+    if (quiet and not shown) then return; end
     imgui.TextDisabled(line);
 end
 
 local function render_fatigue(charname, activity, zoneId, zoneName)
     local value = store.get_fatigue(charname, activity, zoneId);
-    local color = get_fatigue_color(value);
+    local cap   = store.fatigue_cap(charname, activity, zoneId);
+    local color = get_fatigue_color(value, cap);
 
-    imgui.TextColored(color, ('%s: %d / %d'):fmt(zoneName, value, data.FATIGUE_CAP));
+    imgui.TextColored(color, ('%s: %d / %d'):fmt(zoneName, value, cap));
 
-    local fraction = value / data.FATIGUE_CAP;
+    local fraction = value / cap;
 
     if (bar_fill ~= false) then
         bar_fill = pcall(fill_bar, fraction, color);
@@ -575,6 +582,8 @@ local function render_activity_tab(charname, activity)
                     ('Skill Ups - %d/%d (%.1f%%)'):fmt(ups, swings,
                                                        ups / swings * 100));
             end
+
+            render_procs(charname, activity, zone.id, total, true);
 
             render_item_list(log, total);
             imgui.Spacing();

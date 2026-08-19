@@ -294,15 +294,30 @@ function store.get_skill(charname, activity)
     return char.skill[activity];
 end
 
+function store.fatigue_cap(charname, activity, zoneId)
+    local caps = data.SKILL_CAPS[activity];
+    if (caps == nil) then return data.FATIGUE_CAP; end
+
+    local zone_cap = caps[zoneId];
+    if (zone_cap == nil) then return data.FATIGUE_CAP; end
+
+    local skill = store.get_skill(charname, activity);
+    if (skill == nil or skill <= zone_cap) then return data.FATIGUE_CAP; end
+
+    local blocks = math.floor((skill - zone_cap) / data.FATIGUE_BONUS_PER);
+    return data.FATIGUE_CAP + blocks * data.FATIGUE_BONUS;
+end
+
 function store.set_skill(charname, activity, value)
     ensure_char(charname).skill[activity] = value;
 end
 
 function store.set_fatigue(charname, activity, zoneId, value)
     local group, key = ensure_zone(charname, 'fatigue', activity, zoneId);
-    group[key] = math.max(0, math.min(data.FATIGUE_CAP, value));
+    local cap = store.fatigue_cap(charname, activity, zoneId);
+    group[key] = math.max(0, math.min(cap, value));
 
-    if (group[key] < data.FATIGUE_CAP) then
+    if (group[key] < cap) then
         local flags, flagKey = ensure_zone(charname, 'fatigued', activity, zoneId);
         flags[flagKey] = nil;
     end
@@ -317,13 +332,14 @@ function store.register_gather(activity, zoneId)
     local fatigue, key = ensure_zone(charname, 'fatigue', activity, zoneId);
     local flags        = ensure_zone(charname, 'fatigued', activity, zoneId);
 
-    fatigue[key] = math.min(data.FATIGUE_CAP, (fatigue[key] or 0) + 1);
+    fatigue[key] = math.min(store.fatigue_cap(charname, activity, zoneId),
+                            (fatigue[key] or 0) + 1);
     flags[key]   = nil;
 
     for zid, value in pairs(fatigue) do
         if (zid ~= key) then
             fatigue[zid] = math.max(0, value - 1);
-            if (fatigue[zid] < data.FATIGUE_CAP) then
+            if (fatigue[zid] < store.fatigue_cap(charname, activity, tonumber(zid))) then
                 flags[zid] = nil;
             end
         end
@@ -335,10 +351,13 @@ function store.register_fatigue_cap(activity, zoneId)
     local fatigue, key = ensure_zone(charname, 'fatigue', activity, zoneId);
     local flags        = ensure_zone(charname, 'fatigued', activity, zoneId);
 
-    fatigue[key] = data.FATIGUE_CAP;
+    local cap   = store.fatigue_cap(charname, activity, zoneId);
+    local moved = math.max(0, cap - (fatigue[key] or 0));
 
-    for zid in pairs(fatigue) do
-        if (zid ~= key) then fatigue[zid] = 0; end
+    fatigue[key] = cap;
+
+    for zid, value in pairs(fatigue) do
+        if (zid ~= key) then fatigue[zid] = math.max(0, value - moved); end
     end
     for zid in pairs(flags) do
         flags[zid] = nil;

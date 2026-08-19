@@ -4,7 +4,7 @@ Tracks HorizonXI's HELM system: Harvesting, Excavation, Logging and Mining.
 
 This addon is in very early development, there will be bugs and the UI will be reworked as I get closer to being feature complete.
 
-Ashita v4.30+ addon. Version 0.9.7. Released under GPL-3.0. Coded with help from Claude Opus 5.
+Ashita v4.30+ addon. Version 0.9.8. Released under GPL-3.0. Coded with help from Claude Opus 5.
 
 ## Features
 
@@ -50,7 +50,7 @@ To load it every time, add that line to `Ashita/scripts/default.txt`.
 | `/helmdiel` | Toggles the window |
 | `/helmdiel show` / `hide` | Shows or hides it |
 | `/helmdiel debug` | Prints raw chat lines, for reporting detection problems |
-| `/helmdiel set <activity> <0-200>` | Sets the current zone's fatigue |
+| `/helmdiel set <activity> <value>` | Sets the current zone's fatigue |
 | `/helmdiel skill <activity> <value>` | Sets your skill level |
 | `/helmdiel reset all` | Wipes everything for this character |
 | `/helmdiel reset <activity>` | Wipes one activity, all zones |
@@ -58,26 +58,32 @@ To load it every time, add that line to `Ashita/scripts/default.txt`.
 
 ## How fatigue works
 
-Each activity has its own counter **per zone**, capped at 200.
+Each activity has its own counter **per zone**, capped at 200 by default.
 
 - A successful gather raises the current zone's counter by 1.
 - The same gather lowers every **other** tracked zone by 1.
-- At 200 the zone is done: nothing more can be gathered there until you work
-  the same activity somewhere else.
+- At the cap the zone is done: nothing more can be gathered there until you
+  work the same activity somewhere else.
 
 So if Giddeus is capped and you harvest 100 times in West Sarutabaruta,
 Giddeus falls to 100.
+
+**Zones you have outskilled hold more.** For every 10 skill levels above a
+zone's skill cap you get 50 extra fatigue there, so West Sarutabaruta, which
+caps harvesting at 10, holds 300 once you are at 35. This only applies to zones
+whose skill cap the addon knows; the rest stay at 200.
 
 The counters are a model built from observed play, not a readout of the
 server's real numbers. If you gather with the addon unloaded they will drift;
 `/helmdiel set` puts them back.
 
 **The game corrects the drift itself.** When it tells you a zone is tapped
-out, that zone is marked fatigued and every other zone for that activity
-resets to zero, which is what capping a zone from empty would have done
-anyway. For the same reason the red **FATIGUED** label only appears once the
-game has actually said so, since a counter sitting at 200 may just have
-drifted.
+out, that zone is marked fatigued and every other zone for that activity drops
+by however far this one just jumped, which is what the gathers you did not see
+would have done. For the same reason the red **FATIGUED** label only appears
+once the game has actually said so, since a counter sitting at the cap may just
+have drifted.
+
 
 ## Reading the window
 
@@ -104,20 +110,24 @@ Under each skill is how often that activity's special skills fire, in this
 zone. **Gatherer's Discipline**, **Gold Rush** and **Motherlode** count against
 the Items Collected figure below them. **Practiced Technique** counts against
 the pickaxes that broke or would have, since it fires instead of a break.
-Logging's are not known yet, so it shows none.
+Logging's are not known yet, so it shows none. The activity tabs carry the same
+rates inside each zone's foldout, against that zone's own Items Collected.
 
 These start counting from 0.9.6, while Items Collected goes back as far as your
 drop history does. **If you gathered before 0.9.6, use Reset All Data for an
 accurate rate**, after exporting if you want to keep the drop data. Reset
 Gather/Skill Ups deliberately keeps both, so it will not fix this.
 
-Fatigue bar colours:
+Fatigue bar colours, as a share of that zone's own cap:
 
-| Colour | Fatigue |
-|---|---|
-| Light blue | 0 to 149 |
-| Yellow | 150 to 199 |
-| Red | 200, fatigued |
+| Colour | Fatigue | At a 200 cap | At a 300 cap |
+|---|---|---|---|
+| Light blue | below 75% | 0 to 149 | 0 to 224 |
+| Yellow | 75% and up | 150 to 199 | 225 to 299 |
+| Red | at the cap | 200 | 300 |
+
+Red is the counter reaching the cap. The **FATIGUED** label is separate and
+only appears when the game itself says the zone is tapped out.
 
 Each item shows its icon in a border coloured by rarity, with its name in the
 same colour, so you can read rarity without a label:

@@ -1,6 +1,6 @@
 addon.name    = 'HELMdiel';
 addon.author  = 'Masuru';
-addon.version = '0.9.7';
+addon.version = '0.9.8';
 addon.desc    = 'Tracks HELM (Harvesting/Excavation/Logging/Mining) regional gathering fatigue on HorizonXI.';
 addon.link    = 'https://github.com/KisamMeow/HELMdiel';
 
@@ -75,15 +75,19 @@ ashita.events.register('text_in', 'helmdiel_text_in', function(e)
     if (text == nil or text == '' or e.injected) then return; end
 
     local mode = (e.mode or 0) % data.CHAT_MODE_MASK;
-    if (data.PLAYER_CHAT_MODES[mode]) then return; end
+    local helm = data.HELM_CHAT_MODES[mode] == true;
+    if (not helm and not state.debug) then return; end
 
     if (detect.has_codes(text)) then
         text = detect.strip_codes(text);
     end
 
     if (state.debug) then
-        msg(('[mode %d raw %d] %s'):fmt(mode, e.mode or 0, text));
+        msg(('[mode %d raw %d]%s %s')
+            :fmt(mode, e.mode or 0, helm and '' or ' dropped', text));
     end
+
+    if (not helm) then return; end
 
     local zoneId = store.zone_id();
     local now    = os.clock();
@@ -165,8 +169,15 @@ ashita.events.register('text_in', 'helmdiel_text_in', function(e)
         state.last_gather_zone     = zoneId;
         state.last_gather_time     = now;
 
-        store.register_attempt(activity, zoneId);
-        store.bump_since_skillup(activity);
+        local blocked = failed
+            and store.is_fatigued(store.char_name(), activity, zoneId);
+
+        if (not blocked) then
+            store.register_attempt(activity, zoneId);
+            store.bump_since_skillup(activity);
+        elseif (state.debug) then
+            msg(('[fatigued] %s swing in a capped zone, not counted'):fmt(activity));
+        end
 
         if (not failed) then
             store.register_success(activity, zoneId);
@@ -300,7 +311,7 @@ ashita.events.register('command', 'helmdiel_command', function(e)
         local value    = tonumber(args[4]);
 
         if (activity == nil or value == nil) then
-            msg('Usage: /helmdiel set <activity> <0-200>');
+            msg('Usage: /helmdiel set <activity> <value>');
         else
             store.set_fatigue(charname, activity, zoneId, value);
             store.save();

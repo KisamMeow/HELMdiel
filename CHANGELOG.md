@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.8] - 2026-08-19
+
+### Added
+
+- **Zones you have outskilled hold more fatigue**, 50 more for every 10 skill
+  levels above the zone's cap. The bar and its colours follow the raised number.
+- **Special skill rates on the activity tabs**, inside each zone's foldout
+  under its skill up rate, so you can compare zones without walking to them.
+
+### Fixed
+
+- **Swings at a zone you have already capped no longer count**, since you
+  cannot skill up while fatigued and counting them dragged down your skill up
+  rate and inflated Last Skill Up.
+
+### Changed
+
+- **Only the three chat modes the game actually uses for HELM messages are
+  read now**, so nothing anyone types in any channel can move your counters.
+- **`/helmdiel debug` shows every line**, including the ones dropped by that
+  filter, marked `dropped` and named by mode.
+
 ## [0.9.7] - 2026-08-17
 
 ### Added
@@ -298,7 +320,8 @@ Initial public release.
 - The rule that a gather decays *all* other zones for that activity was
   inferred from a two-zone observation.
 
-[Unreleased]: https://github.com/KisamMeow/HELMdiel/compare/v0.9.7...HEAD
+[Unreleased]: https://github.com/KisamMeow/HELMdiel/compare/v0.9.8...HEAD
+[0.9.8]: https://github.com/KisamMeow/HELMdiel/compare/v0.9.7...v0.9.8
 [0.9.7]: https://github.com/KisamMeow/HELMdiel/compare/v0.9.6...v0.9.7
 [0.9.6]: https://github.com/KisamMeow/HELMdiel/compare/v0.9.5...v0.9.6
 [0.9.5]: https://github.com/KisamMeow/HELMdiel/compare/v0.9.4...v0.9.5

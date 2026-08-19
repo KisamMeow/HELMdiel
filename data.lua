@@ -4,41 +4,22 @@ local data = T{};
 
 -- The mechanic
 data.FATIGUE_CAP          = 200;
-data.FATIGUE_WARN         = 150;
+data.FATIGUE_WARN_RATIO   = 0.75;
+data.FATIGUE_BONUS_PER    = 10;
+data.FATIGUE_BONUS        = 50;
 data.DEDUP_WINDOW_SECONDS = 1.0;
 data.DEDUP_QUIET_SECONDS  = 0.10;
 
 data.ACTIVITIES = T{ 'Harvesting', 'Excavation', 'Logging', 'Mining' };
 
--- Chat modes a player can type on. Anything arriving on one of these is
--- somebody talking, never the game reporting a gather.
+-- Chat modes HELM messages have been captured on. Anything on any other mode
+-- is somebody talking, never the game reporting a gather.
 data.CHAT_MODE_MASK = 256;
 
-data.PLAYER_CHAT_MODES = T{
-    -- Outgoing 1-6, incoming 9-14, the same channels eight apart. 7 and 8 are
-    -- unobserved and blocked with them: the whole low block is social chat and
-    -- every system message seen sits at 121 or above.
-    [1]   = true,   -- say, outgoing
-    [2]   = true,   -- shout, outgoing
-    [3]   = true,   -- yell, outgoing
-    [4]   = true,   -- tell, outgoing
-    [5]   = true,   -- party, outgoing
-    [6]   = true,   -- linkshell, outgoing
-    [7]   = true,
-    [8]   = true,
-    [9]   = true,   -- say
-    [10]  = true,   -- shout
-    [11]  = true,   -- yell
-    [12]  = true,   -- tell
-    [13]  = true,   -- party
-    [14]  = true,   -- linkshell
-
-    [157] = true,   -- the echo of a command you typed
-    [212] = true,   -- unity
-    [213] = true,   -- linkshell 2, outgoing
-    [214] = true,   -- linkshell 2
-    [220] = true,   -- assist, ja
-    [222] = true,   -- assist, en
+data.HELM_CHAT_MODES = T{
+    [121] = true,   -- skill ups, the fatigue cap, procs, rotting timber
+    [151] = true,   -- gathers, failures and tool breaks, the original line
+    [190] = true,   -- the same three, re-emitted with a timestamp
 };
 
 -- Nav order
