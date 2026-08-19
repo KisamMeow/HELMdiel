@@ -251,18 +251,29 @@ Deleting that file resets the character, same as `/helmdiel reset all`.
 
 ## Known limitations
 
+- **The raised fatigue cap only applies to zones whose skill cap is known**,
+  and that is 7 of the 28 tracked zones. Everywhere else the bar tops out at
+  200, so if you have outskilled one of those zones the game will let you keep
+  gathering after the bar looks full. Sending me a zone's skill cap is the most
+  useful correction you can make right now.
 - **Skill up rates depend on your skill against a zone's cap**, which HELMdiel
   does not model. Rates recorded at different skill levels are not comparable,
   and a zone that looks slow may just be a poor match for your current skill.
+- **A logging gather that breaks your hatchet may not be counted at all.** That
+  message is the one detection pattern never seen in a real chat log, so if the
+  wording differs the whole gather is missed: no item, no fatigue, no attempt.
+  The other three activities are confirmed.
+- **The fatigue message is confirmed for harvesting only** and assumed to be
+  worded the same for the other three. If it differs, the red FATIGUED label
+  will never appear for that activity and its counters will not resync.
 - Zone IDs use standard retail-compatible numbering and have not been checked
   one by one against HorizonXI's server.
-- The rule that a gather decays *all* other zones, rather than only the most
-  recently fatigued, was inferred from a two-zone observation.
 
 ## Feedback
 
-Corrections to the message patterns and zone lists are the most useful thing
-you can send, and `/helmdiel debug` output is ideal.
+Zone skill caps are the most useful thing you can send right now, since they
+drive the fatigue ceiling and only 7 zones have one. Corrections to the message
+patterns and zone lists are next, and `/helmdiel debug` output is ideal.
 
 Open an issue at
 [github.com/KisamMeow/HELMdiel/issues](https://github.com/KisamMeow/HELMdiel/issues),
