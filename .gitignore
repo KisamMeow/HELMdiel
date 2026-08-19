@@ -1,6 +1,8 @@
 # Development files kept locally, never published.
 CLAUDE.md
 test_harness.lua
+.github/
+docs/
 
 # Compiled Lua / luac output
 *.luac
