@@ -1,9 +1,11 @@
 # Excluded from release archives produced by `git archive` (and from
 # GitHub's generated release tarballs/zips). CLAUDE.md, test_harness.lua,
-# .github and docs are not listed here because they are not tracked at all
-# — see .gitignore.
+# stress_harness.lua and .github are not listed here because they are not
+# tracked at all — see .gitignore. docs/screenshots is tracked, for the
+# README, and is 1.2MB against a 46KB addon, so it must stay listed.
 .gitattributes     export-ignore
 .gitignore         export-ignore
+docs/**            export-ignore
 
 # Normalize line endings so the addon doesn't churn between Windows checkouts
 # and anything reading it on another platform.

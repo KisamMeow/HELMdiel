@@ -3,7 +3,10 @@ CLAUDE.md
 test_harness.lua
 stress_harness.lua
 .github/
-docs/
+docs/*
+!docs/screenshots/
+docs/screenshots/*
+!docs/screenshots/*.png
 
 # Compiled Lua / luac output
 *.luac
