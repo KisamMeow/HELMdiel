@@ -19,6 +19,13 @@ If you notice any items being listed twice but spelt differently then type
 
 ## [Unreleased]
 
+## [0.10.1] - 2026-08-19
+
+### Fixed
+
+- **Phalaenopsis no longer shows as a Yhoator Jungle drop.** It does not drop
+  there on current information; Yuhtunga Jungle is unaffected.
+
 ## [0.10.0] - 2026-08-19
 
 ### Added
@@ -348,7 +355,8 @@ Initial public release.
 - The rule that a gather decays *all* other zones for that activity was
   inferred from a two-zone observation.
 
-[Unreleased]: https://github.com/KisamMeow/HELMdiel/compare/v0.10.0...HEAD
+[Unreleased]: https://github.com/KisamMeow/HELMdiel/compare/v0.10.1...HEAD
+[0.10.1]: https://github.com/KisamMeow/HELMdiel/compare/v0.10.0...v0.10.1
 [0.10.0]: https://github.com/KisamMeow/HELMdiel/compare/v0.9.8...v0.10.0
 [0.9.8]: https://github.com/KisamMeow/HELMdiel/compare/v0.9.7...v0.9.8
 [0.9.7]: https://github.com/KisamMeow/HELMdiel/compare/v0.9.6...v0.9.7

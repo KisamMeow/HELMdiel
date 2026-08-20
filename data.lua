@@ -184,7 +184,6 @@ data.ZONE_ITEMS = T{
             { name = 'Danceshroom' },
             { name = 'Mistletoe', skill = 30 },
             { name = 'Mushrm. Locust' },
-            { name = 'Phalaenopsis' },
             { name = 'Reishi Mushroom', skill = 20 },
             { name = 'Scream Fungus' },
             { name = 'Sleepshroom' },
