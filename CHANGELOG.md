@@ -5,7 +5,35 @@ All notable changes to HELMdiel are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Where this stands
+
+I generally consider this feature complete at this point. I have most of the
+logic in for the things I personally wanted out of this addon. What I really
+need now is just a lot of data, specifically what items drop in what zones,
+what items are locked behind skill levels. This project will remain in pre 1.0
+until I gather most of this data. Most releases going forward will be minor in
+scope including any bugs I find.
+
+If you notice any items being listed twice but spelt differently then type
+`/helmdiel names` and you can send me a screenshot of that in Discord.
+
 ## [Unreleased]
+
+## [0.10.0] - 2026-08-19
+
+### Added
+
+- **Items a zone is known to drop are now listed**, not just the ones you have
+  found. Unfound items sit in grey below the rest: **Not seen** if you can
+  gather it, **Locked (10)** if you need that skill level first. Gathering one
+  moves it up with its own percentage.
+- **A profit column on the Spoils tab** under Item / Amount / Gil headings,
+  your count times the price you set, with a session total under it.
+- **Edit Prices on the Spoils tab**, every gatherable item split by activity,
+  with a box to type what it sells for. Prices save as you type, are shared by
+  every character, and no reset clears them. 86 items ship listed.
+- **`/helmdiel names`** reports any tracked item whose name does not match what
+  your game calls it, so it can be corrected.
 
 ## [0.9.8] - 2026-08-19
 
@@ -320,7 +348,8 @@ Initial public release.
 - The rule that a gather decays *all* other zones for that activity was
   inferred from a two-zone observation.
 
-[Unreleased]: https://github.com/KisamMeow/HELMdiel/compare/v0.9.8...HEAD
+[Unreleased]: https://github.com/KisamMeow/HELMdiel/compare/v0.10.0...HEAD
+[0.10.0]: https://github.com/KisamMeow/HELMdiel/compare/v0.9.8...v0.10.0
 [0.9.8]: https://github.com/KisamMeow/HELMdiel/compare/v0.9.7...v0.9.8
 [0.9.7]: https://github.com/KisamMeow/HELMdiel/compare/v0.9.6...v0.9.7
 [0.9.6]: https://github.com/KisamMeow/HELMdiel/compare/v0.9.5...v0.9.6

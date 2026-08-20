@@ -4,7 +4,7 @@ Tracks HorizonXI's HELM system: Harvesting, Excavation, Logging and Mining.
 
 This addon is in very early development, there will be bugs and the UI will be reworked as I get closer to being feature complete.
 
-Ashita v4.30+ addon. Version 0.9.8. Released under GPL-3.0. Coded with help from Claude Opus 5.
+Ashita v4.30+ addon. Version 0.10.0. Released under GPL-3.0. Coded with help from Claude Opus 5.
 
 ## Features
 
@@ -12,14 +12,14 @@ Ashita v4.30+ addon. Version 0.9.8. Released under GPL-3.0. Coded with help from
 - Skill levels read automatically from your skill-up messages.
 - Attempts, successes and skill ups per zone, so you can see what a zone costs.
 - Item drop logging with icons, grouped into rarity tiers.
-- A Spoils tab tallying everything gathered this session.
+- A Spoils tab tallying everything gathered this session, with what it is worth.
 - Export to CSV for Excel or Sheets.
 
 ## Coming soon
 
 No promised timeline:
 
-- Gil per hour on the Spoils tab, using prices you set yourself
+- Gil per hour on the Spoils tab
 - Rank tracking
 - More of the UI rework
 
@@ -50,6 +50,7 @@ To load it every time, add that line to `Ashita/scripts/default.txt`.
 | `/helmdiel` | Toggles the window |
 | `/helmdiel show` / `hide` | Shows or hides it |
 | `/helmdiel debug` | Prints raw chat lines, for reporting detection problems |
+| `/helmdiel names` | Lists any tracked item name that is not what your game calls it |
 | `/helmdiel set <activity> <value>` | Sets the current zone's fatigue |
 | `/helmdiel skill <activity> <value>` | Sets your skill level |
 | `/helmdiel reset all` | Wipes everything for this character |
@@ -144,6 +145,22 @@ Items sort by how often they drop. **The percentages are only as good as your
 sample.** Twenty gathers will show wildly misleading tiers; give it a few
 hundred.
 
+**Items you have not found yet are listed too**, in grey below the ones you
+have, so a zone shows what it can give rather than only what it has given:
+
+- **Not seen** — it drops here and you can gather it; you just have not yet.
+- **Locked (10)** — it needs that skill level before it will drop for you at
+  all. These sort to the bottom.
+
+Once you gather one it moves up into the list proper with its own percentage,
+whatever your skill says, because gathering it is proof you can.
+
+Drop lists exist for every harvesting and excavation zone, 4 of 11 logging
+zones and 4 of 7 mining zones. **A list is what is known so far, not a
+guarantee it is complete** — an item missing from one simply shows up the
+first time you gather it. A zone with no list behaves as before and shows only
+what you have gathered.
+
 Skill starts as `unknown`, because the game only reports it when it goes *up*.
 Type it into Settings or wait for your next skill up.
 
@@ -151,15 +168,30 @@ Type it into Settings or wait for your next skill up.
 fatigue in, and a foldout of drops per zone.
 
 **Spoils** is everything gathered this session in one alphabetical list,
-whatever zone it came from:
+whatever zone it came from, with what each stack is worth:
 
 ```
-[icon]  Bone Chip              x3
-[icon]  Sprig of Dyer's Woad   x12
+Item                   Amount      Gil
+[icon]  Bone Chip              x3       135
+[icon]  Sprig of Dyer's Woad   x12   14,400
+
+Total - 14,535 Gil
 ```
 
 No rates, no rarity, just what you are carrying home. It survives reloading
 and logging out.
+
+**Prices are yours to set.** The game does not tell addons what anything sells
+for, so **Edit Prices** on the Spoils tab opens a list of every gatherable item
+with a box beside it. Type what you sell it for, whether that is the NPC price
+or what it goes for on your server. Prices save as you type, are shared by all
+your characters, and **no reset clears them** — not Reset Spoils Session, not
+Reset All Data. Anything you have not priced counts as 0.
+
+The list covers all four activities, each in its own block: 38 harvesting items,
+15 excavation, 19 logging and 14 mining. If an item shows **(?)** instead of a
+box, the name in the list does not match what your game calls it — tell me which
+and it is a one-line fix.
 
 ## Settings
 
@@ -215,11 +247,10 @@ them apart by the zone you are in. That works because no zone appears in both
 lists. Gather either in an untracked zone and it may be filed under the wrong
 one.
 
-Two messages have not been seen directly yet:
+One message is only partly verified:
 
-- **Logging's message for breaking a hatchet while still getting a log.** It
-  matches what the older `hgather` addon uses.
-- **The fatigue-cap message**, verified for Harvesting and assumed shared.
+- **The fatigue-cap message.** Seen for harvesting and for logging, worded
+  identically both times. Excavation and mining are assumed to match.
 
 If something is not being counted, run `/helmdiel debug`, gather with the tool
 in question, and send the exact lines.
@@ -259,13 +290,10 @@ Deleting that file resets the character, same as `/helmdiel reset all`.
 - **Skill up rates depend on your skill against a zone's cap**, which HELMdiel
   does not model. Rates recorded at different skill levels are not comparable,
   and a zone that looks slow may just be a poor match for your current skill.
-- **A logging gather that breaks your hatchet may not be counted at all.** That
-  message is the one detection pattern never seen in a real chat log, so if the
-  wording differs the whole gather is missed: no item, no fatigue, no attempt.
-  The other three activities are confirmed.
-- **The fatigue message is confirmed for harvesting only** and assumed to be
-  worded the same for the other three. If it differs, the red FATIGUED label
-  will never appear for that activity and its counters will not resync.
+- **The fatigue message is confirmed for harvesting and logging**, worded the
+  same both times, and assumed to match for excavation and mining. If either
+  differs, that activity never shows the red FATIGUED label and its counters
+  will not resync.
 - Zone IDs use standard retail-compatible numbering and have not been checked
   one by one against HorizonXI's server.
 

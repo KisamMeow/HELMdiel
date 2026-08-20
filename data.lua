@@ -28,6 +28,8 @@ data.NAV_TRAILING = T{ 'Spoils', 'Settings' };
 
 -- Pixel sizes
 data.SKILL_INPUT_WIDTH  = 70;
+data.PRICE_INPUT_WIDTH  = 90;
+data.PRICE_EDITOR_HEIGHT = 320.0;
 data.FATIGUE_BAR_HEIGHT = 14.0;
 data.ICON_SIZE         = 32;
 data.SPOILS_ICON_SIZE  = 16;
@@ -84,6 +86,14 @@ data.EXPORT_HEADER_MIN = T{ 'Activity', 'Zone', 'Item', 'Count',
                             'Zone Gathers', 'Drop Rate', 'Skill' };
 
 data.COLOR_SKILLUP  = { 0.40, 0.75, 1.00, 1.00 };
+data.COLOR_LOCKED   = { 0.45, 0.45, 0.48, 1.00 };
+
+-- Spoils column headings
+data.SPOILS_HEADERS = T{ 'Item', 'Amount', 'Gil' };
+
+-- Known drops you have not collected
+data.TIER_UNSEEN = { rank = 6, name = 'Not seen', color = data.COLOR_LOCKED };
+data.TIER_LOCKED = { rank = 7, name = 'Locked',   color = data.COLOR_LOCKED };
 
 -- Fatigue bar
 data.COLOR_BAR_BG   = { 0.16, 0.16, 0.18, 0.85 };
@@ -115,6 +125,210 @@ data.ICON_SIZE_COMBO   = combo_string(ICON_SIZE_LABELS);
 data.ITEM_STYLES        = T{ 'Grid', 'List' };
 data.ITEM_STYLE_DEFAULT = 'Grid';
 data.ITEM_STYLE_COMBO   = combo_string(data.ITEM_STYLES);
+
+-- Items each zone is known to drop, and the skill a gated one needs
+data.ZONE_ITEMS = T{
+    Harvesting = T{
+        [51] = T{
+            { name = 'Coffee Cherries' },
+            { name = 'Eastern Ginger' },
+            { name = 'Eggplant' },
+            { name = 'Fresh Marjoram' },
+            { name = 'Mohbwa Grass' },
+            { name = 'Peph. Hive Chip' },
+            { name = 'Wijnruit' },
+        },
+        [52] = T{
+            { name = 'Coffee Cherries' },
+            { name = 'Eastern Ginger' },
+            { name = 'Eggplant' },
+            { name = 'Fresh Marjoram' },
+            { name = 'Fresh Mugwort', skill = 30 },
+            { name = 'Im. Tea Leaves', skill = 10 },
+            { name = 'Mohbwa Grass' },
+            { name = 'Peph. Hive Chip' },
+            { name = 'Red Moko Grass', skill = 10 },
+            { name = 'Simsim' },
+            { name = 'Wijnruit' },
+        },
+        [115] = T{
+            { name = 'Beehive Chip' },
+            { name = 'Crawler Cocoon' },
+            { name = "Dyer's Woad" },
+            { name = 'Flax Flower' },
+            { name = 'Fresh Mugwort', skill = 10 },
+            { name = 'Grain Seeds' },
+            { name = 'Herb Seeds' },
+            { name = 'Honey' },
+            { name = 'Moko Grass' },
+            { name = 'Red Moko Grass', skill = 10 },
+            { name = 'Saruta Cotton' },
+            { name = 'Skull Locust' },
+            { name = 'Vegetable Seeds' },
+            { name = 'Wild Onion' },
+            { name = 'Win. Tea Leaves' },
+        },
+        [123] = T{
+            { name = 'Danceshroom' },
+            { name = 'Mushrm. Locust' },
+            { name = 'Phalaenopsis' },
+            { name = 'Puffball', skill = 20 },
+            { name = 'Scream Fungus' },
+            { name = 'Sleepshroom' },
+            { name = 'Toad Oil', skill = 30 },
+            { name = 'Woozyshroom' },
+        },
+        [124] = T{
+            { name = 'Cattleya' },
+            { name = 'Coral Fungus' },
+            { name = 'Danceshroom' },
+            { name = 'Mistletoe', skill = 30 },
+            { name = 'Mushrm. Locust' },
+            { name = 'Phalaenopsis' },
+            { name = 'Reishi Mushroom', skill = 20 },
+            { name = 'Scream Fungus' },
+            { name = 'Sleepshroom' },
+            { name = 'Woozyshroom' },
+        },
+        [145] = T{
+            { name = 'Beehive Chip' },
+            { name = 'Crawler Cocoon' },
+            { name = "Dyer's Woad" },
+            { name = 'Flax Flower' },
+            { name = 'Fresh Marjoram' },
+            { name = 'Fresh Mugwort', skill = 20 },
+            { name = 'Grain Seeds' },
+            { name = 'Herb Seeds' },
+            { name = 'Honey' },
+            { name = 'King Locust' },
+            { name = 'Moko Grass' },
+            { name = 'Red Moko Grass', skill = 10 },
+            { name = 'Saruta Cotton' },
+            { name = 'Spider Web', skill = 30 },
+            { name = 'Vegetable Seeds' },
+            { name = 'Win. Tea Leaves' },
+        },
+    },
+    Excavation = T{
+        [7] = T{
+            { name = 'Bat Fang' },
+            { name = 'Bone Chip' },
+            { name = 'Chicken Bone' },
+            { name = 'Scorpion Claw' },
+        },
+        [117] = T{
+            { name = 'Bat Fang' },
+            { name = 'Bone Chip' },
+            { name = 'Chicken Bone' },
+            { name = 'Giant Femur' },
+            { name = 'Scorpion Claw' },
+            { name = 'Silica' },
+        },
+        [173] = T{
+            { name = 'Blue Rock' },
+            { name = 'Crab Shell' },
+            { name = 'Fish Scales' },
+            { name = 'Lugworm' },
+            { name = 'Rock Salt' },
+            { name = 'Seashell' },
+            { name = 'Shell Bug' },
+        },
+        [198] = T{
+            { name = 'Bat Fang' },
+            { name = 'Beetle Jaw' },
+            { name = 'Beetle Shell' },
+            { name = 'Bone Chip' },
+            { name = 'Chicken Bone' },
+            { name = 'Giant Femur' },
+            { name = 'Silica' },
+        },
+    },
+    Logging    = T{
+        [101] = T{
+            { name = 'Arrowwood Log' },
+            { name = 'Ash Log' },
+            { name = 'Chestnut' },
+            { name = 'Chestnut Log' },
+            { name = 'Elm Log', skill = 5 },
+            { name = 'Fruit Seeds' },
+            { name = 'Maple Log' },
+            { name = 'Yew Log' },
+        },
+        [104] = T{
+            { name = 'Acorn' },
+            { name = 'Arrowwood Log' },
+            { name = 'Ash Log' },
+            { name = 'Dryad Root' },
+            { name = 'Oak Log' },
+            { name = 'Walnut Log' },
+            { name = 'Willow Log' },
+            { name = 'Yew Log' },
+        },
+        [118] = T{
+            { name = 'Arrowwood Log' },
+            { name = 'Buburimu Grape' },
+            { name = 'Dryad Root' },
+            { name = 'Ebony Log' },
+            { name = 'Fruit Seeds' },
+            { name = 'Holly Log' },
+            { name = 'Lauan Log' },
+            { name = 'Rosewood Log' },
+            { name = 'Yagudo Cherry' },
+        },
+        [140] = T{
+            { name = 'Arrowwood Log' },
+            { name = 'Ash Log' },
+            { name = 'Chestnut Log' },
+            { name = 'Elm Log' },
+            { name = 'Holly Log' },
+            { name = 'Maple Log' },
+            { name = 'Willow Log' },
+        },
+    },
+    Mining     = T{
+        [142] = T{
+            { name = 'Copper Ore' },
+            { name = 'Flint Stone' },
+            { name = 'Gold Ore', skill = 10 },
+            { name = 'Iron Ore' },
+            { name = 'Pebble' },
+            { name = 'Red Rock' },
+            { name = 'Silver Ore' },
+            { name = 'Tin Ore' },
+            { name = 'Zinc Ore' },
+        },
+        [143] = T{
+            { name = 'Black Rock' },
+            { name = 'Copper Ore' },
+            { name = 'Iron Ore' },
+            { name = 'Mythril Ore' },
+            { name = 'Pebble' },
+            { name = 'Silver Ore' },
+            { name = 'Tin Ore' },
+            { name = 'Zinc Ore' },
+        },
+        [172] = T{
+            { name = 'Copper Ore' },
+            { name = 'Darksteel Ore', skill = 10 },
+            { name = 'Iron Ore' },
+            { name = 'Pebble' },
+            { name = 'Silver Ore' },
+            { name = 'Snapping Mole' },
+            { name = 'Tin Ore' },
+            { name = 'Zinc Ore' },
+        },
+        [196] = T{
+            { name = 'Copper Ore' },
+            { name = 'Darksteel Ore' },
+            { name = 'Iron Ore' },
+            { name = 'Pebble' },
+            { name = 'Silver Ore' },
+            { name = 'Tin Ore' },
+            { name = 'White Rock' },
+            { name = 'Zinc Ore' },
+        },
+    },
+};
 
 data.RARITY_TIERS = T{
     { rank = 1, name = 'Common',         min_pct = 20,
@@ -243,6 +457,7 @@ data.ZONE_ACTIVITIES  = T{};
 data.SKILL_PATTERNS   = T{};
 data.ZONE_LABELS      = T{};
 
+data.PRICE_ITEMS   = T{};
 data.SKILL_CAPS    = T{};
 data.PROC_PATTERNS = T{};
 data.PROC_NAMES    = T{};
@@ -270,6 +485,18 @@ for _, activity in ipairs(data.ACTIVITIES) do
     end
     data.TRACKED_ZONE_SET[activity] = set;
     data.SKILL_CAPS[activity]       = caps;
+    local named, names = T{}, T{};
+    for _, entries in pairs(data.ZONE_ITEMS[activity] or T{}) do
+        for _, entry in ipairs(entries) do
+            if (not named[entry.name]) then
+                named[entry.name] = true;
+                table.insert(names, entry.name);
+            end
+        end
+    end
+    table.sort(names);
+    data.PRICE_ITEMS[activity] = names;
+
     data.SKILL_PATTERNS[activity]   =
         ('Your %s skill has increased'):fmt(SKILL_NAMES[activity]);
 end

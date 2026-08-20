@@ -1,6 +1,6 @@
 addon.name    = 'HELMdiel';
 addon.author  = 'Masuru';
-addon.version = '0.9.8';
+addon.version = '0.10.0';
 addon.desc    = 'Tracks HELM (Harvesting/Excavation/Logging/Mining) regional gathering fatigue on HorizonXI.';
 addon.link    = 'https://github.com/KisamMeow/HELMdiel';
 
@@ -281,6 +281,24 @@ ashita.events.register('command', 'helmdiel_command', function(e)
         state.debug = not state.debug;
         msg('Debug printing ' .. (state.debug and 'enabled' or 'disabled') .. '.');
 
+    elseif (sub == 'names') then
+        local wrong = 0;
+        for _, activity in ipairs(data.ACTIVITIES) do
+            for zoneId, entries in pairs(data.ZONE_ITEMS[activity] or T{}) do
+                for _, entry in ipairs(entries) do
+                    local shown = resources.item_name(entry.name);
+                    if (shown ~= entry.name) then
+                        wrong = wrong + 1;
+                        msg(('%s %s: %s -> %s')
+                            :fmt(activity, resources.zone_name(zoneId),
+                                 entry.name, shown));
+                    end
+                end
+            end
+        end
+        msg(('%d name%s differ from the inventory spelling.')
+            :fmt(wrong, wrong == 1 and '' or 's'));
+
     elseif (sub == 'reset') then
         local target = args[3] and args[3]:lower() or nil;
 
@@ -331,7 +349,7 @@ ashita.events.register('command', 'helmdiel_command', function(e)
         end
 
     else
-        msg('Usage: /helmdiel or /hd [show|hide|debug|reset <all|activity> [zone]|set <activity> <0-200>|skill <activity> <value>]');
+        msg('Usage: /helmdiel or /hd [show|hide|debug|names|reset <all|activity> [zone]|set <activity> <value>|skill <activity> <value>]');
     end
 end);
 

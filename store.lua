@@ -2,6 +2,7 @@ require('common');
 
 local settings = require('settings');
 local data     = require('data');
+local resources = require('resources');
 
 local store = T{};
 
@@ -25,6 +26,7 @@ local default_settings = T{
 local helm_settings = settings.load(default_settings);
 helm_settings.activities = helm_settings.activities or T{};
 helm_settings.window     = helm_settings.window or T{};
+helm_settings.prices     = helm_settings.prices or T{};
 
 settings.register('settings', 'settings_update', function(s)
     if (s ~= nil) then
@@ -416,6 +418,83 @@ end
 function store.reset_spoils()
     ensure_char(store.char_name()).spoils = T{};
     settings.save();
+end
+
+
+----------------------------------------
+-- Known zone drops
+----------------------------------------
+
+function store.zone_items(activity, zoneId)
+    local group = data.ZONE_ITEMS[activity];
+    if (group == nil) then return EMPTY_LOG; end
+    return group[zoneId] or EMPTY_LOG;
+end
+
+function store.item_skill(activity, zoneId, itemName)
+    for _, entry in ipairs(store.zone_items(activity, zoneId)) do
+        if (entry.name == itemName) then return entry.skill; end
+    end
+    return nil;
+end
+
+function store.item_locked(charname, activity, zoneId, itemName)
+    local needs = store.item_skill(activity, zoneId, itemName);
+    if (needs == nil) then return nil; end
+
+    local skill = store.get_skill(charname, activity);
+    if (skill ~= nil and skill >= needs) then return nil; end
+    return needs;
+end
+----------------------------------------
+-- Item prices
+----------------------------------------
+
+function store.get_price(activity, itemName)
+    local key = resources.price_key(itemName);
+    if (key == nil) then return 0; end
+
+    local group = helm_settings.prices[activity];
+    if (group == nil) then return 0; end
+    return group[key] or 0;
+end
+
+function store.set_price(activity, itemName, value)
+    local key = resources.price_key(itemName);
+    if (key == nil) then return; end
+
+    value = math.max(0, math.floor(tonumber(value) or 0));
+
+    local group = helm_settings.prices[activity];
+    if (group == nil) then
+        if (value == 0) then return; end
+        group = T{};
+        helm_settings.prices[activity] = group;
+    end
+
+    if (value == 0) then
+        group[key] = nil;
+    else
+        group[key] = value;
+    end
+    store.save();
+end
+
+function store.price_of(itemName)
+    local key = resources.price_key(itemName);
+    if (key == nil) then return 0; end
+
+    for _, activity in ipairs(data.ACTIVITIES) do
+        local group = helm_settings.prices[activity];
+        if (group ~= nil and group[key] ~= nil) then
+            return group[key];
+        end
+    end
+    return 0;
+end
+
+function store.priced_items(activity)
+    return data.PRICE_ITEMS[activity] or T{};
 end
 
 function store.reset_all()

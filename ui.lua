@@ -10,6 +10,7 @@ local ui = T{};
 
 ui.visible    = false;
 ui.active_tab = 'Home';
+ui.editing_prices = false;
 
 local actions = T{};
 
@@ -27,17 +28,26 @@ local cell_id = 0;
 local ITEMS = T{};
 local SLOTS = {};
 
-local function item_slot(index)
-    local slot = SLOTS[index];
+local function pooled(pool, index)
+    local slot = pool[index];
     if (slot == nil) then
         slot = {};
-        SLOTS[index] = slot;
+        pool[index] = slot;
     end
     return slot;
 end
 
 local function by_count_then_name(a, b)
+    if (a.tier.rank ~= b.tier.rank) then return a.tier.rank < b.tier.rank; end
     if (a.count ~= b.count) then return a.count > b.count; end
+    return a.name < b.name;
+end
+
+local PRICE_ROWS  = {};
+local PRICE_SLOTS = {};
+
+local function by_activity_then_name(a, b)
+    if (a.order ~= b.order) then return a.order < b.order; end
     return a.name < b.name;
 end
 
@@ -71,15 +81,6 @@ end
 local SPOILS      = T{};
 local SPOIL_SLOTS = {};
 
-local function spoil_slot(index)
-    local slot = SPOIL_SLOTS[index];
-    if (slot == nil) then
-        slot = {};
-        SPOIL_SLOTS[index] = slot;
-    end
-    return slot;
-end
-
 local FIRST_SIZE = { 360, 0 };
 local IS_OPEN    = { false };
 local TABS       = T{};
@@ -88,6 +89,7 @@ local CELL_PAD   = { 0, 0 };
 local BOX_SIZE   = { 0, 0 };
 local ART_SIZE   = { 0, 0 };
 local LINE_GAP   = { 0, 0 };
+local PRICE_BOX  = { 0, 0 };
 
 local STYLE_COLORS;
 local STYLE_VARS;
@@ -337,15 +339,23 @@ local function render_item(item, show_icons, box, art)
 
     imgui.BeginGroup();
     imgui.TextColored(item.tier.color, item.name);
-    imgui.TextDisabled(item.label);
+    if (item.muted) then
+        imgui.TextColored(item.tier.color, item.label);
+    else
+        imgui.TextDisabled(item.label);
+    end
     imgui.EndGroup();
 
     imgui.PopStyleVar(1);
     imgui.EndGroup();
 end
 
-local function render_item_list(log, total)
-    if (total == 0) then
+local SEEN = {};
+
+local function render_item_list(log, total, charname, activity, zoneId)
+    local known = store.zone_items(activity, zoneId);
+
+    if (total == 0 and #known == 0) then
         imgui.TextDisabled('  No gathers recorded yet.');
         return;
     end
@@ -360,9 +370,14 @@ local function render_item_list(log, total)
     local items  = ITEMS;
     local widest = 0;
     local count_n = 0;
+
+    local seen = SEEN;
+    for key in pairs(seen) do seen[key] = nil; end
+
     for itemName, count in pairs(log) do
-        local pct  = count / total * 100;
+        local pct  = total > 0 and (count / total * 100) or 0;
         local name = resources.item_name(itemName);
+        seen[name] = true;
 
         local label = ('%.1f%%'):fmt(pct);
 
@@ -372,14 +387,38 @@ local function render_item_list(log, total)
         if (text_width > widest) then widest = text_width; end
 
         count_n = count_n + 1;
-        local slot = item_slot(count_n);
+        local slot = pooled(SLOTS, count_n);
         slot.name   = name;
         slot.count  = count;
         slot.label  = label;
         slot.text_w = text_width;
         slot.tier   = get_rarity_tier(pct);
+        slot.muted  = false;
         slot.icon   = show_icons and icons.texture(resources.item_id(itemName)) or nil;
         items[count_n] = slot;
+    end
+
+    for _, entry in ipairs(known) do
+        local shown = resources.item_name(entry.name);
+        if (not seen[shown]) then
+            local locked = store.item_locked(charname, activity, zoneId, entry.name);
+            local label  = locked and ('Locked (%d)'):fmt(locked) or 'Not seen';
+
+            local text_width = math.max(imgui.CalcTextSize(shown),
+                                        imgui.CalcTextSize(label));
+            if (text_width > widest) then widest = text_width; end
+
+            count_n = count_n + 1;
+            local slot = pooled(SLOTS, count_n);
+            slot.name   = shown;
+            slot.count  = 0;
+            slot.label  = label;
+            slot.text_w = text_width;
+            slot.tier   = locked and data.TIER_LOCKED or data.TIER_UNSEEN;
+            slot.muted  = true;
+            slot.icon   = show_icons and icons.texture(resources.item_id(entry.name)) or nil;
+            items[count_n] = slot;
+        end
     end
     for index = count_n + 1, #items do items[index] = nil; end
 
@@ -449,7 +488,7 @@ local function render_activity(charname, activity, curZoneId, zoneName)
         :fmt(total, last_skillup_label(charname, activity, curZoneId)));
 
     imgui.Spacing();
-    render_item_list(log, total);
+    render_item_list(log, total, charname, activity, curZoneId);
     imgui.Spacing();
 end
 
@@ -484,26 +523,131 @@ local function render_home(charname, curZoneId)
     end
 end
 
+local function gil(value)
+    local text = tostring(math.floor(value));
+    local head = #text % 3;
+    if (head == 0) then head = 3; end
+
+    local out = text:sub(1, head);
+    for index = head + 1, #text, 3 do
+        out = out .. ',' .. text:sub(index, index + 2);
+    end
+    return out;
+end
+
+local PRICE_BUFFER = {};
+
+local function render_price_editor()
+    imgui.TextDisabled('Set what each item sells for. Spoils multiplies it by your count.');
+    imgui.Spacing();
+
+    PRICE_BOX[1] = 0;
+    PRICE_BOX[2] = px(data.PRICE_EDITOR_HEIGHT);
+    imgui.BeginChild('##hhprices', PRICE_BOX, ImGuiChildFlags_Borders);
+
+    local show_icons = store.item_icons();
+    SPOIL_ICON[1] = px(data.SPOILS_ICON_SIZE);
+    SPOIL_ICON[2] = SPOIL_ICON[1];
+
+    local rows   = PRICE_ROWS;
+    local widest = 0;
+    local n      = 0;
+    for order, activity in ipairs(data.ACTIVITIES) do
+        for _, key in ipairs(store.priced_items(activity)) do
+            local name  = resources.item_name(key);
+            local width = imgui.CalcTextSize(name);
+            if (width > widest) then widest = width; end
+
+            n = n + 1;
+            local slot = pooled(PRICE_SLOTS, n);
+            slot.key      = key;
+            slot.name     = name;
+            slot.name_w   = width;
+            slot.activity = activity;
+            slot.order    = order;
+            rows[n] = slot;
+        end
+    end
+    for index = n + 1, #rows do rows[index] = nil; end
+
+    table.sort(rows, by_activity_then_name);
+
+    local shown = nil;
+    imgui.PushItemWidth(px(data.PRICE_INPUT_WIDTH));
+    for _, item in ipairs(rows) do
+        if (item.activity ~= shown) then
+            if (shown ~= nil) then imgui.Spacing(); end
+            shown = item.activity;
+            imgui.TextColored(data.COLOR_SKILLUP, item.activity);
+            imgui.Spacing();
+        end
+
+        if (show_icons) then
+            local icon = icons.texture(resources.item_id(item.key));
+            if (icon ~= nil) then
+                imgui.Image(icon.handle, SPOIL_ICON);
+            else
+                imgui.Dummy(SPOIL_ICON);
+            end
+            imgui.SameLine();
+        end
+
+        imgui.TextDisabled(item.name);
+        imgui.SameLine(0, widest - item.name_w + px(data.CELL_GUTTER));
+
+        if (resources.price_key(item.key) == nil) then
+            imgui.TextColored(data.COLOR_HIGH, '(?)');
+        else
+            PRICE_BUFFER[1] = store.get_price(item.activity, item.key);
+            if (imgui.InputInt(('##hhprice%s%s'):fmt(item.activity, item.key),
+                               PRICE_BUFFER, 0, 0)) then
+                store.set_price(item.activity, item.key, PRICE_BUFFER[1]);
+            end
+        end
+    end
+    imgui.PopItemWidth();
+
+    imgui.EndChild();
+    imgui.Spacing();
+
+    if (imgui.Button('Done')) then
+        ui.editing_prices = false;
+    end
+    imgui.SameLine(0, px(data.NAV_GAP));
+    imgui.TextDisabled('Saved as you type.');
+    imgui.Spacing();
+end
+
 local function render_spoils(charname)
+    if (ui.editing_prices) then
+        render_price_editor();
+        return;
+    end
+
     local spoils     = store.get_spoils(charname);
     local show_icons = store.item_icons();
 
     imgui.Spacing();
 
-    local items  = SPOILS;
-    local widest = 0;
-    local n      = 0;
+    local items   = SPOILS;
+    local widest  = 0;
+    local widestc = 0;
+    local n       = 0;
     for itemName, count in pairs(spoils) do
         local name = resources.item_name(itemName);
         local width = imgui.CalcTextSize(name);
         if (width > widest) then widest = width; end
 
         n = n + 1;
-        local slot = spoil_slot(n);
+        local slot = pooled(SPOIL_SLOTS, n);
         slot.key    = itemName;
         slot.name   = name;
         slot.count  = count;
         slot.name_w = width;
+        slot.profit = count * store.price_of(itemName);
+        slot.tally  = ('x%d'):fmt(count);
+        slot.tally_w = imgui.CalcTextSize(slot.tally);
+        if (slot.tally_w > widestc) then widestc = slot.tally_w; end
         items[n] = slot;
     end
     for index = n + 1, #items do items[index] = nil; end
@@ -516,7 +660,27 @@ local function render_spoils(charname)
         SPOIL_ICON[1] = px(data.SPOILS_ICON_SIZE);
         SPOIL_ICON[2] = SPOIL_ICON[1];
 
+        local head  = data.SPOILS_HEADERS;
+        local head1 = imgui.CalcTextSize(head[1]);
+        local head2 = imgui.CalcTextSize(head[2]);
+        if (head1 > widest)  then widest  = head1; end
+        if (head2 > widestc) then widestc = head2; end
+
+        if (show_icons) then
+            imgui.Dummy(SPOIL_ICON);
+            imgui.SameLine();
+        end
+        imgui.Text(head[1]);
+        imgui.SameLine(0, widest - head1 + px(data.CELL_GUTTER));
+        imgui.Text(head[2]);
+        imgui.SameLine(0, widestc - head2 + px(data.CELL_GUTTER));
+        imgui.Text(head[3]);
+        imgui.Spacing();
+
+        local total = 0;
         for _, item in ipairs(items) do
+            total = total + item.profit;
+
             if (show_icons) then
                 local icon = icons.texture(resources.item_id(item.key));
                 if (icon ~= nil) then
@@ -529,12 +693,21 @@ local function render_spoils(charname)
 
             imgui.TextDisabled(item.name);
             imgui.SameLine(0, widest - item.name_w + px(data.CELL_GUTTER));
-            imgui.TextDisabled(('x%d'):fmt(item.count));
+            imgui.TextDisabled(item.tally);
+            imgui.SameLine(0, widestc - item.tally_w + px(data.CELL_GUTTER));
+            imgui.TextColored(data.COLOR_SKILLUP, gil(item.profit));
         end
+
+        imgui.Spacing();
+        imgui.TextColored(data.COLOR_SKILLUP, ('Total - %s Gil'):fmt(gil(total)));
     end
 
     divider();
 
+    if (imgui.Button('Edit Prices')) then
+        ui.editing_prices = true;
+    end
+    imgui.SameLine(0, px(data.NAV_GAP));
     if (danger_button('Reset Spoils Session')) then
         store.reset_spoils();
     end
@@ -585,7 +758,7 @@ local function render_activity_tab(charname, activity)
 
             render_procs(charname, activity, zone.id, total, true);
 
-            render_item_list(log, total);
+            render_item_list(log, total, charname, activity, zone.id);
             imgui.Spacing();
         end
     end

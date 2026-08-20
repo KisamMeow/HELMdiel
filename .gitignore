@@ -1,6 +1,7 @@
 # Development files kept locally, never published.
 CLAUDE.md
 test_harness.lua
+stress_harness.lua
 .github/
 docs/
 

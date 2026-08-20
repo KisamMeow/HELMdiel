@@ -8,6 +8,7 @@ local ZONE_NAMES      = T{};
 local ITEM_NAMES      = T{};
 local ITEM_IDS        = T{};
 local ITEM_IDS_BY_NAME = T{};
+local PRICE_KEYS      = T{};
 
 local ITEM_LOOKUP     = T{};
 local ITEM_SCAN_CHUNK = 500;
@@ -114,6 +115,19 @@ function resources.item_id(name)
         ITEM_IDS_BY_NAME[name] = id or false;
     end
     return id;
+end
+
+-- The price key: either name form resolves to the same item id
+function resources.price_key(name)
+    local id = resources.item_id(name);
+    if (id == nil) then return nil; end
+
+    local key = PRICE_KEYS[id];
+    if (key == nil) then
+        key = tostring(id);
+        PRICE_KEYS[id] = key;
+    end
+    return key;
 end
 
 function resources.item_bitmap(id)
