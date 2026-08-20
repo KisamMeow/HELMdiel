@@ -18,11 +18,9 @@ Ashita v4.30+ addon. Version 0.10.0. Released under GPL-3.0. Coded with help fro
 ## Screenshots
 
 | Home | Harvesting |
-|---|---|
+|:---|:---|
 | ![Home tab: the current zone's skill, fatigue bar and drop grid](docs/screenshots/home.png) | ![Harvesting tab: a fatigue bar per zone and a foldout per zone](docs/screenshots/activity.png) |
-
-| Spoils | Settings |
-|---|---|
+| **Spoils** | **Settings** |
 | ![Spoils tab: everything gathered this session and what it is worth](docs/screenshots/Spoils.png) | ![Settings tab](docs/screenshots/settings.png) |
 
 **Home** covers the zone you are standing in. **Activity tabs** cover every
