@@ -127,6 +127,7 @@ data.ITEM_STYLE_DEFAULT = 'Grid';
 data.ITEM_STYLE_COMBO   = combo_string(data.ITEM_STYLES);
 
 -- Items each zone is known to drop, and the skill a gated one needs
+-- Items each zone is known to drop, and the skill a gated one needs
 data.ZONE_ITEMS = T{
     Harvesting = T{
         [51] = T{
@@ -134,8 +135,12 @@ data.ZONE_ITEMS = T{
             { name = 'Eastern Ginger' },
             { name = 'Eggplant' },
             { name = 'Fresh Marjoram' },
+            { name = 'Fresh Mugwort', skill = 20 },
+            { name = 'Im. Tea Leaves', skill = 10 },
             { name = 'Mohbwa Grass' },
             { name = 'Peph. Hive Chip' },
+            { name = 'Red Moko Grass', skill = 10 },
+            { name = 'Simsim' },
             { name = 'Wijnruit' },
         },
         [52] = T{
@@ -143,7 +148,7 @@ data.ZONE_ITEMS = T{
             { name = 'Eastern Ginger' },
             { name = 'Eggplant' },
             { name = 'Fresh Marjoram' },
-            { name = 'Fresh Mugwort', skill = 30 },
+            { name = 'Fresh Mugwort', skill = 20 },
             { name = 'Im. Tea Leaves', skill = 10 },
             { name = 'Mohbwa Grass' },
             { name = 'Peph. Hive Chip' },
@@ -170,6 +175,7 @@ data.ZONE_ITEMS = T{
         },
         [123] = T{
             { name = 'Danceshroom' },
+            { name = 'King Truffle', skill = 40 },
             { name = 'Mushrm. Locust' },
             { name = 'Phalaenopsis' },
             { name = 'Puffball', skill = 20 },
@@ -201,6 +207,7 @@ data.ZONE_ITEMS = T{
             { name = 'Honey' },
             { name = 'King Locust' },
             { name = 'Moko Grass' },
+            { name = 'Phoenix Feather', skill = 30 },
             { name = 'Red Moko Grass', skill = 10 },
             { name = 'Saruta Cotton' },
             { name = 'Spider Web', skill = 30 },
@@ -221,7 +228,9 @@ data.ZONE_ITEMS = T{
             { name = 'Chicken Bone' },
             { name = 'Giant Femur' },
             { name = 'Scorpion Claw' },
+            { name = 'Scorpion Shell' },
             { name = 'Silica' },
+            { name = 'Turtle Shell' },
         },
         [173] = T{
             { name = 'Blue Rock' },
@@ -243,6 +252,15 @@ data.ZONE_ITEMS = T{
         },
     },
     Logging    = T{
+        [25] = T{
+            { name = 'Ash Log' },
+            { name = 'Elm Log' },
+            { name = 'Faerie Apple' },
+            { name = 'Maple Log' },
+            { name = 'Oak Log' },
+            { name = 'Tree Cuttings' },
+            { name = 'Walnut Log' },
+        },
         [101] = T{
             { name = 'Arrowwood Log' },
             { name = 'Ash Log' },

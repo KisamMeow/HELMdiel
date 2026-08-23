@@ -4,7 +4,7 @@ Tracks HorizonXI's HELM system: Harvesting, Excavation, Logging and Mining.
 
 This addon is in very early development, there will be bugs and the UI will be reworked as I get closer to being feature complete.
 
-Ashita v4.30+ addon. Version 0.10.1. Released under GPL-3.0. Coded with help from Claude Opus 5.
+Ashita v4.30+ addon. Version 0.10.2. Released under GPL-3.0. Coded with help from Claude Opus 5.
 
 ## Features
 
@@ -168,7 +168,7 @@ have, so a zone shows what it can give rather than only what it has given:
 Once you gather one it moves up into the list proper with its own percentage,
 whatever your skill says, because gathering it is proof you can.
 
-Drop lists exist for every harvesting and excavation zone, 4 of 11 logging
+Drop lists exist for every harvesting and excavation zone, 5 of 11 logging
 zones and 4 of 7 mining zones. **A list is what is known so far, not a
 guarantee it is complete** — an item missing from one simply shows up the
 first time you gather it. A zone with no list behaves as before and shows only
@@ -201,8 +201,8 @@ or what it goes for on your server. Prices save as you type, are shared by all
 your characters, and **no reset clears them** — not Reset Spoils Session, not
 Reset All Data. Anything you have not priced counts as 0.
 
-The list covers all four activities, each in its own block: 38 harvesting items,
-15 excavation, 19 logging and 14 mining. If an item shows **(?)** instead of a
+The list covers all four activities, each in its own block: 40 harvesting items,
+17 excavation, 21 logging and 14 mining. If an item shows **(?)** instead of a
 box, the name in the list does not match what your game calls it — tell me which
 and it is a one-line fix.
 
