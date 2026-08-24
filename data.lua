@@ -30,14 +30,15 @@ data.NAV_TRAILING = T{ 'Spoils', 'Settings' };
 data.SKILL_INPUT_WIDTH  = 70;
 data.PRICE_INPUT_WIDTH  = 90;
 data.PRICE_EDITOR_HEIGHT = 320.0;
-data.FATIGUE_BAR_HEIGHT = 14.0;
+data.FATIGUE_BAR_HEIGHT = 5.0;
 data.ICON_SIZE         = 32;
 data.SPOILS_ICON_SIZE  = 16;
 data.ITEMS_PER_ROW     = 3;
-data.CELL_PADDING      = 4.0;
-data.CELL_BORDER       = 2.0;
 data.CELL_GUTTER       = 14;
-data.NAV_GAP           = 6.0;
+data.NAV_GAP           = 3.0;
+data.TILE_PAD_X        = 13.0;
+data.TILE_PAD_Y        = 5.0;
+data.TILE_GAP          = 5.0;
 data.FRAME_ROUNDING    = 5.0;
 data.WINDOW_ROUNDING   = 6.0;
 data.TITLE_ALIGN       = { 0.5, 0.5 };
@@ -54,6 +55,12 @@ data.OPACITY_MAX    = 1.00;
 
 -- Gold accent and resize grip
 data.COLOR_GOLD        = { 1.00, 0.84, 0.20, 1.00 };
+data.COLOR_LABEL       = { 0.62, 0.62, 0.67, 1.00 };
+data.COLOR_VALUE       = { 0.93, 0.93, 0.96, 1.00 };
+data.COLOR_CAPTION     = { 0.48, 0.48, 0.54, 1.00 };
+data.COLOR_TILE_BG     = { 0.17, 0.17, 0.21, 0.90 };
+data.COLOR_NAV_TRACK   = { 0.13, 0.13, 0.16, 0.90 };
+data.COLOR_NAV_IDLE    = { 0.00, 0.00, 0.00, 0.00 };
 data.COLOR_GRIP        = { 1.00, 0.84, 0.20, 0.85 };
 data.COLOR_GRIP_HOVER  = { 1.00, 0.90, 0.45, 1.00 };
 data.COLOR_GRIP_ACTIVE = { 1.00, 1.00, 0.75, 1.00 };
@@ -435,7 +442,7 @@ data.PROC_ABILITIES = T{
     Logging    = T{},
     Mining     = T{
         { name = 'Gold Rush',  pattern = 'Gold Rush!',
-          basis = 'successes' },
+          basis = 'successes', repeats = true },
         { name = 'Motherlode', pattern = 'You hit the mother lode',
           basis = 'successes' },
     },
@@ -465,9 +472,20 @@ data.SKILL_VALUE_INTEGER = 'raising it to (%d+)';
 
 data.CHARACTER_KEYS = T{ 'fatigue', 'fatigued', 'item_log', 'skill',
                          'skillups', 'attempts', 'successes', 'spoils',
-                         'since_skillup', 'procs', 'breaks' };
+                         'since_skillup', 'procs', 'breaks', 'goldrush' };
 data.SESSION_KEYS   = T{ 'skillups', 'attempts', 'successes', 'spoils',
                          'since_skillup' };
+data.SESSION_CLOCK  = T{ 'session_start', 'session_last' };
+
+data.SECONDS_PER_HOUR = 3600;
+
+data.PROC_GAP        = 18.0;
+
+data.REPEAT_WINDOW_SECONDS = 30.0;
+
+data.CONFIRM_LABEL   = 'Confirm?';
+data.CONFIRM_SECONDS = 3.0;
+data.BUTTON_PAD      = 10.0;
 
 data.TRACKED_ZONE_SET = T{};
 data.ZONE_ACTIVITIES  = T{};
@@ -478,12 +496,14 @@ data.PRICE_ITEMS   = T{};
 data.SKILL_CAPS    = T{};
 data.PROC_PATTERNS = T{};
 data.PROC_NAMES    = T{};
+data.PROC_REPEATS  = T{};
 
 for _, activity in ipairs(data.ACTIVITIES) do
     local procs = T{};
     for _, ability in ipairs(data.PROC_ABILITIES[activity]) do
         table.insert(procs, ability.pattern);
         data.PROC_NAMES[ability.pattern] = ability.name;
+        if (ability.repeats) then data.PROC_REPEATS[ability.name] = true; end
     end
     data.PROC_PATTERNS[activity] = procs;
 

@@ -1,6 +1,6 @@
 addon.name    = 'HELMdiel';
 addon.author  = 'Masuru';
-addon.version = '0.10.2';
+addon.version = '0.11.0';
 addon.desc    = 'Tracks HELM (Harvesting/Excavation/Logging/Mining) regional gathering fatigue on HorizonXI.';
 addon.link    = 'https://github.com/KisamMeow/HELMdiel';
 
@@ -26,6 +26,10 @@ local state = T{
     last_gather_activity = nil,
     last_gather_zone     = nil,
     last_gather_time     = 0,
+    repeat_activity      = nil,
+    repeat_zone          = nil,
+    repeat_item          = nil,
+    repeat_time          = 0,
 };
 
 local recent_break       = {};
@@ -124,6 +128,13 @@ ashita.events.register('text_in', 'helmdiel_text_in', function(e)
             store.save();
             if (state.debug) then msg(('[proc] counted %s'):fmt(proc_name)); end
         end
+
+        if (data.PROC_REPEATS[proc_name]) then
+            state.repeat_activity = proc_activity;
+            state.repeat_zone     = zoneId;
+            state.repeat_item     = nil;
+            state.repeat_time     = now;
+        end
         return;
     end
 
@@ -183,11 +194,35 @@ ashita.events.register('text_in', 'helmdiel_text_in', function(e)
             store.register_success(activity, zoneId);
             store.register_gather(activity, zoneId);
 
-            if (data.TRACKED_ZONE_SET[activity][zoneId]) then
-                store.register_item_gather(activity, zoneId, detect.clean_item_name(detect.extract_after(text, matched)));
+            local item = detect.clean_item_name(detect.extract_after(text, matched));
+
+            local in_run = state.repeat_activity == activity
+                and state.repeat_zone == zoneId
+                and (state.repeat_item == nil or state.repeat_item == item)
+                and (now - state.repeat_time) < data.REPEAT_WINDOW_SECONDS;
+
+            if (in_run) then
+                state.repeat_item = item;
+                state.repeat_time = now;
+                if (state.debug) then
+                    msg(('[repeat] %s from a Gold Rush node, %s'):fmt(item,
+                        store.count_repeats() and 'counted' or 'not counted'));
+                end
+            else
+                state.repeat_activity = nil;
+                state.repeat_zone     = nil;
+                state.repeat_item     = nil;
             end
-        elseif (barren) then
-            store.register_gather(activity, zoneId);
+
+            if (data.TRACKED_ZONE_SET[activity][zoneId]) then
+                store.register_item_gather(activity, zoneId, item, in_run);
+            end
+        else
+            state.repeat_activity = nil;
+            state.repeat_zone     = nil;
+            state.repeat_item     = nil;
+
+            if (barren) then store.register_gather(activity, zoneId); end
         end
 
         store.save();
@@ -221,6 +256,10 @@ local function clear_detection_state()
     state.last_gather_activity = nil;
     state.last_gather_zone     = nil;
     state.last_gather_time     = 0;
+    state.repeat_activity      = nil;
+    state.repeat_zone          = nil;
+    state.repeat_item          = nil;
+    state.repeat_time          = 0;
 
     recent_break       = {};
     recent_proc        = {};

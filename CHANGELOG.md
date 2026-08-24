@@ -19,6 +19,37 @@ If you notice any items being listed twice but spelt differently then type
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-08-23
+
+### Added
+
+- **Gil per hour on the Spoils tab**, under the total. It is measured from your
+  first gather to your last, so an idle window does not drag it down, and every
+  reset that clears the tally restarts it.
+- **Count Gold Rush Drops in Settings.** A Gold Rush node repeats one item until
+  it runs out; turning this off keeps those repeats out of your drop rates. On
+  by default, and they always count towards Spoils either way.
+- **Hovering the Gold Rush figure** lists what came from Gold Rush nodes in that
+  zone, and says whether they are being counted.
+
+### Changed
+
+- **The window has had a visual pass.** Nothing it tracks or counts has moved.
+- **The nav buttons sit in a track**, so the row reads as one control.
+- **The window sizes itself to its contents again**, instead of staying as wide
+  as the widest tab you last visited.
+- **Home's counters are three tiles**, replacing the counter line. They stretch
+  with the window like the fatigue bar does.
+- **The fatigue bar is a slim track under its label**, so the coloured block is
+  much smaller and no text sits on top of it.
+- **Rarity is the item name's colour**, and the coloured border around each
+  icon is gone, so the art now fills its box.
+- **Settings help text moved into tooltips**, halving the panel's height.
+- **Body text is a neutral grey**, leaving gold as an accent only.
+- **Icon Size is now called Item Size**, since it sizes the item text as well.
+- **The reset buttons take two clicks.** The first arms the button and it asks
+  to be clicked again; it disarms itself after a few seconds.
+
 ## [0.10.2] - 2026-08-23
 
 ### Added
@@ -365,7 +396,8 @@ Initial public release.
 - The rule that a gather decays *all* other zones for that activity was
   inferred from a two-zone observation.
 
-[Unreleased]: https://github.com/KisamMeow/HELMdiel/compare/v0.10.2...HEAD
+[Unreleased]: https://github.com/KisamMeow/HELMdiel/compare/v0.11.0...HEAD
+[0.11.0]: https://github.com/KisamMeow/HELMdiel/compare/v0.10.2...v0.11.0
 [0.10.2]: https://github.com/KisamMeow/HELMdiel/compare/v0.10.1...v0.10.2
 [0.10.1]: https://github.com/KisamMeow/HELMdiel/compare/v0.10.0...v0.10.1
 [0.10.0]: https://github.com/KisamMeow/HELMdiel/compare/v0.9.8...v0.10.0

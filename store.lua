@@ -108,6 +108,14 @@ function store.toggle_home_minimum()
     settings.save();
 end
 
+function store.count_repeats()
+    return helm_settings.window.count_repeats ~= false;
+end
+function store.toggle_count_repeats()
+    helm_settings.window.count_repeats = not store.count_repeats();
+    settings.save();
+end
+
 function store.item_icons()
     return helm_settings.window.item_icons ~= false;
 end
@@ -374,13 +382,40 @@ function store.get_spoils(charname)
     return char.spoils;
 end
 
-function store.register_item_gather(activity, zoneId, itemName)
+function store.register_item_gather(activity, zoneId, itemName, repeated)
     if (itemName == nil) then return; end
 
     local group, key, char = ensure_zone(store.char_name(), 'item_log',
                                          activity, zoneId, T);
-    group[key][itemName]  = (group[key][itemName] or 0) + 1;
+
+    if (repeated) then
+        local run = char.goldrush[key] or T{};
+        char.goldrush[key] = run;
+        run[itemName] = (run[itemName] or 0) + 1;
+    end
+
+    if (not repeated or store.count_repeats()) then
+        group[key][itemName] = (group[key][itemName] or 0) + 1;
+    end
+
     char.spoils[itemName] = (char.spoils[itemName] or 0) + 1;
+
+    local now = os.time();
+    char.session_start = char.session_start or now;
+    char.session_last  = now;
+end
+
+function store.get_repeats(charname, zoneId)
+    local char = helm_settings.characters[charname];
+    if (char == nil or char.goldrush == nil) then return EMPTY_LOG; end
+    return char.goldrush[zone_key(zoneId)] or EMPTY_LOG;
+end
+
+function store.session_span(charname)
+    local char = helm_settings.characters[charname];
+    if (char == nil or char.session_start == nil) then return 0; end
+    return math.max(0, (char.session_last or char.session_start)
+                       - char.session_start);
 end
 
 function store.register_skill(activity, value)
@@ -412,11 +447,18 @@ function store.reset_session()
     for _, key in ipairs(data.SESSION_KEYS) do
         char[key] = T{};
     end
+    for _, key in ipairs(data.SESSION_CLOCK) do
+        char[key] = nil;
+    end
     settings.save();
 end
 
 function store.reset_spoils()
-    ensure_char(store.char_name()).spoils = T{};
+    local char = ensure_char(store.char_name());
+    char.spoils = T{};
+    for _, key in ipairs(data.SESSION_CLOCK) do
+        char[key] = nil;
+    end
     settings.save();
 end
 

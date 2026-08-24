@@ -4,7 +4,7 @@ Tracks HorizonXI's HELM system: Harvesting, Excavation, Logging and Mining.
 
 This addon is in very early development, there will be bugs and the UI will be reworked as I get closer to being feature complete.
 
-Ashita v4.30+ addon. Version 0.10.2. Released under GPL-3.0. Coded with help from Claude Opus 5.
+Ashita v4.30+ addon. Version 0.11.0. Released under GPL-3.0. Coded with help from Claude Opus 5.
 
 ## Features
 
@@ -105,16 +105,23 @@ have drifted.
 (Yuhtunga and Yhoator Jungle) get a section for each.
 
 ```
-Harvesting Skill: 31.3   Skill Ups - 2/28 (7.1%)
-Items Collected - 241    Last Skill Up - 12
+HARVESTING                                                31.3
+
+Giddeus                                              241 / 300
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  COLLECTED         SKILL UPS          LAST SKILL
+  241               7.1%               12
 ```
+
+The fatigue bar is the thin coloured track under each zone's line.
 
 **Skill Ups** is how often a swing in this zone raised your skill.
 
 **Items Collected** is everything logged in this zone, and it survives resets
-so your drop percentages stay meaningful. **Last Skill Up** is how many swings
-ago it was, failures and broken tools included, and it carries across zones
-because your skill does.
+so your drop percentages stay meaningful. **Last Skill** is how many swings ago
+your last skill up was, failures and broken tools included, and it carries
+across zones because your skill does.
 
 It reads **Cap (20)** once your skill reaches the zone's ceiling, naming the
 cap, since the count is then measuring a drought the zone cannot end. Only a
@@ -126,6 +133,13 @@ the Items Collected figure below them. **Practiced Technique** counts against
 the pickaxes that broke or would have, since it fires instead of a break.
 Logging's are not known yet, so it shows none. The activity tabs carry the same
 rates inside each zone's foldout, against that zone's own Items Collected.
+
+**Gold Rush repeats one item until the node runs out.** Those extra items are
+real, but they are not a fair sample of what the zone drops, so
+**Count Gold Rush Drops** in Settings decides whether they count towards your
+drop percentages. It is on by default, which keeps rates behaving as they
+always have. Either way they are always in your Spoils tally, and hovering the
+Gold Rush figure lists exactly which items came from a Gold Rush node here.
 
 These start counting from 0.9.6, while Items Collected goes back as far as your
 drop history does. **If you gathered before 0.9.6, use Reset All Data for an
@@ -143,8 +157,7 @@ Fatigue bar colours, as a share of that zone's own cap:
 Red is the counter reaching the cap. The **FATIGUED** label is separate and
 only appears when the game itself says the zone is tapped out.
 
-Each item shows its icon in a border coloured by rarity, with its name in the
-same colour, so you can read rarity without a label:
+Each item's name is coloured by rarity, so you can read it without a label:
 
 | Tier | Colour | Share of that zone's gathers |
 |---|---|---|
@@ -189,10 +202,17 @@ Item                   Amount      Gil
 [icon]  Sprig of Dyer's Woad   x12   14,400
 
 Total - 14,535 Gil
+Per Hour - 12,458 Gil   over 1h 10m
 ```
 
-No rates, no rarity, just what you are carrying home. It survives reloading
-and logging out.
+No rarity, just what you are carrying home. It survives reloading and logging
+out.
+
+**Per Hour is measured from your first gather to your last**, not to the
+current time, so leaving the window open while you do something else does not
+drag the figure down. It stops moving when you stop gathering and picks up
+again on the next one. Every reset that clears the tally clears the clock with
+it, so a fresh session starts from your next gather.
 
 **Prices are yours to set.** The game does not tell addons what anything sells
 for, so **Edit Prices** on the Spoils tab opens a list of every gatherable item
@@ -208,11 +228,14 @@ and it is a one-line fix.
 
 ## Settings
 
+Hover any control for a one-line explanation.
+
 | Setting | What it does |
 |---|---|
 | Home Minimum Mode | Home shows only skill and fatigue. Tracking continues |
+| Count Gold Rush Drops | On by default. Off keeps a Gold Rush node's repeats out of your drop rates |
 | Item Icons | Item art beside each drop. On by default |
-| Icon Size | Large or Small. The rarity border is drawn either way |
+| Item Size | Large or Small. Sizes the item text too, even with icons off |
 | Item Style | Grid packs three across, List gives each item a row and is far narrower |
 | Opacity | How see-through the window is. Stops short of invisible |
 | UI Scale | 75%, 100% or 125%. Text, icons and spacing together |
@@ -243,6 +266,10 @@ Your name comes off the filename too, so a minimal export writes
 `HELMdiel_export_<date>_<time>.csv` instead.
 
 Two reset buttons:
+
+**Each reset button takes two clicks.** The first arms it and the button asks
+`Confirm?`; the second does the work. It disarms itself after a few seconds if
+you leave it.
 
 - **Reset Gather/Skill Ups** clears the Home counters and the Spoils tab. Your
   fatigue, drop history, skill levels and special skill counts are kept, since

@@ -11,6 +11,8 @@ local ui = T{};
 ui.visible    = false;
 ui.active_tab = 'Home';
 ui.editing_prices = false;
+ui.armed = nil;
+ui.armed_at = 0;
 
 local actions = T{};
 
@@ -85,7 +87,6 @@ local FIRST_SIZE = { 360, 0 };
 local IS_OPEN    = { false };
 local TABS       = T{};
 local SPOIL_ICON = { 0, 0 };
-local CELL_PAD   = { 0, 0 };
 local BOX_SIZE   = { 0, 0 };
 local ART_SIZE   = { 0, 0 };
 local LINE_GAP   = { 0, 0 };
@@ -102,7 +103,7 @@ local function window_style()
         { ImGuiCol_TitleBg,          WINDOW_BG },
         { ImGuiCol_TitleBgActive,    WINDOW_BG },
         { ImGuiCol_TitleBgCollapsed, WINDOW_BG },
-        { ImGuiCol_TextDisabled,     data.COLOR_GOLD },
+        { ImGuiCol_TextDisabled,     data.COLOR_LABEL },
 
         { ImGuiCol_ResizeGrip,        data.COLOR_GRIP },
         { ImGuiCol_ResizeGripHovered, data.COLOR_GRIP_HOVER },
@@ -163,6 +164,158 @@ local function get_rarity_tier(pct)
     return data.RARITY_TIERS[#data.RARITY_TIERS];
 end
 
+local CLIP_MIN = { 0, 0 };
+local CLIP_MAX = { 0, 0 };
+local TEXT_POS = { 0, 0 };
+
+local function clip_text(list, x0, x1, y0, y1, col, text)
+    CLIP_MIN[1] = x0;
+    CLIP_MIN[2] = y0;
+    CLIP_MAX[1] = x1;
+    CLIP_MAX[2] = y1;
+
+    list:PushClipRect(CLIP_MIN, CLIP_MAX, true);
+    local ok, err = pcall(list.AddText, list, TEXT_POS, col, text);
+    list:PopClipRect();
+
+    if (not ok) then error(err, 0); end
+end
+
+local right_fill = nil;
+local RIGHT_POS  = { 0, 0 };
+
+local function right_text(text, color, right, top)
+    RIGHT_POS[1] = right - imgui.CalcTextSize(text);
+    RIGHT_POS[2] = top;
+    imgui.GetWindowDrawList():AddText(RIGHT_POS,
+        imgui.GetColorU32(color), text);
+end
+
+local TILE_SIZE = { 0, 0 };
+local TILE_PAD  = { 0, 0 };
+local TILE_LINE = { 0, 0 };
+local TILES     = {};
+
+local function tile(index, label, value, color)
+    local slot = TILES[index];
+    if (slot == nil) then slot = {}; TILES[index] = slot; end
+    slot.label, slot.value, slot.color = label, value, color;
+    return slot;
+end
+
+local TILE_MIN  = { 0, 0 };
+local TILE_MAX  = { 0, 0 };
+local tile_fill = nil;
+
+local function paint_tiles(count, x, y, w, h)
+    local list  = imgui.GetWindowDrawList();
+    local gap   = px(data.TILE_GAP);
+    local width = (w - gap * (count - 1)) / count;
+    local padx  = px(data.TILE_PAD_X);
+    local pady  = px(data.TILE_PAD_Y);
+    local drop  = imgui.GetTextLineHeight() + px(data.ITEM_LINE_GAP);
+    local plate = imgui.GetColorU32(data.COLOR_TILE_BG);
+    local cap   = imgui.GetColorU32(data.COLOR_CAPTION);
+
+    for index = 1, count do
+        local slot = TILES[index];
+        local left = x + (width + gap) * (index - 1);
+
+        TILE_MIN[1] = left;
+        TILE_MIN[2] = y;
+        TILE_MAX[1] = left + width;
+        TILE_MAX[2] = y + h;
+        list:AddRectFilled(TILE_MIN, TILE_MAX, plate, px(data.FRAME_ROUNDING));
+
+        TEXT_POS[1] = left + padx;
+        TEXT_POS[2] = y + pady;
+        clip_text(list, left, left + width, y, y + h, cap, slot.label);
+
+        TEXT_POS[2] = y + pady + drop;
+        clip_text(list, left, left + width, y, y + h,
+            imgui.GetColorU32(slot.color or data.COLOR_VALUE), slot.value);
+    end
+end
+
+local function lay_out_tiles(count, avail, height)
+    local gap = px(data.TILE_GAP);
+
+    TILE_PAD[1] = px(data.TILE_PAD_X);
+    TILE_PAD[2] = px(data.TILE_PAD_Y);
+    TILE_LINE[1] = 0;
+    TILE_LINE[2] = px(data.ITEM_LINE_GAP);
+
+    TILE_SIZE[1] = (avail - gap * (count - 1)) / count;
+    TILE_SIZE[2] = height;
+
+    imgui.PushStyleColor(ImGuiCol_ChildBg, data.COLOR_TILE_BG);
+    imgui.PushStyleVar(ImGuiStyleVar_ChildRounding, px(data.FRAME_ROUNDING));
+    imgui.PushStyleVar(ImGuiStyleVar_WindowPadding, TILE_PAD);
+    imgui.PushStyleVar(ImGuiStyleVar_ItemSpacing, TILE_LINE);
+
+    for index = 1, count do
+        if (index > 1) then imgui.SameLine(0, gap); end
+        local slot = TILES[index];
+        imgui.BeginChild(('##hhtile%d'):fmt(index), TILE_SIZE,
+            ImGuiChildFlags_AlwaysUseWindowPadding, ImGuiWindowFlags_NoScrollbar);
+        imgui.TextColored(data.COLOR_CAPTION, slot.label);
+        imgui.TextColored(slot.color or data.COLOR_VALUE, slot.value);
+        imgui.EndChild();
+    end
+
+    imgui.PopStyleVar(3);
+    imgui.PopStyleColor(1);
+end
+
+local function render_tiles(count)
+    local avail  = imgui.GetContentRegionAvail();
+    local height = imgui.GetTextLineHeight() * 2 + px(data.ITEM_LINE_GAP)
+                   + px(data.TILE_PAD_Y) * 2;
+
+    if (tile_fill ~= false) then
+        local x, y = imgui.GetCursorScreenPos();
+        tile_fill = pcall(paint_tiles, count, x, y, avail, height);
+    end
+
+    if (not tile_fill) then
+        lay_out_tiles(count, avail, height);
+        return;
+    end
+
+    TILE_SIZE[1] = 0;
+    TILE_SIZE[2] = height;
+    imgui.Dummy(TILE_SIZE);
+end
+
+
+
+local function render_skill_head(charname, activity)
+    local head  = activity:upper();
+    local skill = store.get_skill(charname, activity);
+    local text  = skill == nil and 'unknown' or ('%.1f'):fmt(skill);
+
+    local avail = imgui.GetContentRegionAvail();
+    local x, y  = imgui.GetCursorScreenPos();
+
+    imgui.TextColored(data.COLOR_CAPTION, head);
+
+    if (right_fill ~= false) then
+        right_fill = pcall(right_text, text, data.COLOR_VALUE, x + avail, y);
+    end
+
+    if (not right_fill) then
+        local hw = imgui.CalcTextSize(head);
+        local vw = imgui.CalcTextSize(text);
+        imgui.SameLine(0, math.max(0, avail - hw - vw));
+        imgui.TextColored(data.COLOR_VALUE, text);
+    end
+end
+
+local function as_rate(part, whole)
+    if (whole <= 0) then return '-'; end
+    return ('%.1f%%'):fmt(part / whole * 100);
+end
+
 local function render_skill(charname, activity, zoneId)
     local skill = store.get_skill(charname, activity);
     if (skill == nil) then
@@ -188,34 +341,69 @@ end
 -- Fatigue bar
 local bar_fill = nil;
 
+local BAR_MIN  = { 0, 0 };
+local BAR_MAX  = { 0, 0 };
+local BAR_SIZE = { 0, 0 };
+
 local function fill_bar(fraction, color)
     local list = imgui.GetWindowDrawList();
     local w    = imgui.GetContentRegionAvail();
     local x, y = imgui.GetCursorScreenPos();
     local h    = px(data.FATIGUE_BAR_HEIGHT);
-    local r    = px(data.FRAME_ROUNDING);
+    local r    = h * 0.5;
 
-    list:AddRectFilled({ x, y }, { x + w, y + h },
-        imgui.GetColorU32(data.COLOR_BAR_BG), r);
+    BAR_MIN[1] = x;
+    BAR_MIN[2] = y;
+    BAR_MAX[1] = x + w;
+    BAR_MAX[2] = y + h;
+    list:AddRectFilled(BAR_MIN, BAR_MAX, imgui.GetColorU32(data.COLOR_BAR_BG), r);
 
     if (fraction > 0) then
-        list:AddRectFilled({ x, y }, { x + w * fraction, y + h },
-            imgui.GetColorU32(color), r);
+        BAR_MAX[1] = x + w * fraction;
+        list:AddRectFilled(BAR_MIN, BAR_MAX, imgui.GetColorU32(color), r);
     end
 
-    imgui.Dummy({ 0, h });
+    BAR_SIZE[1] = 0;
+    BAR_SIZE[2] = h;
+    imgui.Dummy(BAR_SIZE);
+end
+
+-- Hover help.
+local function hint(text)
+    if (imgui.IsItemHovered()) then imgui.SetTooltip(text); end
+end
+
+local PROC_PARTS = {};
+local REPEAT_NAMES = {};
+
+local function repeat_note(charname, zoneId)
+    local names, count = REPEAT_NAMES, 0;
+
+    for itemName, tally in pairs(store.get_repeats(charname, zoneId)) do
+        count = count + 1;
+        names[count] = ('%s x%d'):fmt(resources.item_name(itemName), tally);
+    end
+    for index = count + 1, #names do names[index] = nil; end
+
+    if (count == 0) then
+        return 'Nothing has dropped from a Gold Rush node here yet.';
+    end
+
+    table.sort(names);
+    return ('From Gold Rush nodes here:\n%s\n\n%s'):fmt(
+        table.concat(names, '\n', 1, count),
+        store.count_repeats()
+            and 'These are counted in the rates above.'
+            or  'These are left out of the rates above.');
 end
 
 local function render_procs(charname, activity, zoneId, collected, quiet)
     local abilities = data.PROC_ABILITIES[activity];
     if (#abilities == 0) then return; end
 
-    local line  = '';
     local shown = false;
 
     for index, ability in ipairs(abilities) do
-        if (index > 1) then line = line .. '   '; end
-
         local fired = store.get_proc(charname, ability.name, zoneId);
 
         local outof = collected;
@@ -225,26 +413,52 @@ local function render_procs(charname, activity, zoneId, collected, quiet)
 
         if (fired > 0 or outof > 0) then shown = true; end
 
+        local slot = PROC_PARTS[index];
+        if (slot == nil) then slot = {}; PROC_PARTS[index] = slot; end
+        slot.repeats = ability.repeats;
+
         if (outof > 0) then
-            line = line .. ('%s - %d/%d (%.1f%%)')
+            slot.text = ('%s - %d/%d (%.1f%%)')
                 :fmt(ability.name, fired, outof, fired / outof * 100);
         else
-            line = line .. ('%s - %d/0'):fmt(ability.name, fired);
+            slot.text = ('%s - %d/0'):fmt(ability.name, fired);
         end
     end
 
     if (quiet and not shown) then return; end
-    imgui.TextDisabled(line);
+
+    for index = 1, #abilities do
+        if (index > 1) then imgui.SameLine(0, px(data.PROC_GAP)); end
+
+        local slot = PROC_PARTS[index];
+        imgui.TextDisabled(slot.text);
+        if (slot.repeats) then hint(repeat_note(charname, zoneId)); end
+    end
 end
 
 local function render_fatigue(charname, activity, zoneId, zoneName)
     local value = store.get_fatigue(charname, activity, zoneId);
     local cap   = store.fatigue_cap(charname, activity, zoneId);
     local color = get_fatigue_color(value, cap);
-
-    imgui.TextColored(color, ('%s: %d / %d'):fmt(zoneName, value, cap));
+    local count = ('%d / %d'):fmt(value, cap);
 
     local fraction = value / cap;
+
+    local avail = imgui.GetContentRegionAvail();
+    local x, y  = imgui.GetCursorScreenPos();
+
+    imgui.TextColored(data.COLOR_VALUE, zoneName);
+
+    if (right_fill ~= false) then
+        right_fill = pcall(right_text, count, data.COLOR_LABEL, x + avail, y);
+    end
+
+    if (not right_fill) then
+        local zw = imgui.CalcTextSize(zoneName);
+        local cw = imgui.CalcTextSize(count);
+        imgui.SameLine(0, math.max(0, avail - zw - cw));
+        imgui.TextColored(data.COLOR_LABEL, count);
+    end
 
     if (bar_fill ~= false) then
         bar_fill = pcall(fill_bar, fraction, color);
@@ -283,10 +497,42 @@ local function tinted_button(label, base, hover, active)
     return pressed;
 end
 
--- Red: throws data away.
+
+-- Red: throws data away. Takes two clicks.
+local DANGER_SIZE = { 0, 0 };
+
 local function danger_button(label)
-    return tinted_button(label, data.COLOR_DANGER,
-        data.COLOR_DANGER_HOVER, data.COLOR_DANGER_ACTIVE);
+    local now   = os.clock();
+    local armed = (ui.armed == label)
+                  and (now - ui.armed_at) < data.CONFIRM_SECONDS;
+
+    if (ui.armed == label and not armed) then ui.armed = nil; end
+
+    local wide = imgui.CalcTextSize(label);
+    local ask  = imgui.CalcTextSize(data.CONFIRM_LABEL);
+    DANGER_SIZE[1] = math.max(wide, ask) + px(data.BUTTON_PAD) * 2;
+    DANGER_SIZE[2] = imgui.GetFrameHeight();
+
+    imgui.PushStyleColor(ImGuiCol_Button,
+        armed and data.COLOR_DANGER_ACTIVE or data.COLOR_DANGER);
+    imgui.PushStyleColor(ImGuiCol_ButtonHovered, data.COLOR_DANGER_HOVER);
+    imgui.PushStyleColor(ImGuiCol_ButtonActive,  data.COLOR_DANGER_ACTIVE);
+
+    local pressed = imgui.Button(('%s###%s')
+        :fmt(armed and data.CONFIRM_LABEL or label, label), DANGER_SIZE);
+
+    imgui.PopStyleColor(3);
+
+    if (not pressed) then return false; end
+
+    if (armed) then
+        ui.armed = nil;
+        return true;
+    end
+
+    ui.armed    = label;
+    ui.armed_at = now;
+    return false;
 end
 
 -- Green: produces something.
@@ -295,20 +541,14 @@ local function success_button(label)
         data.COLOR_SUCCESS_HOVER, data.COLOR_SUCCESS_ACTIVE);
 end
 
-local function render_item_icon(item, box, art)
-    imgui.PushStyleColor(ImGuiCol_Border, item.tier.color);
-    imgui.PushStyleVar(ImGuiStyleVar_ChildBorderSize, px(data.CELL_BORDER));
-
-    CELL_PAD[1] = px(data.CELL_PADDING);
-    CELL_PAD[2] = CELL_PAD[1];
-    imgui.PushStyleVar(ImGuiStyleVar_WindowPadding, CELL_PAD);
-
-    BOX_SIZE[1] = box;
-    BOX_SIZE[2] = box;
+local function render_item_icon(item, art)
+    BOX_SIZE[1] = art;
+    BOX_SIZE[2] = art;
     ART_SIZE[1] = art;
     ART_SIZE[2] = art;
 
-    if (imgui.BeginChild(next_cell_id(), BOX_SIZE, ImGuiChildFlags_Borders)) then
+    if (imgui.BeginChild(next_cell_id(), BOX_SIZE,
+                         ImGuiChildFlags_None, ImGuiWindowFlags_NoScrollbar)) then
         if (item.icon ~= nil) then
             imgui.Image(item.icon.handle, ART_SIZE);
         else
@@ -316,22 +556,19 @@ local function render_item_icon(item, box, art)
         end
     end
     imgui.EndChild();
-
-    imgui.PopStyleVar(2);
-    imgui.PopStyleColor(1);
 end
 
-local function render_item(item, show_icons, box, art)
+local function render_item(item, show_icons, art)
     imgui.BeginGroup();
 
     if (show_icons) then
         local text_h = imgui.GetTextLineHeight() * 2 + px(data.ITEM_LINE_GAP);
         local top    = imgui.GetCursorPosY();
 
-        imgui.SetCursorPosY(top + math.max(0, (text_h - box) * 0.5));
-        render_item_icon(item, box, art);
+        imgui.SetCursorPosY(top + math.max(0, (text_h - art) * 0.5));
+        render_item_icon(item, art);
         imgui.SameLine();
-        imgui.SetCursorPosY(top + math.max(0, (box - text_h) * 0.5));
+        imgui.SetCursorPosY(top + math.max(0, (art - text_h) * 0.5));
     end
 
     LINE_GAP[2] = px(data.ITEM_LINE_GAP);
@@ -425,7 +662,6 @@ local function render_item_list(log, total, charname, activity, zoneId)
     table.sort(items, by_count_then_name);
 
     local art  = px(store.icon_size());
-    local box  = art + px(data.CELL_PADDING * 2 + data.CELL_BORDER * 2);
     local list = store.item_style() == 'List';
 
     local last_rank = nil;
@@ -443,7 +679,7 @@ local function render_item_list(log, total, charname, activity, zoneId)
             imgui.SameLine(0, widest - previous.text_w + px(data.CELL_GUTTER));
         end
 
-        render_item(item, show_icons, box, art);
+        render_item(item, show_icons, art);
 
         if (not list) then
             column = column + 1;
@@ -474,18 +710,23 @@ local function render_activity(charname, activity, curZoneId, zoneName)
     local log   = store.get_item_log(charname, activity, curZoneId);
     local total = count_gathers(log);
 
-    render_skill(charname, activity, curZoneId);
-    if (not store.home_minimum()) then
-        render_procs(charname, activity, curZoneId, total);
-    end
+    render_skill_head(charname, activity);
     imgui.Spacing();
 
     render_fatigue(charname, activity, curZoneId, zoneName);
 
     if (store.home_minimum()) then return; end
 
-    imgui.TextDisabled(('Items Collected - %d   Last Skill Up - %s')
-        :fmt(total, last_skillup_label(charname, activity, curZoneId)));
+    local ups    = store.get_skillups(charname, activity, curZoneId);
+    local swings = store.get_attempts(charname, activity, curZoneId);
+
+    tile(1, 'COLLECTED', ('%d'):fmt(total));
+    tile(2, 'SKILL UPS', as_rate(ups, swings), data.COLOR_SKILLUP);
+    tile(3, 'LAST SKILL', last_skillup_label(charname, activity, curZoneId));
+    render_tiles(3);
+
+    imgui.Spacing();
+    render_procs(charname, activity, curZoneId, total);
 
     imgui.Spacing();
     render_item_list(log, total, charname, activity, curZoneId);
@@ -521,6 +762,14 @@ local function render_home(charname, curZoneId)
         imgui.TextDisabled('All activities here are hidden.');
         imgui.Spacing();
     end
+end
+
+local function span_label(seconds)
+    local hours = math.floor(seconds / data.SECONDS_PER_HOUR);
+    local mins  = math.floor(seconds % data.SECONDS_PER_HOUR / 60);
+    if (hours > 0) then return ('%dh %dm'):fmt(hours, mins); end
+    if (mins > 0) then return ('%dm'):fmt(mins); end
+    return ('%ds'):fmt(seconds);
 end
 
 local function gil(value)
@@ -614,7 +863,7 @@ local function render_price_editor()
         ui.editing_prices = false;
     end
     imgui.SameLine(0, px(data.NAV_GAP));
-    imgui.TextDisabled('Saved as you type.');
+    hint('Saved as you type.');
     imgui.Spacing();
 end
 
@@ -700,6 +949,14 @@ local function render_spoils(charname)
 
         imgui.Spacing();
         imgui.TextColored(data.COLOR_SKILLUP, ('Total - %s Gil'):fmt(gil(total)));
+
+        local span = store.session_span(charname);
+        if (span > 0) then
+            imgui.TextColored(data.COLOR_GOLD, ('Per Hour - %s Gil   over %s')
+                :fmt(gil(total * data.SECONDS_PER_HOUR / span), span_label(span)));
+        else
+            imgui.TextColored(data.COLOR_GOLD, 'Per Hour - not enough time yet');
+        end
     end
 
     divider();
@@ -711,7 +968,7 @@ local function render_spoils(charname)
     if (danger_button('Reset Spoils Session')) then
         store.reset_spoils();
     end
-    imgui.TextDisabled('Clears only this tab.');
+    hint('Clears only this tab.');
     imgui.Spacing();
 end
 
@@ -782,24 +1039,24 @@ local function render_settings(charname)
     if (imgui.Checkbox('Home Minimum Mode', { store.home_minimum() })) then
         store.toggle_home_minimum();
     end
-    imgui.TextDisabled('Home shows only skill and fatigue.');
+    hint('Home shows only skill and fatigue.');
 
     imgui.Spacing();
 
     if (imgui.Checkbox('Item Icons', { store.item_icons() })) then
         store.toggle_item_icons();
     end
-    imgui.TextDisabled('Show item art beside drop counts.');
+    hint('Show item art beside drop counts.');
 
     imgui.Spacing();
 
     imgui.PushItemWidth(px(data.SKILL_INPUT_WIDTH));
     local sized = { store.icon_size_index() - 1 };
-    if (imgui.Combo('Icon Size', sized, data.ICON_SIZE_COMBO)) then
+    if (imgui.Combo('Item Size', sized, data.ICON_SIZE_COMBO)) then
         store.set_icon_size_index(sized[1] + 1);
     end
     imgui.PopItemWidth();
-    imgui.TextDisabled('Size of the item art.');
+    hint('Size of the item art and its text.');
 
     imgui.Spacing();
 
@@ -809,7 +1066,7 @@ local function render_settings(charname)
         store.set_item_style_index(styled[1] + 1);
     end
     imgui.PopItemWidth();
-    imgui.TextDisabled('Grid packs three across, List is one per row.');
+    hint('Grid packs three across, List is one per row.');
 
     imgui.Spacing();
 
@@ -819,7 +1076,7 @@ local function render_settings(charname)
         store.set_window_opacity(opacity[1]);
     end
     imgui.PopItemWidth();
-    imgui.TextDisabled('Window and title bar background.');
+    hint('Window and title bar background.');
 
     imgui.Spacing();
 
@@ -829,7 +1086,7 @@ local function render_settings(charname)
         store.set_ui_scale_index(chosen[1] + 1);
     end
     imgui.PopItemWidth();
-    imgui.TextDisabled('Size of text, icons and spacing.');
+    hint('Size of text, icons and spacing.');
 
     divider();
     imgui.TextDisabled('Shown activities');
@@ -863,6 +1120,14 @@ local function render_settings(charname)
 
     divider();
 
+    if (imgui.Checkbox('Count Gold Rush Drops', { store.count_repeats() })) then
+        store.toggle_count_repeats();
+    end
+    hint('Gold Rush makes a node repeat one item. Off keeps those repeats out '
+         .. 'of your drop rates.');
+
+    imgui.Spacing();
+
     if (imgui.Checkbox('Auto-open on gather', { store.auto_popup() })) then
         store.toggle_auto_popup();
     end
@@ -872,35 +1137,35 @@ local function render_settings(charname)
     if (imgui.Checkbox('Auto-Resize Window', { store.auto_resize() })) then
         store.toggle_auto_resize();
     end
-    imgui.TextDisabled('Off: drag the gold corner to resize.');
+    hint('Off: drag the gold corner to resize.');
 
     divider();
 
     if (success_button('Export CSV')) then
         actions.export();
     end
-    imgui.TextDisabled('Writes a spreadsheet beside your settings.');
+    hint('Writes a spreadsheet beside your settings.');
 
     imgui.Spacing();
 
     if (imgui.Checkbox('Minimum Data', { store.export_minimal() })) then
         store.toggle_export_minimal();
     end
-    imgui.TextDisabled('Drops your name and personal counters.');
+    hint('Drops your name and personal counters.');
 
     divider();
 
     if (danger_button('Reset Gather/Skill Ups')) then
         actions.reset_session();
     end
-    imgui.TextDisabled('Clears gather and skill up counters.');
+    hint('Clears gather and skill up counters.');
 
     imgui.Spacing();
 
     if (danger_button('Reset All Data')) then
         actions.reset_all();
     end
-    imgui.TextDisabled('Clears everything for this character.');
+    hint('Clears everything for this character.');
     imgui.Spacing();
 end
 
@@ -925,6 +1190,20 @@ local function visible_tabs()
     return TABS;
 end
 
+local NAV_MIN  = { 0, 0 };
+local NAV_MAX  = { 0, 0 };
+local nav_fill = nil;
+
+local function nav_track(x, y, w, h)
+    NAV_MIN[1] = x;
+    NAV_MIN[2] = y;
+    NAV_MAX[1] = x + w;
+    NAV_MAX[2] = y + h;
+
+    imgui.GetWindowDrawList():AddRectFilled(NAV_MIN, NAV_MAX,
+        imgui.GetColorU32(data.COLOR_NAV_TRACK), px(data.FRAME_ROUNDING));
+end
+
 local function render_nav(tabs)
     local showing = false;
     for _, name in ipairs(tabs) do
@@ -932,19 +1211,24 @@ local function render_nav(tabs)
     end
     if (not showing) then ui.active_tab = tabs[1]; end
 
+    if (nav_fill ~= false) then
+        local x, y = imgui.GetCursorScreenPos();
+        nav_fill = pcall(nav_track, x, y, imgui.GetContentRegionAvail(),
+                                          imgui.GetFrameHeight());
+    end
+
     for index, name in ipairs(tabs) do
         if (index > 1) then imgui.SameLine(0, px(data.NAV_GAP)); end
 
         local selected = (name == ui.active_tab);
-        if (selected) then
-            imgui.PushStyleColor(ImGuiCol_Button, data.COLOR_NAV_SELECTED);
-        end
+        imgui.PushStyleColor(ImGuiCol_Button,
+            selected and data.COLOR_NAV_SELECTED or data.COLOR_NAV_IDLE);
 
         if (imgui.Button(nav_label(name))) then
             ui.active_tab = name;
         end
 
-        if (selected) then imgui.PopStyleColor(1); end
+        imgui.PopStyleColor(1);
     end
 end
 
