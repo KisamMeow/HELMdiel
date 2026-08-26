@@ -19,6 +19,11 @@ If you notice any items being listed twice but spelt differently then type
 
 ## [Unreleased]
 
+### Fixed
+
+- **Tools no longer offer a Vendor tick box.** It did nothing, since a tool is
+  never something you carry home.
+
 ## [0.12.0] - 2026-08-26
 
 ### Added

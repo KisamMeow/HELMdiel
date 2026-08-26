@@ -1031,9 +1031,11 @@ local function render_price_editor()
             if (imgui.InputInt(item.id, PRICE_BUFFER, 0, 0)) then
                 store.set_price(item.activity, item.key, PRICE_BUFFER[1]);
             end
-            imgui.SameLine(0, px(data.CELL_GUTTER));
-            if (checkbox('Vendor', store.is_vendor(item.key), item.id)) then
-                store.toggle_vendor(item.key);
+            if (item.activity ~= data.TOOL_KEY) then
+                imgui.SameLine(0, px(data.CELL_GUTTER));
+                if (checkbox('Vendor', store.is_vendor(item.key), item.id)) then
+                    store.toggle_vendor(item.key);
+                end
             end
         end
     end

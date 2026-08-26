@@ -16,9 +16,9 @@ from Claude Opus 5.
 
 | Home | Harvesting |
 |:---:|:---:|
-| ![Home tab: the current zone's skill, fatigue bar and drop grid](docs/screenshots/home.png) | ![Harvesting tab: a fatigue bar per zone and a foldout per zone](docs/screenshots/activity.png) |
+| ![Home tab: the current zone's skill and fatigue bar, a row of stat tiles, and the drop grid below them](docs/screenshots/home.png) | ![Harvesting tab: a fatigue bar per zone, one of them capped and red, and a foldout per zone carrying its own rates and drops](docs/screenshots/activity.png) |
 | **Spoils** | **Settings** |
-| ![Spoils tab: everything gathered this session and what it is worth](docs/screenshots/Spoils.png) | ![Settings tab](docs/screenshots/settings.png) |
+| ![Spoils tab: the session tally sorted by gil, with Net Gil, Tools Broken and Per Hour under it](docs/screenshots/spoils.png) | ![Settings tab: the Display, Activities, Skill Levels, Tracking, Export and Reset blocks](docs/screenshots/settings.png) |
 
 **Home** is the zone you are standing in; the **four activity tabs** are every
 zone for one activity, drops behind a foldout; **Spoils** is the session tally
@@ -199,6 +199,7 @@ item showing **(?)** instead of a box has a name your game does not
 recognise — tell me which and it is a one-line fix.
 
 **Tick Vendor beside an item** to mark it as something you just sell to an NPC.
+Tools have no such box, since you never carry one home.
 Those items read grey in the Spoils list while everything else reads white, so
 what is actually worth carrying stands out. **Hide Vendor Items** on the Spoils
 tab drops them from the list entirely — they still count towards Net Gil and
