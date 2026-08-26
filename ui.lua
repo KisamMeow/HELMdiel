@@ -706,9 +706,10 @@ local function render_item(item, show_icons, art)
     imgui.EndGroup();
 end
 
-local SEEN = {};
+local SEEN   = {};
+local PROVEN = {};
 
-local function render_item_list(log, total, charname, activity, zoneId)
+local function render_item_list(log, total, charname, activity, zoneId, proven)
     local known = store.zone_items(activity, zoneId);
 
     if (total == 0 and #known == 0) then
@@ -729,6 +730,12 @@ local function render_item_list(log, total, charname, activity, zoneId)
 
     local seen = SEEN;
     for key in pairs(seen) do seen[key] = nil; end
+
+    local got = PROVEN;
+    for key in pairs(got) do got[key] = nil; end
+    if (proven ~= nil) then
+        for itemName in pairs(proven) do got[resources.item_name(itemName)] = true; end
+    end
 
     for itemName, count in pairs(log) do
         local pct  = total > 0 and (count / total * 100) or 0;
@@ -758,6 +765,7 @@ local function render_item_list(log, total, charname, activity, zoneId)
         local shown = resources.item_name(entry.name);
         if (not seen[shown]) then
             local locked = store.item_locked(charname, activity, zoneId, entry.name);
+            if (got[shown]) then locked = nil; end
             local label  = locked and ('Locked (%d)'):fmt(locked) or 'Not seen';
 
             local text_width = math.max(imgui.CalcTextSize(shown),
@@ -834,8 +842,8 @@ local function proc_tip(ability, fired, outof, charname, zoneId)
             :fmt(ability.name);
     else
         local outof_what = ability.basis == 'breaks'
-            and 'tools that would have broken' or 'gathers';
-        head = ('%s\n%d of %d %s - %.1f%%')
+            and 'tools that would have broken' or 'gathers here';
+        head = ('%s\n%d of %d %s, every session - %.1f%%')
             :fmt(ability.name, fired, outof, outof_what, fired / outof * 100);
     end
 
@@ -859,8 +867,10 @@ local function skillup_tip(ups, swings, since, capped)
 end
 
 local function render_activity(charname, activity, curZoneId, zoneName)
-    local log   = store.get_item_log(charname, activity, curZoneId);
+    local log   = store.get_session_log(charname, activity, curZoneId);
     local total = count_gathers(log);
+    local ever  = store.get_item_log(charname, activity, curZoneId);
+    local kept  = count_gathers(ever);
 
     local mode = store.home_mode();
 
@@ -883,7 +893,7 @@ local function render_activity(charname, activity, curZoneId, zoneName)
     local abilities = data.PROC_ABILITIES[activity];
     for index, ability in ipairs(abilities) do
         local fired = store.get_proc(charname, ability.name, curZoneId);
-        local outof = total;
+        local outof = kept;
         if (ability.basis == 'breaks') then
             outof = fired + store.get_breaks(charname, activity, curZoneId);
         end
@@ -896,7 +906,7 @@ local function render_activity(charname, activity, curZoneId, zoneName)
     if (mode == 'Normal') then imgui.Spacing(); return; end
 
     imgui.Spacing();
-    render_item_list(log, total, charname, activity, curZoneId);
+    render_item_list(log, total, charname, activity, curZoneId, ever);
     imgui.Spacing();
 end
 
@@ -1169,6 +1179,14 @@ local function render_spoils(charname)
         else
             imgui.TextColored(data.COLOR_GOLD, 'Per Hour - not enough time yet');
         end
+    end
+
+    local lifetime, ever = store.lifetime_gil(charname);
+    if (ever) then
+        imgui.Spacing();
+        imgui.TextColored(data.COLOR_SKILLUP, ('Lifetime - %s Gil'):fmt(gil(lifetime)));
+        hint('Everything this character has ever gathered, less every tool it '
+          .. 'has broken. Only Reset All Data clears it.');
     end
 
     divider();

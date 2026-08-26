@@ -9,7 +9,7 @@ export.
 Still in early development: expect bugs, and expect the UI to keep moving until
 1.0.
 
-Ashita v4.30+ addon. Version 0.12.0. Released under GPL-3.0. Coded with help
+Ashita v4.30+ addon. Version 0.13.0. Released under GPL-3.0. Coded with help
 from Claude Opus 5.
 
 ## Screenshots
@@ -107,8 +107,11 @@ Giddeus                                              241 / 300
 Skill starts as `unknown`, because the game only reports it when it goes *up*.
 Type it into Settings or wait for your next skill up.
 
-**Items Collected** is everything logged in this zone, and it survives a
-session reset so your drop percentages stay meaningful.
+**Items Collected** is what you have gathered here **this session**, and the
+grid under it is rated against that, so Home always describes the run you are
+on. **The activity tabs keep the full history instead**, which is where drop
+rates worth trusting live: they need hundreds of gathers and a session rarely
+has them.
 
 **Skill Ups** is how often a swing here raised your skill, or **Cap (20)**
 once your skill reaches the zone's ceiling, since a rate stops meaning anything
@@ -122,9 +125,11 @@ Items Collected figure beside them; Practiced Technique counts against the
 pickaxes that broke or would have, since it fires instead of a break. The
 activity tabs carry the same rates inside each zone's foldout.
 
-These rates start from 0.9.6, while Items Collected goes back as far as your
-drop history does. **If you gathered before 0.9.6, use Reset All Data for an
-accurate rate**, after exporting if you want to keep the drop data.
+These rates divide into your whole drop history rather than this session, since
+a session is far too small a sample to measure an ability that fires a few
+percent of the time. They start from 0.9.6, so **if you gathered before then,
+use Reset All Data for an accurate rate**, after exporting if you want to keep
+the drop data.
 
 ### Gold Rush
 
@@ -155,9 +160,10 @@ hundred.
 
 **Items you have not found yet are listed too**, in grey below the rest, so a
 zone shows what it can give rather than only what it has given: **Not seen**
-means it drops here and you just have not got one, **Locked (10)** means it
-needs that skill level first. Gather one and it moves up with its own
-percentage whatever your skill says, because gathering it is proof you can.
+means it drops here and you have not got one — this session on Home, ever on an
+activity tab — and **Locked (10)** means it needs that skill level first.
+Anything you have ever gathered here never reads as locked, whatever your skill
+says, because gathering it is proof you can.
 
 Drop lists exist for every harvesting and excavation zone, 5 of 11 logging
 zones and 4 of 9 mining zones. **A list is what is known so far, not a
@@ -189,6 +195,11 @@ and Per Hour divides the net. Leave the tools unpriced and nothing is deducted.
 **Per Hour runs from your first gather to your last**, not to the current time,
 so leaving the window open while you do something else does not drag it down.
 Every reset that clears the tally clears the clock with it.
+
+**Lifetime is everything this character has ever gathered**, less every tool it
+has broken, and it is the one figure here that a session reset leaves alone —
+only Reset All Data clears it. Like the rest it is priced live, so setting a
+price later corrects everything you gathered before you set it.
 
 **Prices are yours to set**, since the game does not tell addons what anything
 sells for. **Edit Prices** lists every gatherable item with a box beside it —

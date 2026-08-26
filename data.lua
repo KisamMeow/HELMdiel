@@ -560,10 +560,10 @@ data.SKILL_VALUE_INTEGER = 'raising it to (%d+)';
 data.CHARACTER_KEYS = T{ 'fatigue', 'fatigued', 'item_log', 'skill',
                          'skillups', 'attempts', 'successes', 'spoils',
                          'since_skillup', 'procs', 'breaks', 'goldrush',
-                         'tool_breaks' };
+                         'tool_breaks', 'lifetime', 'session_log' };
 data.SESSION_KEYS   = T{ 'skillups', 'attempts', 'successes', 'spoils',
-                         'since_skillup', 'tool_breaks' };
-data.SPOILS_KEYS    = T{ 'spoils', 'tool_breaks' };
+                         'since_skillup', 'tool_breaks', 'session_log' };
+data.SPOILS_KEYS    = T{ 'spoils', 'tool_breaks', 'session_log' };
 data.SESSION_CLOCK  = T{ 'session_start', 'session_last' };
 
 data.SECONDS_PER_HOUR = 3600;

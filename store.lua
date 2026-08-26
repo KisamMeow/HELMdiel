@@ -296,6 +296,10 @@ function store.get_skillups(charname, activity, zoneId)
     return read_zone(charname, 'skillups', activity, zoneId, 0);
 end
 
+function store.get_session_log(charname, activity, zoneId)
+    return read_zone(charname, 'session_log', activity, zoneId, EMPTY_LOG);
+end
+
 function store.get_item_log(charname, activity, zoneId)
     return read_zone(charname, 'item_log', activity, zoneId, EMPTY_LOG);
 end
@@ -416,9 +420,14 @@ function store.register_item_gather(activity, zoneId, itemName, repeated)
 
     if (not repeated or store.count_repeats()) then
         group[key][itemName] = (group[key][itemName] or 0) + 1;
+
+        local session = ensure_zone(store.char_name(), 'session_log',
+                                    activity, zoneId, T);
+        session[key][itemName] = (session[key][itemName] or 0) + 1;
     end
 
-    char.spoils[itemName] = (char.spoils[itemName] or 0) + 1;
+    char.spoils[itemName]   = (char.spoils[itemName] or 0) + 1;
+    char.lifetime[itemName] = (char.lifetime[itemName] or 0) + 1;
 
     local now = os.time();
     char.session_start = char.session_start or now;
@@ -429,6 +438,35 @@ function store.get_repeats(charname, zoneId)
     local char = helm_settings.characters[charname];
     if (char == nil or char.goldrush == nil) then return EMPTY_LOG; end
     return char.goldrush[zone_key(zoneId)] or EMPTY_LOG;
+end
+
+local function lifetime_tool_cost(char)
+    if (char.breaks == nil) then return 0; end
+
+    local cost = 0;
+    for _, activity in ipairs(data.ACTIVITIES) do
+        local group = char.breaks[activity];
+        if (group ~= nil) then
+            local broke = 0;
+            for _, count in pairs(group) do broke = broke + count; end
+            cost = cost + broke * store.tool_price(activity);
+        end
+    end
+    return cost;
+end
+
+function store.lifetime_gil(charname)
+    local char = helm_settings.characters[charname];
+    if (char == nil or char.lifetime == nil) then return 0, false; end
+
+    local gross, any = 0, false;
+    for itemName, count in pairs(char.lifetime) do
+        any   = true;
+        gross = gross + count * store.price_of(itemName);
+    end
+    if (not any) then return 0, false; end
+
+    return gross - lifetime_tool_cost(char), true;
 end
 
 function store.session_span(charname)

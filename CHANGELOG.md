@@ -19,6 +19,20 @@ If you notice any items being listed twice but spelt differently then type
 
 ## [Unreleased]
 
+## [0.13.0] - 2026-08-26
+
+### Changed
+
+- **Home's item tracking is per session now.** Items Collected and the drop
+  percentages under it cover the current spoils session, and a reset clears
+  them. The activity tabs keep the full history, which is where drop rates
+  worth trusting live.
+
+### Added
+
+- **Lifetime gil at the bottom of Spoils**, everything this character has ever
+  gathered less every tool it has broken. Only Reset All Data clears it.
+
 ### Fixed
 
 - **Tools no longer offer a Vendor tick box.** It did nothing, since a tool is
@@ -484,7 +498,8 @@ Initial public release.
 - The rule that a gather decays *all* other zones for that activity was
   inferred from a two-zone observation.
 
-[Unreleased]: https://github.com/KisamMeow/HELMdiel/compare/v0.12.0...HEAD
+[Unreleased]: https://github.com/KisamMeow/HELMdiel/compare/v0.13.0...HEAD
+[0.13.0]: https://github.com/KisamMeow/HELMdiel/compare/v0.12.0...v0.13.0
 [0.12.0]: https://github.com/KisamMeow/HELMdiel/compare/v0.11.1...v0.12.0
 [0.11.1]: https://github.com/KisamMeow/HELMdiel/compare/v0.11.0...v0.11.1
 [0.11.0]: https://github.com/KisamMeow/HELMdiel/compare/v0.10.2...v0.11.0
