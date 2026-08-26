@@ -4,7 +4,7 @@ Tracks HorizonXI's HELM system: Harvesting, Excavation, Logging and Mining.
 
 This addon is in very early development, there will be bugs and the UI will be reworked as I get closer to being feature complete.
 
-Ashita v4.30+ addon. Version 0.11.0. Released under GPL-3.0. Coded with help from Claude Opus 5.
+Ashita v4.30+ addon. Version 0.11.1. Released under GPL-3.0. Coded with help from Claude Opus 5.
 
 ## Features
 
@@ -197,7 +197,7 @@ fatigue in, and a foldout of drops per zone.
 whatever zone it came from, with what each stack is worth:
 
 ```
-Item                   Amount      Gil
+ITEM                   AMOUNT      GIL
 [icon]  Bone Chip              x3       135
 [icon]  Sprig of Dyer's Woad   x12   14,400
 
@@ -232,11 +232,11 @@ Hover any control for a one-line explanation.
 
 | Setting | What it does |
 |---|---|
-| Home Minimum Mode | Home shows only skill and fatigue. Tracking continues |
+| Home Detail | Full, Normal (no item list) or Compact (skill and fatigue only) |
 | Count Gold Rush Drops | On by default. Off keeps a Gold Rush node's repeats out of your drop rates |
 | Item Icons | Item art beside each drop. On by default |
-| Item Size | Large or Small. Sizes the item text too, even with icons off |
-| Item Style | Grid packs three across, List gives each item a row and is far narrower |
+| Large Item Size | Off gives smaller item art, and smaller item text with it |
+| List Item Style | Off packs three items across instead of one per row |
 | Opacity | How see-through the window is. Stops short of invisible |
 | UI Scale | 75%, 100% or 125%. Text, icons and spacing together |
 | Shown activities | Unchecking one hides its tab. Tracking continues |

@@ -19,6 +19,44 @@ If you notice any items being listed twice but spelt differently then type
 
 ## [Unreleased]
 
+## [0.11.1] - 2026-08-25
+
+### Added
+
+- **Lots of new known drops**, mostly Excavation's skill-gated items and the
+  whole of Oldton Movalpolos for Mining.
+- **Legacy items in the price list.** Items the HorizonXI wiki lists as HELM
+  drops that this addon has never seen are there to be priced, dimmed and
+  marked as unconfirmed. Not done for Harvesting.
+
+### Changed
+
+- **The window is a charcoal surface with a hairline border**, instead of pure
+  black, so it holds an edge against a bright zone.
+- **The title bar is a shade lighter than the body**, and still follows the
+  opacity slider.
+- **Every control is themed.** Checkboxes, sliders, input boxes, dropdowns,
+  dividers and the price editor's scrollbar were still on Ashita's default
+  theme, which is why a red scrollbar showed up in the price list.
+- **Your character name is in the window title now**, so the line under the
+  title bar and the rule below it are gone.
+- **Settings blocks are named** rather than just ruled apart.
+- **Spoils column headings and the "nothing here yet" lines** take the same
+  quiet caption styling as the counters on Home.
+- **The window will not shrink narrower than its nav row.**
+- **Home Minimum Mode is now a Home Detail dropdown**: Full, Normal or Compact.
+  Normal is new, and drops just the item list.
+- **Checkboxes fill rather than tick**, matching the rest of the window.
+- **Item Size and Item Style are tick boxes now**, Large Item Size and List Item
+  Style. Your existing choice is kept either way.
+- **The dropdowns are wide enough for their longest option**, so Compact no
+  longer reads as "Compa".
+
+### Fixed
+
+- **Three item names corrected** to their inventory spellings: Goblin Die,
+  Moblin Armor and H.Q. Scp. Shell.
+
 ## [0.11.0] - 2026-08-23
 
 ### Added
@@ -396,7 +434,8 @@ Initial public release.
 - The rule that a gather decays *all* other zones for that activity was
   inferred from a two-zone observation.
 
-[Unreleased]: https://github.com/KisamMeow/HELMdiel/compare/v0.11.0...HEAD
+[Unreleased]: https://github.com/KisamMeow/HELMdiel/compare/v0.11.1...HEAD
+[0.11.1]: https://github.com/KisamMeow/HELMdiel/compare/v0.11.0...v0.11.1
 [0.11.0]: https://github.com/KisamMeow/HELMdiel/compare/v0.10.2...v0.11.0
 [0.10.2]: https://github.com/KisamMeow/HELMdiel/compare/v0.10.1...v0.10.2
 [0.10.1]: https://github.com/KisamMeow/HELMdiel/compare/v0.10.0...v0.10.1

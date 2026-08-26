@@ -28,6 +28,9 @@ data.NAV_TRAILING = T{ 'Spoils', 'Settings' };
 
 -- Pixel sizes
 data.SKILL_INPUT_WIDTH  = 70;
+data.COMBO_WIDTH        = 120;
+data.CHECK_INSET        = 4.0;
+data.CHECK_GAP          = 8.0;
 data.PRICE_INPUT_WIDTH  = 90;
 data.PRICE_EDITOR_HEIGHT = 320.0;
 data.FATIGUE_BAR_HEIGHT = 5.0;
@@ -41,6 +44,7 @@ data.TILE_PAD_Y        = 5.0;
 data.TILE_GAP          = 5.0;
 data.FRAME_ROUNDING    = 5.0;
 data.WINDOW_ROUNDING   = 6.0;
+data.WINDOW_MIN_WIDTH  = 330.0;
 data.TITLE_ALIGN       = { 0.5, 0.5 };
 
 data.FONT_PATH = 'C:\\Windows\\Fonts\\segoeuib.ttf';
@@ -49,30 +53,58 @@ data.FONT_SIZE = 18.0;
 data.SMALL_ICON_FONT_DROP = 2.0;
 data.ITEM_LINE_GAP        = 1.0;
 
-data.WINDOW_OPACITY = 0.75;
+data.WINDOW_OPACITY = 0.92;
 data.OPACITY_MIN    = 0.10;
 data.OPACITY_MAX    = 1.00;
+
+-- Surface elevation
+data.SURFACE_BASE   = { 0.13, 0.13, 0.17, 1.00 };
+data.SURFACE_TITLE  = { 0.19, 0.19, 0.23, 1.00 };
+data.SURFACE_RAISED = { 0.22, 0.22, 0.26, 0.90 };
+data.SURFACE_PLATE  = { 0.28, 0.28, 0.32, 0.90 };
+data.SURFACE_INSET  = { 0.07, 0.07, 0.10, 0.50 };
+
+data.COLOR_EDGE     = { 1.00, 1.00, 1.00, 0.24 };
+data.WINDOW_BORDER  = 1.0;
+data.SHEEN_HEIGHT   = 90.0;
+data.COLOR_SHEEN    = { 1.00, 1.00, 1.00, 0.055 };
+data.COLOR_SHEEN_END = { 1.00, 1.00, 1.00, 0.00 };
 
 -- Gold accent and resize grip
 data.COLOR_GOLD        = { 1.00, 0.84, 0.20, 1.00 };
 data.COLOR_LABEL       = { 0.62, 0.62, 0.67, 1.00 };
 data.COLOR_VALUE       = { 0.93, 0.93, 0.96, 1.00 };
 data.COLOR_CAPTION     = { 0.48, 0.48, 0.54, 1.00 };
-data.COLOR_TILE_BG     = { 0.17, 0.17, 0.21, 0.90 };
-data.COLOR_NAV_TRACK   = { 0.13, 0.13, 0.16, 0.90 };
+data.COLOR_TILE_BG     = data.SURFACE_PLATE;
+data.COLOR_NAV_TRACK   = data.SURFACE_RAISED;
 data.COLOR_NAV_IDLE    = { 0.00, 0.00, 0.00, 0.00 };
 data.COLOR_GRIP        = { 1.00, 0.84, 0.20, 0.85 };
 data.COLOR_GRIP_HOVER  = { 1.00, 0.90, 0.45, 1.00 };
 data.COLOR_GRIP_ACTIVE = { 1.00, 1.00, 0.75, 1.00 };
 
 -- Chrome
-data.COLOR_BUTTON        = { 0.14, 0.14, 0.15, 0.90 };
-data.COLOR_BUTTON_HOVER  = { 0.26, 0.26, 0.28, 0.95 };
-data.COLOR_BUTTON_ACTIVE = { 0.33, 0.33, 0.35, 1.00 };
-data.COLOR_NAV_SELECTED  = { 0.40, 0.40, 0.43, 1.00 };
-data.COLOR_HEADER        = { 0.19, 0.19, 0.20, 0.65 };
-data.COLOR_HEADER_HOVER  = { 0.28, 0.28, 0.30, 0.85 };
-data.COLOR_HEADER_ACTIVE = { 0.34, 0.34, 0.36, 0.95 };
+data.COLOR_BUTTON        = { 0.22, 0.22, 0.26, 0.90 };
+data.COLOR_BUTTON_HOVER  = { 0.32, 0.32, 0.36, 0.95 };
+data.COLOR_BUTTON_ACTIVE = { 0.40, 0.40, 0.45, 1.00 };
+data.COLOR_NAV_SELECTED  = { 0.46, 0.46, 0.51, 1.00 };
+data.COLOR_HEADER        = { 0.24, 0.24, 0.28, 0.65 };
+data.COLOR_HEADER_HOVER  = { 0.32, 0.32, 0.36, 0.85 };
+data.COLOR_HEADER_ACTIVE = { 0.38, 0.38, 0.42, 0.95 };
+
+-- Inputs, scrollbars, separators, popups
+
+data.COLOR_INPUT         = { 0.28, 0.28, 0.32, 0.90 };
+data.COLOR_INPUT_HOVER   = { 0.34, 0.34, 0.38, 0.95 };
+data.COLOR_INPUT_ACTIVE  = { 0.38, 0.38, 0.43, 1.00 };
+data.COLOR_GRAB          = { 0.80, 0.80, 0.86, 1.00 };
+data.COLOR_GRAB_ACTIVE   = { 0.93, 0.93, 0.97, 1.00 };
+data.COLOR_SCROLL_BG     = { 0.07, 0.07, 0.10, 0.50 };
+data.COLOR_SCROLL        = { 0.36, 0.36, 0.41, 0.85 };
+data.COLOR_SCROLL_HOVER  = { 0.44, 0.44, 0.49, 0.95 };
+data.COLOR_SCROLL_ACTIVE = { 0.54, 0.54, 0.60, 1.00 };
+data.COLOR_SEPARATOR     = { 0.34, 0.34, 0.39, 0.60 };
+data.COLOR_POPUP         = { 0.19, 0.19, 0.23, 0.98 };
+data.COLOR_TEXT_SELECT   = { 0.36, 0.40, 0.52, 0.60 };
 
 -- Destructive buttons
 data.COLOR_DANGER        = { 0.45, 0.16, 0.16, 0.90 };
@@ -96,14 +128,14 @@ data.COLOR_SKILLUP  = { 0.40, 0.75, 1.00, 1.00 };
 data.COLOR_LOCKED   = { 0.45, 0.45, 0.48, 1.00 };
 
 -- Spoils column headings
-data.SPOILS_HEADERS = T{ 'Item', 'Amount', 'Gil' };
+data.SPOILS_HEADERS = T{ 'ITEM', 'AMOUNT', 'GIL' };
 
 -- Known drops you have not collected
 data.TIER_UNSEEN = { rank = 6, name = 'Not seen', color = data.COLOR_LOCKED };
 data.TIER_LOCKED = { rank = 7, name = 'Locked',   color = data.COLOR_LOCKED };
 
 -- Fatigue bar
-data.COLOR_BAR_BG   = { 0.16, 0.16, 0.18, 0.85 };
+data.COLOR_BAR_BG   = { 0.22, 0.22, 0.26, 0.85 };
 data.COLOR_LOW      = { 0.40, 0.75, 1.00, 1.00 };
 data.COLOR_MID      = { 1.00, 0.90, 0.20, 1.00 };
 data.COLOR_HIGH     = { 0.90, 0.20, 0.20, 1.00 };
@@ -126,14 +158,14 @@ data.UI_SCALE_COMBO   = combo_string(UI_SCALE_LABELS);
 
 data.ICON_SIZES        = T{ data.ICON_SIZE, data.SPOILS_ICON_SIZE };
 data.ICON_SIZE_DEFAULT = data.ICON_SIZE;
-local ICON_SIZE_LABELS = T{ 'Large', 'Small' };
-data.ICON_SIZE_COMBO   = combo_string(ICON_SIZE_LABELS);
 
 data.ITEM_STYLES        = T{ 'Grid', 'List' };
 data.ITEM_STYLE_DEFAULT = 'Grid';
-data.ITEM_STYLE_COMBO   = combo_string(data.ITEM_STYLES);
 
--- Items each zone is known to drop, and the skill a gated one needs
+data.HOME_MODES        = T{ 'Full', 'Normal', 'Compact' };
+data.HOME_MODE_DEFAULT = 'Full';
+data.HOME_MODE_COMBO   = combo_string(data.HOME_MODES);
+
 -- Items each zone is known to drop, and the skill a gated one needs
 data.ZONE_ITEMS = T{
     Harvesting = T{
@@ -195,6 +227,7 @@ data.ZONE_ITEMS = T{
             { name = 'Cattleya' },
             { name = 'Coral Fungus' },
             { name = 'Danceshroom' },
+            { name = 'Malboro Fiber', skill = 40 },
             { name = 'Mistletoe', skill = 30 },
             { name = 'Mushrm. Locust' },
             { name = 'Reishi Mushroom', skill = 20 },
@@ -224,28 +257,43 @@ data.ZONE_ITEMS = T{
     },
     Excavation = T{
         [7] = T{
+            { name = 'Antlion Jaw', skill = 20 },
             { name = 'Bat Fang' },
             { name = 'Bone Chip' },
+            { name = 'Cactus Stems', skill = 20 },
             { name = 'Chicken Bone' },
+            { name = 'Emerald' },
+            { name = 'Green Rock' },
+            { name = 'H.Q. Scp. Shell', skill = 20 },
             { name = 'Scorpion Claw' },
+            { name = 'Wyvern Scales', skill = 30 },
         },
         [117] = T{
             { name = 'Bat Fang' },
             { name = 'Bone Chip' },
             { name = 'Chicken Bone' },
+            { name = 'Diamond', skill = 40 },
             { name = 'Giant Femur' },
+            { name = 'Red Rock', skill = 10 },
             { name = 'Scorpion Claw' },
             { name = 'Scorpion Shell' },
             { name = 'Silica' },
+            { name = 'Translucent Rock', skill = 10 },
             { name = 'Turtle Shell' },
         },
         [173] = T{
+            { name = 'Antican Pauldron', skill = 20 },
+            { name = 'Antican Robe', skill = 20 },
             { name = 'Blue Rock' },
+            { name = 'Coral Fragment', skill = 30 },
             { name = 'Crab Shell' },
             { name = 'Fish Scales' },
+            { name = 'Helmet Mole', skill = 10 },
             { name = 'Lugworm' },
+            { name = 'Pearl', skill = 40 },
             { name = 'Rock Salt' },
             { name = 'Seashell' },
+            { name = 'Shall Shell', skill = 10 },
             { name = 'Shell Bug' },
         },
         [198] = T{
@@ -255,7 +303,12 @@ data.ZONE_ITEMS = T{
             { name = 'Bone Chip' },
             { name = 'Chicken Bone' },
             { name = 'Giant Femur' },
+            { name = 'Petrified Log', skill = 10 },
+            { name = 'Purple Rock', skill = 10 },
             { name = 'Silica' },
+            { name = 'Spinel', skill = 40 },
+            { name = 'Wyvern Scales', skill = 30 },
+            { name = 'Yellow Rock', skill = 10 },
         },
     },
     Logging    = T{
@@ -310,6 +363,16 @@ data.ZONE_ITEMS = T{
         },
     },
     Mining     = T{
+        [11] = T{
+            { name = 'Copper Ore' },
+            { name = 'Goblin Die' },
+            { name = 'Gold Ore' },
+            { name = 'Igneous Rock' },
+            { name = 'Iron Ore' },
+            { name = 'Moblin Armor' },
+            { name = 'Moblin Helm' },
+            { name = 'Silver Ore' },
+        },
         [142] = T{
             { name = 'Copper Ore' },
             { name = 'Flint Stone' },
@@ -492,6 +555,50 @@ data.ZONE_ACTIVITIES  = T{};
 data.SKILL_PATTERNS   = T{};
 data.ZONE_LABELS      = T{};
 
+
+-- Legacy: listed as HELM drops on the HorizonXI wiki but never seen by this
+-- addon, and not in the spreadsheet. They exist here only so a price can be set
+-- for them. Delete a name once the game confirms it is not a real item; the
+-- price editor draws (?) beside anything the resource manager cannot resolve,
+-- which is how that gets confirmed. Harvesting is deliberately absent.
+data.LEGACY_ITEMS = T{
+    Harvesting = T{},
+    Excavation = T{
+        'Grain Seeds',
+        'Little Worm',
+        'Vegetable Seeds',
+        'Wyvern Egg',
+    },
+    Logging    = T{
+        'Beehive Chip',
+        'Dragon Fruit',
+        'Kitron',
+        'Lqr. Tree Sap',
+        'Mahogany Log',
+        'Persikos',
+        'Petrified Log',
+        'Rattan Lumber',
+        'Revival Tree Root',
+    },
+    Mining     = T{
+        'Adaman Ore',
+        'Aluminum Ore',
+        'Bomb Arm',
+        'Bomb Ash',
+        'Green Rock',
+        'Iron Sand',
+        'Mine Gravel',
+        'Moblin Mail',
+        'Moblin Mask',
+        'Orichalcum Ore',
+        'Orpiment',
+        'Platinum Ore',
+        'Sulfur',
+        'Yellow Rock',
+    },
+};
+
+data.LEGACY_SET    = T{};
 data.PRICE_ITEMS   = T{};
 data.SKILL_CAPS    = T{};
 data.PROC_PATTERNS = T{};
@@ -531,8 +638,19 @@ for _, activity in ipairs(data.ACTIVITIES) do
             end
         end
     end
+
+    local legacy = T{};
+    for _, name in ipairs(data.LEGACY_ITEMS[activity]) do
+        if (not named[name]) then
+            named[name]  = true;
+            legacy[name] = true;
+            table.insert(names, name);
+        end
+    end
+
     table.sort(names);
     data.PRICE_ITEMS[activity] = names;
+    data.LEGACY_SET[activity]  = legacy;
 
     data.SKILL_PATTERNS[activity]   =
         ('Your %s skill has increased'):fmt(SKILL_NAMES[activity]);

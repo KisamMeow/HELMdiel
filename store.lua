@@ -10,7 +10,7 @@ local default_settings = T{
     characters = T{},
     window     = T{
         auto_popup   = true,
-        home_minimum = false,
+        home_mode = 'Full',
         item_icons   = true,
         auto_resize  = true,
         opacity      = data.WINDOW_OPACITY,
@@ -99,14 +99,8 @@ function store.toggle_auto_popup()
     settings.save();
 end
 
-function store.home_minimum()
-    return helm_settings.window.home_minimum == true;
-end
 
-function store.toggle_home_minimum()
-    helm_settings.window.home_minimum = not store.home_minimum();
-    settings.save();
-end
+
 
 function store.count_repeats()
     return helm_settings.window.count_repeats ~= false;
@@ -178,28 +172,42 @@ function store.set_ui_scale_index(index)
     set_choice('ui_scale', data.UI_SCALES, index);
 end
 
+function store.home_mode()
+    if (helm_settings.window.home_mode == nil
+        and helm_settings.window.home_minimum == true) then
+        return 'Compact';
+    end
+    return choice('home_mode', data.HOME_MODES, data.HOME_MODE_DEFAULT);
+end
+function store.home_mode_index()
+    return choice_index('home_mode', data.HOME_MODES, store.home_mode());
+end
+function store.set_home_mode_index(index)
+    set_choice('home_mode', data.HOME_MODES, index);
+end
+
 function store.icon_size()
     return choice('icon_size', data.ICON_SIZES, data.ICON_SIZE_DEFAULT);
 end
 
-function store.icon_size_index()
-    return choice_index('icon_size', data.ICON_SIZES, data.ICON_SIZE_DEFAULT);
+function store.large_items()
+    return store.icon_size() == data.ICON_SIZE;
 end
 
-function store.set_icon_size_index(index)
-    set_choice('icon_size', data.ICON_SIZES, index);
+function store.toggle_large_items()
+    set_choice('icon_size', data.ICON_SIZES, store.large_items() and 2 or 1);
 end
 
 function store.item_style()
     return choice('item_style', data.ITEM_STYLES, data.ITEM_STYLE_DEFAULT);
 end
 
-function store.item_style_index()
-    return choice_index('item_style', data.ITEM_STYLES, data.ITEM_STYLE_DEFAULT);
+function store.list_items()
+    return store.item_style() == 'List';
 end
 
-function store.set_item_style_index(index)
-    set_choice('item_style', data.ITEM_STYLES, index);
+function store.toggle_list_items()
+    set_choice('item_style', data.ITEM_STYLES, store.list_items() and 1 or 2);
 end
 
 local function clamp_opacity(value)
