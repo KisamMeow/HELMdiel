@@ -19,6 +19,51 @@ If you notice any items being listed twice but spelt differently then type
 
 ## [Unreleased]
 
+## [0.12.0] - 2026-08-26
+
+### Added
+
+- **A font picker**, at the top of Settings: Segoe UI, Consolas, Arial, Tahoma
+  or Trebuchet MS.
+- **A Vendor tick box per item** in Edit Prices, for things you just sell to an
+  NPC. Marked items read grey in Spoils.
+- **Hide Vendor Items** on the Spoils tab drops them from the list. They still
+  count towards the total.
+- **Halvung and Mount Zhayolm** are tracked for Mining, with their wiki-listed
+  legacy items.
+- **Tools are priced too.** Edit Prices has a Tools block for the sickle,
+  pickaxe and hatchet.
+- **Tools Broken on Spoils**, totalling what this session's broken tools cost
+  to replace.
+
+### Changed
+
+- **Spoils sorts by gil**, highest earner first, instead of by name.
+- **The Spoils list reads white**, with grey now reserved for vendor items.
+- **Total is now Net Gil**, with broken tools deducted, and Per Hour divides
+  the net.
+- **The activity tabs show the skill the way Home does**, as a caption and a
+  right-aligned value.
+- **Gold Rush now tracks the node itself** rather than guessing from the item
+  name, so walking to another vein that gives the same ore is no longer read
+  as the same run, and a miss no longer ends one early.
+- **Moblin Mail is a known Oldton Movalpolos drop** instead of an unconfirmed
+  wiki listing.
+- **Skill Ups and Last Skill are one tile.** It shows the rate, or Cap (20)
+  once your skill reaches the zone's ceiling. Hover it for the skill ups, the
+  swings behind them, and how long since the last one.
+- **Each special skill has its own tile** where Last Skill used to be, showing
+  its activation rate. Hover one for its full name and the count behind it;
+  Gold Rush also lists what its nodes gave you.
+- **The README is shorter**, and carries a Thanks section crediting the addons
+  HELMdiel learned its technique from.
+
+### Fixed
+
+- **Moblin Armor and Moblin Mail** showed under the wording the chat log uses
+  rather than their inventory names, which also left Moblin Armor listed twice:
+  once at its real rate and once as never seen.
+
 ## [0.11.1] - 2026-08-25
 
 ### Added
@@ -434,7 +479,8 @@ Initial public release.
 - The rule that a gather decays *all* other zones for that activity was
   inferred from a two-zone observation.
 
-[Unreleased]: https://github.com/KisamMeow/HELMdiel/compare/v0.11.1...HEAD
+[Unreleased]: https://github.com/KisamMeow/HELMdiel/compare/v0.12.0...HEAD
+[0.12.0]: https://github.com/KisamMeow/HELMdiel/compare/v0.11.1...v0.12.0
 [0.11.1]: https://github.com/KisamMeow/HELMdiel/compare/v0.11.0...v0.11.1
 [0.11.0]: https://github.com/KisamMeow/HELMdiel/compare/v0.10.2...v0.11.0
 [0.10.2]: https://github.com/KisamMeow/HELMdiel/compare/v0.10.1...v0.10.2

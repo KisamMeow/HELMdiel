@@ -40,6 +40,7 @@ data.ITEMS_PER_ROW     = 3;
 data.CELL_GUTTER       = 14;
 data.NAV_GAP           = 3.0;
 data.TILE_PAD_X        = 13.0;
+data.TILES_PER_ROW     = 3;
 data.TILE_PAD_Y        = 5.0;
 data.TILE_GAP          = 5.0;
 data.FRAME_ROUNDING    = 5.0;
@@ -47,7 +48,6 @@ data.WINDOW_ROUNDING   = 6.0;
 data.WINDOW_MIN_WIDTH  = 330.0;
 data.TITLE_ALIGN       = { 0.5, 0.5 };
 
-data.FONT_PATH = 'C:\\Windows\\Fonts\\segoeuib.ttf';
 data.FONT_SIZE = 18.0;
 
 data.SMALL_ICON_FONT_DROP = 2.0;
@@ -83,7 +83,7 @@ data.COLOR_GRIP_HOVER  = { 1.00, 0.90, 0.45, 1.00 };
 data.COLOR_GRIP_ACTIVE = { 1.00, 1.00, 0.75, 1.00 };
 
 -- Chrome
-data.COLOR_BUTTON        = { 0.22, 0.22, 0.26, 0.90 };
+data.COLOR_BUTTON        = data.SURFACE_RAISED;
 data.COLOR_BUTTON_HOVER  = { 0.32, 0.32, 0.36, 0.95 };
 data.COLOR_BUTTON_ACTIVE = { 0.40, 0.40, 0.45, 1.00 };
 data.COLOR_NAV_SELECTED  = { 0.46, 0.46, 0.51, 1.00 };
@@ -93,12 +93,12 @@ data.COLOR_HEADER_ACTIVE = { 0.38, 0.38, 0.42, 0.95 };
 
 -- Inputs, scrollbars, separators, popups
 
-data.COLOR_INPUT         = { 0.28, 0.28, 0.32, 0.90 };
+data.COLOR_INPUT         = data.SURFACE_PLATE;
 data.COLOR_INPUT_HOVER   = { 0.34, 0.34, 0.38, 0.95 };
 data.COLOR_INPUT_ACTIVE  = { 0.38, 0.38, 0.43, 1.00 };
 data.COLOR_GRAB          = { 0.80, 0.80, 0.86, 1.00 };
 data.COLOR_GRAB_ACTIVE   = { 0.93, 0.93, 0.97, 1.00 };
-data.COLOR_SCROLL_BG     = { 0.07, 0.07, 0.10, 0.50 };
+data.COLOR_SCROLL_BG     = data.SURFACE_INSET;
 data.COLOR_SCROLL        = { 0.36, 0.36, 0.41, 0.85 };
 data.COLOR_SCROLL_HOVER  = { 0.44, 0.44, 0.49, 0.95 };
 data.COLOR_SCROLL_ACTIVE = { 0.54, 0.54, 0.60, 1.00 };
@@ -165,6 +165,28 @@ data.ITEM_STYLE_DEFAULT = 'Grid';
 data.HOME_MODES        = T{ 'Full', 'Normal', 'Compact' };
 data.HOME_MODE_DEFAULT = 'Full';
 data.HOME_MODE_COMBO   = combo_string(data.HOME_MODES);
+
+-- Chat forms the resource manager does not index, keyed normalised
+data.ITEM_ALIASES = T{
+    ['suit of moblin armor'] = 'Moblin Armor',
+    ['suit of moblin mail']  = 'Moblin Mail',
+};
+
+-- Fonts
+data.FONT_DIR = 'C:\\Windows\\Fonts\\';
+data.FONTS    = T{
+    { name = 'Segoe UI',     file = 'segoeuib.ttf' },
+    { name = 'Consolas',     file = 'consolab.ttf' },
+    { name = 'Arial',        file = 'arialbd.ttf' },
+    { name = 'Tahoma',       file = 'tahomabd.ttf' },
+    { name = 'Trebuchet MS', file = 'trebucbd.ttf' },
+};
+data.FONT_DEFAULT = 'Segoe UI';
+
+local FONT_NAMES = T{};
+for _, entry in ipairs(data.FONTS) do table.insert(FONT_NAMES, entry.name); end
+data.FONT_NAMES = FONT_NAMES;
+data.FONT_COMBO = combo_string(FONT_NAMES);
 
 -- Items each zone is known to drop, and the skill a gated one needs
 data.ZONE_ITEMS = T{
@@ -371,6 +393,7 @@ data.ZONE_ITEMS = T{
             { name = 'Iron Ore' },
             { name = 'Moblin Armor' },
             { name = 'Moblin Helm' },
+            { name = 'Moblin Mail' },
             { name = 'Silver Ore' },
         },
         [142] = T{
@@ -460,7 +483,9 @@ data.TRACKED_ZONES = T{
     },
     Mining = T{
         { id = 196, name = 'Gusgen Mines' },
+        { id = 62,  name = 'Halvung' },
         { id = 205, name = "Ifrit's Cauldron" },
+        { id = 61,  name = 'Mount Zhayolm' },
         { id = 12,  name = 'Newton Movalpolos' },
         { id = 11,  name = 'Oldton Movalpolos' },
         { id = 143, name = 'Palborough Mines' },
@@ -494,20 +519,19 @@ data.BARREN_PATTERNS = T{
 -- Special skills, counted when they fire. Logging's are not known yet.
 data.PROC_ABILITIES = T{
     Harvesting = T{
-        { name = "Gatherer's Discipline", pattern = 'practiced discipline preserves',
-          basis = 'successes' },
+        { name = "Gatherer's Discipline", short = 'DISCIPLINE',
+          pattern = 'practiced discipline preserves', basis = 'successes' },
     },
     Excavation = T{
-        { name = 'Practiced Technique',   pattern = 'practiced technique preserves',
-          basis = 'breaks' },
-
+        { name = 'Practiced Technique',   short = 'TECHNIQUE',
+          pattern = 'practiced technique preserves', basis = 'breaks' },
     },
     Logging    = T{},
     Mining     = T{
-        { name = 'Gold Rush',  pattern = 'Gold Rush!',
-          basis = 'successes', repeats = true },
-        { name = 'Motherlode', pattern = 'You hit the mother lode',
-          basis = 'successes' },
+        { name = 'Gold Rush',  short = 'GOLD RUSH',
+          pattern = 'Gold Rush!', basis = 'successes', repeats = true },
+        { name = 'Motherlode', short = 'MOTHERLODE',
+          pattern = 'You hit the mother lode', basis = 'successes' },
     },
 };
 
@@ -535,15 +559,22 @@ data.SKILL_VALUE_INTEGER = 'raising it to (%d+)';
 
 data.CHARACTER_KEYS = T{ 'fatigue', 'fatigued', 'item_log', 'skill',
                          'skillups', 'attempts', 'successes', 'spoils',
-                         'since_skillup', 'procs', 'breaks', 'goldrush' };
+                         'since_skillup', 'procs', 'breaks', 'goldrush',
+                         'tool_breaks' };
 data.SESSION_KEYS   = T{ 'skillups', 'attempts', 'successes', 'spoils',
-                         'since_skillup' };
+                         'since_skillup', 'tool_breaks' };
+data.SPOILS_KEYS    = T{ 'spoils', 'tool_breaks' };
 data.SESSION_CLOCK  = T{ 'session_start', 'session_last' };
 
 data.SECONDS_PER_HOUR = 3600;
 
 data.PROC_GAP        = 18.0;
 
+-- HELM interaction, and the render bit that clears when an entity despawns
+data.HELM_PACKET    = 0x36;
+data.RENDER_VISIBLE = 0x200;
+-- A node id describes the swing that just happened, never the next one
+data.NODE_WINDOW_SECONDS = 3.0;
 data.REPEAT_WINDOW_SECONDS = 30.0;
 
 data.CONFIRM_LABEL   = 'Confirm?';
@@ -582,18 +613,24 @@ data.LEGACY_ITEMS = T{
     },
     Mining     = T{
         'Adaman Ore',
+        'Aht Urhgan Brass',
         'Aluminum Ore',
         'Bomb Arm',
         'Bomb Ash',
+        'Demon Horn',
         'Green Rock',
         'Iron Sand',
+        'Khroma Ore',
+        'Luminium Ore',
         'Mine Gravel',
-        'Moblin Mail',
         'Moblin Mask',
         'Orichalcum Ore',
         'Orpiment',
         'Platinum Ore',
+        'Plumbago',
         'Sulfur',
+        'Troll Pauldron',
+        'Troll Vambrace',
         'Yellow Rock',
     },
 };
@@ -655,5 +692,32 @@ for _, activity in ipairs(data.ACTIVITIES) do
     data.SKILL_PATTERNS[activity]   =
         ('Your %s skill has increased'):fmt(SKILL_NAMES[activity]);
 end
+
+-- Tools
+data.TOOL_KEY       = 'Tools';
+data.ACTIVITY_TOOLS = T{
+    Harvesting = 'Sickle',
+    Excavation = 'Pickaxe',
+    Logging    = 'Hatchet',
+    Mining     = 'Pickaxe',
+};
+
+local TOOL_NAMES, tooled = T{}, T{};
+for _, activity in ipairs(data.ACTIVITIES) do
+    local tool = data.ACTIVITY_TOOLS[activity];
+    if (not tooled[tool]) then
+        tooled[tool] = true;
+        table.insert(TOOL_NAMES, tool);
+    end
+end
+table.sort(TOOL_NAMES);
+data.PRICE_ITEMS[data.TOOL_KEY] = TOOL_NAMES;
+data.LEGACY_SET[data.TOOL_KEY]  = T{};
+
+data.PRICE_BLOCKS = T{};
+for _, activity in ipairs(data.ACTIVITIES) do
+    table.insert(data.PRICE_BLOCKS, activity);
+end
+table.insert(data.PRICE_BLOCKS, data.TOOL_KEY);
 
 return data;

@@ -1,6 +1,6 @@
 addon.name    = 'HELMdiel';
 addon.author  = 'Masuru';
-addon.version = '0.11.1';
+addon.version = '0.12.0';
 addon.desc    = 'Tracks HELM (Harvesting/Excavation/Logging/Mining) regional gathering fatigue on HorizonXI.';
 addon.link    = 'https://github.com/KisamMeow/HELMdiel';
 
@@ -29,7 +29,12 @@ local state = T{
     repeat_activity      = nil,
     repeat_zone          = nil,
     repeat_item          = nil,
+    repeat_node          = nil,
+    repeat_node_index    = nil,
     repeat_time          = 0,
+    node_index           = nil,
+    node_id              = nil,
+    node_time            = 0,
 };
 
 local recent_break       = {};
@@ -73,6 +78,62 @@ end
 ----------------------------------------
 -- Events
 ----------------------------------------
+
+local function clear_run()
+    state.repeat_activity = nil;
+    state.repeat_zone     = nil;
+    state.repeat_item     = nil;
+    state.repeat_node     = nil;
+    state.repeat_node_index = nil;
+end
+
+-- The packet describes one swing. Reading it later would let a swing the
+-- hook missed inherit the node before it, which is the silent misread this
+-- whole change exists to remove.
+local function node_now(now)
+    if ((now - state.node_time) >= data.NODE_WINDOW_SECONDS) then return nil; end
+    return state.node_id;
+end
+
+local function same_node()
+    return state.repeat_node ~= nil and node_now(os.clock()) == state.repeat_node;
+end
+
+local function in_run(activity, zoneId, item, now)
+    if (state.repeat_activity ~= activity or state.repeat_zone ~= zoneId) then
+        return false;
+    end
+    if ((now - state.repeat_time) >= data.REPEAT_WINDOW_SECONDS) then
+        return false;
+    end
+    local at = node_now(now);
+    if (state.repeat_node ~= nil and at ~= nil) then
+        return at == state.repeat_node;
+    end
+    if (state.repeat_node ~= nil and state.repeat_node_index ~= nil
+        and resources.node_gone(state.repeat_node_index, state.repeat_node)) then
+        return false;
+    end
+    return state.repeat_item == nil or state.repeat_item == item;
+end
+
+ashita.events.register('packet_out', 'helmdiel_packet_out', function(e)
+    if (e.id ~= data.HELM_PACKET) then return; end
+
+    local index, serverId = resources.target_node();
+    if (index == nil or serverId == nil) then
+        state.node_index, state.node_id = nil, nil;
+        state.node_time = 0;
+        if (state.debug) then msg('[node] a HELM swing at an unknown target'); end
+        return;
+    end
+
+    state.node_index, state.node_id = index, serverId;
+    state.node_time = os.clock();
+    if (state.debug) then
+        msg(('[node] swing at node %d (index %d)'):fmt(serverId, index));
+    end
+end);
 
 ashita.events.register('text_in', 'helmdiel_text_in', function(e)
     local text = e.message;
@@ -133,6 +194,8 @@ ashita.events.register('text_in', 'helmdiel_text_in', function(e)
             state.repeat_activity = proc_activity;
             state.repeat_zone     = zoneId;
             state.repeat_item     = nil;
+            state.repeat_node       = node_now(now);
+            state.repeat_node_index = state.node_index;
             state.repeat_time     = now;
         end
         return;
@@ -196,31 +259,25 @@ ashita.events.register('text_in', 'helmdiel_text_in', function(e)
 
             local item = detect.clean_item_name(detect.extract_after(text, matched));
 
-            local in_run = state.repeat_activity == activity
-                and state.repeat_zone == zoneId
-                and (state.repeat_item == nil or state.repeat_item == item)
-                and (now - state.repeat_time) < data.REPEAT_WINDOW_SECONDS;
+            local repeated = in_run(activity, zoneId, item, now);
 
-            if (in_run) then
+            if (repeated) then
                 state.repeat_item = item;
                 state.repeat_time = now;
                 if (state.debug) then
-                    msg(('[repeat] %s from a Gold Rush node, %s'):fmt(item,
+                    msg(('[repeat] %s from Gold Rush node %s, %s'):fmt(item,
+                        state.repeat_node and tostring(state.repeat_node) or 'unknown',
                         store.count_repeats() and 'counted' or 'not counted'));
                 end
             else
-                state.repeat_activity = nil;
-                state.repeat_zone     = nil;
-                state.repeat_item     = nil;
+                clear_run();
             end
 
             if (data.TRACKED_ZONE_SET[activity][zoneId]) then
-                store.register_item_gather(activity, zoneId, item, in_run);
+                store.register_item_gather(activity, zoneId, item, repeated);
             end
         else
-            state.repeat_activity = nil;
-            state.repeat_zone     = nil;
-            state.repeat_item     = nil;
+            if (not same_node()) then clear_run(); end
 
             if (barren) then store.register_gather(activity, zoneId); end
         end
@@ -259,7 +316,12 @@ local function clear_detection_state()
     state.repeat_activity      = nil;
     state.repeat_zone          = nil;
     state.repeat_item          = nil;
+    state.repeat_node          = nil;
+    state.repeat_node_index    = nil;
     state.repeat_time          = 0;
+    state.node_index           = nil;
+    state.node_id              = nil;
+    state.node_time            = 0;
 
     recent_break       = {};
     recent_proc        = {};

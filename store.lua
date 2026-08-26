@@ -27,6 +27,7 @@ local helm_settings = settings.load(default_settings);
 helm_settings.activities = helm_settings.activities or T{};
 helm_settings.window     = helm_settings.window or T{};
 helm_settings.prices     = helm_settings.prices or T{};
+helm_settings.vendor     = helm_settings.vendor or T{};
 
 settings.register('settings', 'settings_update', function(s)
     if (s ~= nil) then
@@ -172,6 +173,16 @@ function store.set_ui_scale_index(index)
     set_choice('ui_scale', data.UI_SCALES, index);
 end
 
+function store.font_name()
+    return choice('font', data.FONT_NAMES, data.FONT_DEFAULT);
+end
+function store.font_index()
+    return choice_index('font', data.FONT_NAMES, data.FONT_DEFAULT);
+end
+function store.set_font_index(index)
+    set_choice('font', data.FONT_NAMES, index);
+end
+
 function store.home_mode()
     if (helm_settings.window.home_mode == nil
         and helm_settings.window.home_minimum == true) then
@@ -264,8 +275,9 @@ local function read_zone(charname, field, activity, zoneId, missing)
 end
 
 local function bump(field, activity, zoneId)
-    local group, key = ensure_zone(store.char_name(), field, activity, zoneId);
+    local group, key, char = ensure_zone(store.char_name(), field, activity, zoneId);
     group[key] = (group[key] or 0) + 1;
+    return char;
 end
 
 function store.get_fatigue(charname, activity, zoneId)
@@ -439,7 +451,16 @@ function store.bump_since_skillup(activity)
     char.since_skillup[activity] = (char.since_skillup[activity] or 0) + 1;
 end
 
-function store.register_break(activity, zoneId) bump('breaks', activity, zoneId); end
+function store.register_break(activity, zoneId)
+    local char = bump('breaks', activity, zoneId);
+    char.tool_breaks[activity] = (char.tool_breaks[activity] or 0) + 1;
+end
+
+function store.get_tool_breaks(charname, activity)
+    local char = helm_settings.characters[charname];
+    if (char == nil or char.tool_breaks == nil) then return 0; end
+    return char.tool_breaks[activity] or 0;
+end
 function store.register_proc(name, zoneId)      bump('procs',  name,     zoneId); end
 
 function store.reset_since_skillup(activity)
@@ -463,7 +484,9 @@ end
 
 function store.reset_spoils()
     local char = ensure_char(store.char_name());
-    char.spoils = T{};
+    for _, key in ipairs(data.SPOILS_KEYS) do
+        char[key] = T{};
+    end
     for _, key in ipairs(data.SESSION_CLOCK) do
         char[key] = nil;
     end
@@ -543,8 +566,49 @@ function store.price_of(itemName)
     return 0;
 end
 
+function store.hide_vendor()
+    return helm_settings.window.hide_vendor == true;
+end
+function store.toggle_hide_vendor()
+    helm_settings.window.hide_vendor = not store.hide_vendor();
+    store.save();
+end
+
+function store.is_vendor(itemName)
+    local key = resources.price_key(itemName);
+    if (key == nil) then return false; end
+    return helm_settings.vendor[key] == true;
+end
+
+function store.toggle_vendor(itemName)
+    local key = resources.price_key(itemName);
+    if (key == nil) then return; end
+
+    if (helm_settings.vendor[key] == true) then
+        helm_settings.vendor[key] = nil;
+    else
+        helm_settings.vendor[key] = true;
+    end
+    store.save();
+end
+
 function store.priced_items(activity)
     return data.PRICE_ITEMS[activity] or T{};
+end
+
+function store.tool_price(activity)
+    return store.get_price(data.TOOL_KEY, data.ACTIVITY_TOOLS[activity]);
+end
+
+function store.tool_cost(charname)
+    local char = helm_settings.characters[charname];
+    if (char == nil or char.tool_breaks == nil) then return 0; end
+
+    local cost = 0;
+    for _, activity in ipairs(data.ACTIVITIES) do
+        cost = cost + (char.tool_breaks[activity] or 0) * store.tool_price(activity);
+    end
+    return cost;
 end
 
 function store.reset_all()

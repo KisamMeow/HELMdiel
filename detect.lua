@@ -25,13 +25,14 @@ local function resolve_from(patterns, text, zoneId)
 end
 
 local CODE_BYTES = '[\30\31\127]';
+local CODE_PAIR  = CODE_BYTES .. '.';
 
 function detect.has_codes(text)
     return text:find(CODE_BYTES) ~= nil;
 end
 
 function detect.strip_codes(text)
-    return (text:gsub(CODE_BYTES .. '.', ''));
+    return (text:gsub(CODE_PAIR, ''));
 end
 
 function detect.gather(text, zoneId)

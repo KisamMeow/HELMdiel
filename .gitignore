@@ -28,3 +28,6 @@ desktop.ini
 
 # Claude Code local overrides
 .claude/settings.local.json
+
+# Release artifact, built from the tag at release time.
+HELMdiel.zip

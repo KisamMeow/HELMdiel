@@ -48,15 +48,16 @@ local function by_count_then_name(a, b)
     return a.name < b.name;
 end
 
-local PRICE_ROWS  = {};
-local PRICE_SLOTS = {};
+local PRICE_ROWS    = nil;
+local PRICE_SCANNED = nil;
 
 local function by_activity_then_name(a, b)
     if (a.order ~= b.order) then return a.order < b.order; end
     return a.name < b.name;
 end
 
-local function by_name(a, b)
+local function by_profit_then_name(a, b)
+    if (a.profit ~= b.profit) then return a.profit > b.profit; end
     return a.name < b.name;
 end
 
@@ -155,17 +156,31 @@ local title         = 'HELMdiel###HELMdiel';
 local title_version = nil;
 local title_char    = false;
 
-local font = nil;
+-- Fonts
+local fonts  = {};
+local loaded = false;
 
 function ui.load_font()
-    if (font ~= nil) then return true; end
+    if (loaded) then return true; end
+    loaded = true;
 
-    local ok, loaded = pcall(imgui.AddFontFromFileTTF, data.FONT_PATH, data.FONT_SIZE);
-    if (ok and loaded ~= nil) then
-        font = loaded;
-        return true;
+    local all = true;
+    for _, entry in ipairs(data.FONTS) do
+        local ok, face = pcall(imgui.AddFontFromFileTTF,
+                               data.FONT_DIR .. entry.file, data.FONT_SIZE);
+        if (ok and face ~= nil) then
+            fonts[entry.name] = face;
+        else
+            all = false;
+        end
     end
-    return false;
+    return all;
+end
+
+local frame_font = nil;
+
+local function chosen_font()
+    return fonts[store.font_name()] or fonts[data.FONT_DEFAULT];
 end
 
 function ui.set_actions(handlers)
@@ -239,10 +254,11 @@ local TILE_PAD  = { 0, 0 };
 local TILE_LINE = { 0, 0 };
 local TILES     = {};
 
-local function tile(index, label, value, color)
+local function tile(index, label, value, color, tip, a, b, c, d, e)
     local slot = TILES[index];
     if (slot == nil) then slot = {}; TILES[index] = slot; end
-    slot.label, slot.value, slot.color = label, value, color;
+    slot.label, slot.value, slot.color, slot.tip = label, value, color, tip;
+    slot.a, slot.b, slot.c, slot.d, slot.e = a, b, c, d, e;
     return slot;
 end
 
@@ -250,32 +266,50 @@ local TILE_MIN  = { 0, 0 };
 local TILE_MAX  = { 0, 0 };
 local tile_fill = nil;
 
-local function paint_tiles(count, x, y, w, h)
+-- Wraps past three.
+local function tiles_per_row(count)
+    if (count > data.TILES_PER_ROW) then return math.ceil(count / 2); end
+    return count;
+end
+
+local function paint_tiles(count, x, y, w, tall)
     local list  = imgui.GetWindowDrawList();
     local gap   = px(data.TILE_GAP);
-    local width = (w - gap * (count - 1)) / count;
+    local per   = tiles_per_row(count);
+    local width = (w - gap * (per - 1)) / per;
     local padx  = px(data.TILE_PAD_X);
     local pady  = px(data.TILE_PAD_Y);
     local drop  = imgui.GetTextLineHeight() + px(data.ITEM_LINE_GAP);
     local plate = imgui.GetColorU32(data.COLOR_TILE_BG);
     local cap   = imgui.GetColorU32(data.COLOR_CAPTION);
 
+    -- Hover, by hand.
+    local mx, my = imgui.GetMousePos();
+    local over   = imgui.IsWindowHovered();
+
     for index = 1, count do
         local slot = TILES[index];
-        local left = x + (width + gap) * (index - 1);
+        local left = x + (width + gap) * ((index - 1) % per);
+        local top  = y + (tall + gap) * math.floor((index - 1) / per);
+
+        if (over and slot.tip ~= nil
+            and mx >= left and mx < left + width
+            and my >= top and my < top + tall) then
+            imgui.SetTooltip(slot.tip(slot.a, slot.b, slot.c, slot.d, slot.e));
+        end
 
         TILE_MIN[1] = left;
-        TILE_MIN[2] = y;
+        TILE_MIN[2] = top;
         TILE_MAX[1] = left + width;
-        TILE_MAX[2] = y + h;
+        TILE_MAX[2] = top + tall;
         list:AddRectFilled(TILE_MIN, TILE_MAX, plate, px(data.FRAME_ROUNDING));
 
         TEXT_POS[1] = left + padx;
-        TEXT_POS[2] = y + pady;
-        clip_text(list, left, left + width, y, y + h, cap, slot.label);
+        TEXT_POS[2] = top + pady;
+        clip_text(list, left, left + width, top, top + tall, cap, slot.label);
 
-        TEXT_POS[2] = y + pady + drop;
-        clip_text(list, left, left + width, y, y + h,
+        TEXT_POS[2] = top + pady + drop;
+        clip_text(list, left, left + width, top, top + tall,
             imgui.GetColorU32(slot.color or data.COLOR_VALUE), slot.value);
     end
 end
@@ -288,7 +322,9 @@ local function lay_out_tiles(count, avail, height)
     TILE_LINE[1] = 0;
     TILE_LINE[2] = px(data.ITEM_LINE_GAP);
 
-    TILE_SIZE[1] = (avail - gap * (count - 1)) / count;
+    local per = tiles_per_row(count);
+
+    TILE_SIZE[1] = (avail - gap * (per - 1)) / per;
     TILE_SIZE[2] = height;
 
     imgui.PushStyleColor(ImGuiCol_ChildBg, data.COLOR_TILE_BG);
@@ -297,7 +333,7 @@ local function lay_out_tiles(count, avail, height)
     imgui.PushStyleVar(ImGuiStyleVar_ItemSpacing, TILE_LINE);
 
     for index = 1, count do
-        if (index > 1) then imgui.SameLine(0, gap); end
+        if ((index - 1) % per > 0) then imgui.SameLine(0, gap); end
         local slot = TILES[index];
         imgui.BeginChild(('##hhtile%d'):fmt(index), TILE_SIZE,
             ImGuiChildFlags_AlwaysUseWindowPadding, ImGuiWindowFlags_NoScrollbar);
@@ -314,6 +350,7 @@ local function render_tiles(count)
     local avail  = imgui.GetContentRegionAvail();
     local height = imgui.GetTextLineHeight() * 2 + px(data.ITEM_LINE_GAP)
                    + px(data.TILE_PAD_Y) * 2;
+    local rows   = math.ceil(count / tiles_per_row(count));
 
     if (tile_fill ~= false) then
         local x, y = imgui.GetCursorScreenPos();
@@ -326,17 +363,20 @@ local function render_tiles(count)
     end
 
     TILE_SIZE[1] = 0;
-    TILE_SIZE[2] = height;
+    TILE_SIZE[2] = rows * height + (rows - 1) * px(data.TILE_GAP);
     imgui.Dummy(TILE_SIZE);
 end
 
 
 
+local function skill_text(charname, activity)
+    local skill = store.get_skill(charname, activity);
+    return skill == nil and 'unknown' or ('%.1f'):fmt(skill);
+end
+
 local function render_skill_head(charname, activity)
     local head  = activity:upper();
-    local skill = store.get_skill(charname, activity);
-    local text  = skill == nil and 'unknown' or ('%.1f'):fmt(skill);
-
+    local text  = skill_text(charname, activity);
     local avail = imgui.GetContentRegionAvail();
     local x, y  = imgui.GetCursorScreenPos();
 
@@ -357,28 +397,6 @@ end
 local function as_rate(part, whole)
     if (whole <= 0) then return '-'; end
     return ('%.1f%%'):fmt(part / whole * 100);
-end
-
-local function render_skill(charname, activity, zoneId)
-    local skill = store.get_skill(charname, activity);
-    if (skill == nil) then
-        imgui.TextDisabled(('%s Skill: unknown'):fmt(activity));
-    else
-        imgui.Text(('%s Skill: %.1f'):fmt(activity, skill));
-    end
-
-    if (zoneId == nil) then return; end
-
-    local ups   = store.get_skillups(charname, activity, zoneId);
-    local swings = store.get_attempts(charname, activity, zoneId);
-
-    imgui.SameLine(0, px(data.CELL_GUTTER));
-    if (swings > 0) then
-        imgui.TextColored(data.COLOR_SKILLUP,
-            ('Skill Ups - %d/%d (%.1f%%)'):fmt(ups, swings, ups / swings * 100));
-    else
-        imgui.TextColored(data.COLOR_SKILLUP, ('Skill Ups - %d/0'):fmt(ups));
-    end
 end
 
 -- Fatigue bar
@@ -700,9 +718,9 @@ local function render_item_list(log, total, charname, activity, zoneId)
 
     local show_icons = store.item_icons();
 
-    local scaled = (store.icon_size() == data.SPOILS_ICON_SIZE) and font ~= nil;
+    local scaled = (store.icon_size() == data.SPOILS_ICON_SIZE) and frame_font ~= nil;
     if (scaled) then
-        imgui.PushFont(font, px(data.FONT_SIZE - data.SMALL_ICON_FONT_DROP));
+        imgui.PushFont(frame_font, px(data.FONT_SIZE - data.SMALL_ICON_FONT_DROP));
     end
 
     local items  = ITEMS;
@@ -798,38 +816,82 @@ local function divider()
 end
 
 
-local function last_skillup_label(charname, activity, zoneId)
+local function zone_cap_label(charname, activity, zoneId)
     local cap   = data.SKILL_CAPS[activity][zoneId];
     local skill = store.get_skill(charname, activity);
 
     if (cap ~= nil and skill ~= nil and skill >= cap) then
         return ('Cap (%d)'):fmt(cap);
     end
-    return tostring(store.get_since_skillup(charname, activity));
+    return nil;
+end
+
+
+local function proc_tip(ability, fired, outof, charname, zoneId)
+    local head;
+    if (outof <= 0) then
+        head = ('%s\nNothing here has given it a chance to fire yet.')
+            :fmt(ability.name);
+    else
+        local outof_what = ability.basis == 'breaks'
+            and 'tools that would have broken' or 'gathers';
+        head = ('%s\n%d of %d %s - %.1f%%')
+            :fmt(ability.name, fired, outof, outof_what, fired / outof * 100);
+    end
+
+    if (not ability.repeats) then return head; end
+    return ('%s\n\n%s'):fmt(head, repeat_note(charname, zoneId));
+end
+
+local function skillup_tip(ups, swings, since, capped)
+    local rate = swings > 0
+        and ('%d skill up%s in %d swing%s - %.1f%%')
+            :fmt(ups, ups == 1 and '' or 's', swings, swings == 1 and '' or 's',
+                 ups / swings * 100)
+        or  'No swings recorded in this zone yet.';
+
+    local drought = ('%d swing%s since the last one')
+        :fmt(since, since == 1 and '' or 's');
+
+    if (capped == nil) then return rate .. '\n' .. drought; end
+    return ('Your skill is at this zone\'s ceiling, so it cannot rise here.\n%s\n%s')
+        :fmt(rate, drought);
 end
 
 local function render_activity(charname, activity, curZoneId, zoneName)
     local log   = store.get_item_log(charname, activity, curZoneId);
     local total = count_gathers(log);
 
+    local mode = store.home_mode();
+
     render_skill_head(charname, activity);
     imgui.Spacing();
 
     render_fatigue(charname, activity, curZoneId, zoneName);
 
-    local mode = store.home_mode();
     if (mode == 'Compact') then return; end
 
     local ups    = store.get_skillups(charname, activity, curZoneId);
     local swings = store.get_attempts(charname, activity, curZoneId);
+    local capped = zone_cap_label(charname, activity, curZoneId);
+    local since  = store.get_since_skillup(charname, activity);
 
     tile(1, 'COLLECTED', ('%d'):fmt(total));
-    tile(2, 'SKILL UPS', as_rate(ups, swings), data.COLOR_SKILLUP);
-    tile(3, 'LAST SKILL', last_skillup_label(charname, activity, curZoneId));
-    render_tiles(3);
+    tile(2, 'SKILL UPS', capped or as_rate(ups, swings), data.COLOR_SKILLUP,
+         skillup_tip, ups, swings, since, capped);
 
-    imgui.Spacing();
-    render_procs(charname, activity, curZoneId, total);
+    local abilities = data.PROC_ABILITIES[activity];
+    for index, ability in ipairs(abilities) do
+        local fired = store.get_proc(charname, ability.name, curZoneId);
+        local outof = total;
+        if (ability.basis == 'breaks') then
+            outof = fired + store.get_breaks(charname, activity, curZoneId);
+        end
+        tile(2 + index, ability.short, as_rate(fired, outof), nil,
+             proc_tip, ability, fired, outof, charname, curZoneId);
+    end
+
+    render_tiles(2 + #abilities);
 
     if (mode == 'Normal') then imgui.Spacing(); return; end
 
@@ -891,8 +953,31 @@ end
 
 local PRICE_BUFFER = {};
 
+local function price_rows()
+    local scanned = resources.scan_done();
+    if (PRICE_ROWS ~= nil and PRICE_SCANNED == scanned) then return PRICE_ROWS; end
+
+    local rows = {};
+    for order, activity in ipairs(data.PRICE_BLOCKS) do
+        for _, key in ipairs(store.priced_items(activity)) do
+            rows[#rows + 1] = {
+                key      = key,
+                name     = resources.item_name(key),
+                activity = activity,
+                order    = order,
+                legacy   = data.LEGACY_SET[activity][key] == true,
+                id       = ('##hhprice%s%s'):fmt(activity, key),
+            };
+        end
+    end
+    table.sort(rows, by_activity_then_name);
+
+    PRICE_ROWS, PRICE_SCANNED = rows, scanned;
+    return rows;
+end
+
 local function render_price_editor()
-    imgui.TextDisabled('Set what each item sells for. Spoils multiplies it by your count.');
+    imgui.TextDisabled('Set what each item sells for, and what a tool costs to replace.');
     imgui.Spacing();
 
     PRICE_BOX[1] = 0;
@@ -903,29 +988,13 @@ local function render_price_editor()
     SPOIL_ICON[1] = px(data.SPOILS_ICON_SIZE);
     SPOIL_ICON[2] = SPOIL_ICON[1];
 
-    local rows   = PRICE_ROWS;
+    local rows = price_rows();
+
     local widest = 0;
-    local n      = 0;
-    for order, activity in ipairs(data.ACTIVITIES) do
-        for _, key in ipairs(store.priced_items(activity)) do
-            local name  = resources.item_name(key);
-            local width = imgui.CalcTextSize(name);
-            if (width > widest) then widest = width; end
-
-            n = n + 1;
-            local slot = pooled(PRICE_SLOTS, n);
-            slot.key      = key;
-            slot.name     = name;
-            slot.name_w   = width;
-            slot.activity = activity;
-            slot.order    = order;
-            slot.legacy   = data.LEGACY_SET[activity][name] == true;
-            rows[n] = slot;
-        end
+    for _, slot in ipairs(rows) do
+        slot.name_w = imgui.CalcTextSize(slot.name);
+        if (slot.name_w > widest) then widest = slot.name_w; end
     end
-    for index = n + 1, #rows do rows[index] = nil; end
-
-    table.sort(rows, by_activity_then_name);
 
     local shown = nil;
     imgui.PushItemWidth(px(data.PRICE_INPUT_WIDTH));
@@ -959,9 +1028,12 @@ local function render_price_editor()
             imgui.TextColored(data.COLOR_HIGH, '(?)');
         else
             PRICE_BUFFER[1] = store.get_price(item.activity, item.key);
-            if (imgui.InputInt(('##hhprice%s%s'):fmt(item.activity, item.key),
-                               PRICE_BUFFER, 0, 0)) then
+            if (imgui.InputInt(item.id, PRICE_BUFFER, 0, 0)) then
                 store.set_price(item.activity, item.key, PRICE_BUFFER[1]);
+            end
+            imgui.SameLine(0, px(data.CELL_GUTTER));
+            if (checkbox('Vendor', store.is_vendor(item.key), item.id)) then
+                store.toggle_vendor(item.key);
             end
         end
     end
@@ -989,33 +1061,45 @@ local function render_spoils(charname)
 
     imgui.Spacing();
 
+    local hide    = store.hide_vendor();
     local items   = SPOILS;
     local widest  = 0;
     local widestc = 0;
     local n       = 0;
+    local shown   = 0;
     for itemName, count in pairs(spoils) do
-        local name = resources.item_name(itemName);
-        local width = imgui.CalcTextSize(name);
-        if (width > widest) then widest = width; end
-
         n = n + 1;
         local slot = pooled(SPOIL_SLOTS, n);
         slot.key    = itemName;
-        slot.name   = name;
+        slot.name   = resources.item_name(itemName);
         slot.count  = count;
-        slot.name_w = width;
+        slot.name_w = imgui.CalcTextSize(slot.name);
         slot.profit = count * store.price_of(itemName);
+        slot.vendor = store.is_vendor(itemName);
         slot.tally  = ('x%d'):fmt(count);
         slot.tally_w = imgui.CalcTextSize(slot.tally);
-        if (slot.tally_w > widestc) then widestc = slot.tally_w; end
+        slot.hidden = hide and slot.vendor;
         items[n] = slot;
+
+        if (not slot.hidden) then
+            shown = shown + 1;
+            if (slot.name_w > widest)   then widest  = slot.name_w; end
+            if (slot.tally_w > widestc) then widestc = slot.tally_w; end
+        end
     end
     for index = n + 1, #items do items[index] = nil; end
 
     if (n == 0) then
         empty('Nothing gathered this session.');
     else
-        table.sort(items, by_name);
+        table.sort(items, by_profit_then_name);
+
+        if (checkbox('Hide Vendor Items', hide)) then
+            store.toggle_hide_vendor();
+        end
+        hint('Keeps items you marked Vendor out of the list. They still count '
+          .. 'towards the total.');
+        imgui.Spacing();
 
         SPOIL_ICON[1] = px(data.SPOILS_ICON_SIZE);
         SPOIL_ICON[2] = SPOIL_ICON[1];
@@ -1041,31 +1125,45 @@ local function render_spoils(charname)
         local total = 0;
         for _, item in ipairs(items) do
             total = total + item.profit;
-
-            if (show_icons) then
-                local icon = icons.texture(resources.item_id(item.key));
-                if (icon ~= nil) then
-                    imgui.Image(icon.handle, SPOIL_ICON);
-                else
-                    imgui.Dummy(SPOIL_ICON);
-                end
-                imgui.SameLine();
-            end
-
-            imgui.TextDisabled(item.name);
-            imgui.SameLine(0, widest - item.name_w + px(data.CELL_GUTTER));
-            imgui.TextDisabled(item.tally);
-            imgui.SameLine(0, widestc - item.tally_w + px(data.CELL_GUTTER));
-            imgui.TextColored(data.COLOR_SKILLUP, gil(item.profit));
         end
 
+        if (shown == 0) then
+            empty('Every item here is marked Vendor.');
+        end
+
+        for _, item in ipairs(items) do
+            if (not item.hidden) then
+                if (show_icons) then
+                    local icon = icons.texture(resources.item_id(item.key));
+                    if (icon ~= nil) then
+                        imgui.Image(icon.handle, SPOIL_ICON);
+                    else
+                        imgui.Dummy(SPOIL_ICON);
+                    end
+                    imgui.SameLine();
+                end
+
+                local ink = item.vendor and data.COLOR_LABEL or data.COLOR_VALUE;
+                imgui.TextColored(ink, item.name);
+                imgui.SameLine(0, widest - item.name_w + px(data.CELL_GUTTER));
+                imgui.TextColored(ink, item.tally);
+                imgui.SameLine(0, widestc - item.tally_w + px(data.CELL_GUTTER));
+                imgui.TextColored(data.COLOR_SKILLUP, gil(item.profit));
+            end
+        end
+
+        local tools = store.tool_cost(charname);
+        local net   = total - tools;
+
         imgui.Spacing();
-        imgui.TextColored(data.COLOR_SKILLUP, ('Total - %s Gil'):fmt(gil(total)));
+        imgui.TextColored(data.COLOR_SKILLUP, ('Net Gil - %s Gil'):fmt(gil(net)));
+        imgui.TextColored(data.COLOR_LABEL,
+            ('Tools Broken - %s Gil'):fmt(gil(tools)));
 
         local span = store.session_span(charname);
         if (span > 0) then
             imgui.TextColored(data.COLOR_GOLD, ('Per Hour - %s Gil   over %s')
-                :fmt(gil(total * data.SECONDS_PER_HOUR / span), span_label(span)));
+                :fmt(gil(net * data.SECONDS_PER_HOUR / span), span_label(span)));
         else
             imgui.TextColored(data.COLOR_GOLD, 'Per Hour - not enough time yet');
         end
@@ -1087,7 +1185,8 @@ end
 local function render_activity_tab(charname, activity)
     local zones = data.TRACKED_ZONES[activity];
 
-    render_skill(charname, activity);
+    render_skill_head(charname, activity);
+    imgui.Spacing();
     imgui.Separator();
     imgui.Spacing();
 
@@ -1147,6 +1246,16 @@ local function render_settings(charname)
     local widest = activity_pairs();
 
     caption('DISPLAY');
+
+    imgui.PushItemWidth(px(data.COMBO_WIDTH));
+    local fonted = { store.font_index() - 1 };
+    if (imgui.Combo('Font', fonted, data.FONT_COMBO)) then
+        store.set_font_index(fonted[1] + 1);
+    end
+    imgui.PopItemWidth();
+    hint('Typeface for the whole window. All of these ship with Windows.');
+
+    imgui.Spacing();
 
     imgui.PushItemWidth(px(data.COMBO_WIDTH));
     local homed = { store.home_mode_index() - 1 };
@@ -1378,7 +1487,8 @@ function ui.render(charname, curZoneId)
         imgui.PushStyleVar(entry[1], entry[2]);
     end
 
-    if (font ~= nil) then imgui.PushFont(font, px(data.FONT_SIZE)); end
+    frame_font = chosen_font();
+    if (frame_font ~= nil) then imgui.PushFont(frame_font, px(data.FONT_SIZE)); end
 
     imgui.SetNextWindowSize(FIRST_SIZE, ImGuiCond_FirstUseEver);
     imgui.SetNextWindowSizeConstraints(MIN_SIZE, MAX_SIZE);
@@ -1410,7 +1520,7 @@ function ui.render(charname, curZoneId)
     end
     imgui.End();
 
-    if (font ~= nil) then imgui.PopFont(); end
+    if (frame_font ~= nil) then imgui.PopFont(); end
 
     imgui.PopStyleVar(#STYLE_VARS);
     imgui.PopStyleColor(#STYLE_COLORS);

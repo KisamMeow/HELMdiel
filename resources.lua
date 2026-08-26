@@ -88,12 +88,51 @@ function resources.scan_chunk()
     if (last >= ITEM_SCAN_MAX) then item_scan_done = true; end
 end
 
+function resources.target_node()
+    local memory = AshitaCore:GetMemoryManager();
+    if (memory == nil) then return nil; end
+
+    local target = memory:GetTarget();
+    local entity = memory:GetEntity();
+    if (target == nil or entity == nil) then return nil; end
+
+    local index = target:GetTargetIndex(0);
+    if (index == nil or index == 0) then return nil; end
+
+    return index, entity:GetServerId(index);
+end
+
+function resources.node_gone(index, serverId)
+    local memory = AshitaCore:GetMemoryManager();
+    if (memory == nil) then return false; end
+
+    local entity = memory:GetEntity();
+    if (entity == nil) then return false; end
+
+    if (entity:GetServerId(index) ~= serverId) then return true; end
+
+    local flags = entity:GetRenderFlags0(index) or 0;
+    return math.floor(flags / data.RENDER_VISIBLE) % 2 == 0;
+end
+
+function resources.scan_done()
+    return item_scan_done;
+end
+
+local function resolve(name)
+    local bare  = name:gsub('^[Aa]n?%s+', '');
+    local key   = item_key(bare);
+    local alias = data.ITEM_ALIASES[key];
+    if (alias == nil) then return bare, key; end
+    return alias, item_key(alias);
+end
+
 function resources.item_name(name)
     local cached = ITEM_NAMES[name];
     if (cached ~= nil) then return cached; end
 
-    local bare  = name:gsub('^[Aa]n?%s+', '');
-    local shown = ITEM_LOOKUP[item_key(bare)] or (bare:gsub('^%l', string.upper));
+    local bare, key = resolve(name);
+    local shown = ITEM_LOOKUP[key] or (bare:gsub('^%l', string.upper));
 
     if (item_scan_done) then
         ITEM_NAMES[name] = shown;
@@ -108,8 +147,8 @@ function resources.item_id(name)
         return cached;
     end
 
-    local bare = name:gsub('^[Aa]n?%s+', '');
-    local id   = ITEM_IDS[item_key(bare)];
+    local _, key = resolve(name);
+    local id     = ITEM_IDS[key];
 
     if (item_scan_done) then
         ITEM_IDS_BY_NAME[name] = id or false;
