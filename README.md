@@ -16,9 +16,9 @@ from Claude Opus 5.
 
 | Home | Harvesting |
 |:---:|:---:|
-| ![Home tab: the current zone's skill and fatigue bar, a row of stat tiles, and the drop grid below them](docs/screenshots/home.png) | ![Harvesting tab: a fatigue bar per zone, one of them capped and red, and a foldout per zone carrying its own rates and drops](docs/screenshots/activity.png) |
+| ![Home tab: the current zone's skill and fatigue bar, a row of stat tiles, and the drop grid below them](docs/screenshots/home.png?v=2) | ![Harvesting tab: a fatigue bar per zone, one of them capped and red, and a foldout per zone carrying its own rates and drops](docs/screenshots/activity.png?v=2) |
 | **Spoils** | **Settings** |
-| ![Spoils tab: the session tally sorted by gil, with Net Gil, Tools Broken and Per Hour under it](docs/screenshots/spoils.png) | ![Settings tab: the Display, Activities, Skill Levels, Tracking, Export and Reset blocks](docs/screenshots/settings.png) |
+| ![Spoils tab: the session tally sorted by gil, with Net Gil, Tools Broken and Per Hour under it](docs/screenshots/spoils.png?v=2) | ![Settings tab: the Display, Activities, Skill Levels, Tracking, Export and Reset blocks](docs/screenshots/settings.png?v=2) |
 
 **Home** is the zone you are standing in; the **four activity tabs** are every
 zone for one activity, drops behind a foldout; **Spoils** is the session tally
