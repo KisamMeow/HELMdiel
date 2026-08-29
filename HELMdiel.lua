@@ -1,6 +1,6 @@
 addon.name    = 'HELMdiel';
 addon.author  = 'Masuru';
-addon.version = '0.13.0';
+addon.version = '0.14.0';
 addon.desc    = 'Tracks HELM (Harvesting/Excavation/Logging/Mining) regional gathering fatigue on HorizonXI.';
 addon.link    = 'https://github.com/KisamMeow/HELMdiel';
 
@@ -169,6 +169,7 @@ ashita.events.register('text_in', 'helmdiel_text_in', function(e)
 
         store.register_skill(skill_activity, skill_value);
         store.register_skillup(skill_activity, zoneId);
+        store.register_moon_skillup(skill_activity, resources.moon_phase());
         store.reset_since_skillup(skill_activity);
         store.save();
         return;
@@ -248,7 +249,20 @@ ashita.events.register('text_in', 'helmdiel_text_in', function(e)
 
         if (not blocked) then
             store.register_attempt(activity, zoneId);
-            store.bump_since_skillup(activity);
+
+            if (store.skill_capped(store.char_name(), activity, zoneId) == nil) then
+                store.bump_since_skillup(activity);
+
+                local phase = resources.moon_phase();
+                store.register_moon_swing(activity, phase);
+                if (state.debug) then
+                    msg(('[moon] swing under %s')
+                        :fmt(phase or 'no readable game clock'));
+                end
+            elseif (state.debug) then
+                msg(('[capped] %s swing where skill cannot rise, not counted'
+                     .. ' towards the swings since your last skill up'):fmt(activity));
+            end
         elseif (state.debug) then
             msg(('[fatigued] %s swing in a capped zone, not counted'):fmt(activity));
         end

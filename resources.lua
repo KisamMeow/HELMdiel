@@ -88,6 +88,55 @@ function resources.scan_chunk()
     if (last >= ITEM_SCAN_MAX) then item_scan_done = true; end
 end
 
+-- Moon phase
+
+local moon_at, moon_pct, moon_seen = nil, nil, -1;
+local moon_base, moon_ok = nil, nil;
+
+local function moon_pointer()
+    if (moon_base ~= nil) then return moon_base; end
+    if (moon_ok == false) then return nil; end
+
+    local mem = ashita and ashita.memory;
+    if (mem == nil or mem.find == nil) then moon_ok = false; return nil; end
+
+    local ok, found = pcall(mem.find, 'FFXiMain.dll', 0, data.MOON_SIGNATURE,
+                            data.MOON_POINTER_OFFSET, 0);
+    if (not ok or found == nil or found == 0) then moon_ok = false; return nil; end
+
+    moon_base = found;
+    return moon_base;
+end
+
+local function read_moon()
+    local base = moon_pointer();
+    if (base == nil) then return nil; end
+
+    local mem = ashita.memory;
+    local ok, pointer = pcall(mem.read_uint32, base);
+    if (not ok or pointer == nil or pointer == 0) then return nil; end
+
+    local got, ticks = pcall(mem.read_uint32, pointer + data.MOON_TIME_OFFSET);
+    if (not got or ticks == nil) then return nil; end
+
+    local day    = math.floor((ticks + data.MOON_EPOCH) / data.MOON_DAY_TICKS);
+    local mphase = (day + 26) % data.MOON_CYCLE;
+    local away   = math.abs(data.MOON_HALF - mphase);
+    return data.MOON_INDEX[mphase + 1],
+           math.floor(away * 100 / data.MOON_HALF + 0.5);
+end
+
+function resources.moon_phase()
+    local now = os.clock();
+    if (moon_at ~= nil and (now - moon_seen) < data.MOON_CACHE_SECONDS) then
+        return moon_at, moon_pct;
+    end
+
+    moon_at, moon_pct = read_moon();
+    moon_seen = now;
+    return moon_at, moon_pct;
+end
+
 function resources.target_node()
     local memory = AshitaCore:GetMemoryManager();
     if (memory == nil) then return nil; end

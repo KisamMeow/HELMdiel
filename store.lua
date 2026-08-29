@@ -328,6 +328,18 @@ function store.get_skill(charname, activity)
     return char.skill[activity];
 end
 
+function store.skill_capped(charname, activity, zoneId)
+    local caps = data.SKILL_CAPS[activity];
+    if (caps == nil) then return nil; end
+
+    local cap = caps[zoneId];
+    if (cap == nil) then return nil; end
+
+    local skill = store.get_skill(charname, activity);
+    if (skill == nil or skill < cap) then return nil; end
+    return cap;
+end
+
 function store.fatigue_cap(charname, activity, zoneId)
     local caps = data.SKILL_CAPS[activity];
     if (caps == nil) then return data.FATIGUE_CAP; end
@@ -483,6 +495,32 @@ end
 function store.register_attempt(activity, zoneId) bump('attempts',  activity, zoneId); end
 function store.register_success(activity, zoneId) bump('successes', activity, zoneId); end
 function store.register_skillup(activity, zoneId) bump('skillups',  activity, zoneId); end
+
+local function moon_bump(field, activity, phase)
+    if (phase == nil) then return; end
+
+    local char  = ensure_char(store.char_name());
+    local group = char[field];
+    if (type(group[activity]) ~= 'table') then group[activity] = T{}; end
+    group[activity][phase] = (group[activity][phase] or 0) + 1;
+end
+
+function store.register_moon_swing(activity, phase)
+    moon_bump('moonswings', activity, phase);
+end
+
+function store.register_moon_skillup(activity, phase)
+    moon_bump('moonups', activity, phase);
+end
+
+function store.moon_record(charname, activity, phase)
+    local char = helm_settings.characters[charname];
+    if (char == nil) then return 0, 0; end
+
+    local ups    = char.moonups    and char.moonups[activity];
+    local swings = char.moonswings and char.moonswings[activity];
+    return (ups and ups[phase]) or 0, (swings and swings[phase]) or 0;
+end
 
 function store.bump_since_skillup(activity)
     local char = ensure_char(store.char_name());

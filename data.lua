@@ -70,7 +70,7 @@ data.SHEEN_HEIGHT   = 90.0;
 data.COLOR_SHEEN    = { 1.00, 1.00, 1.00, 0.055 };
 data.COLOR_SHEEN_END = { 1.00, 1.00, 1.00, 0.00 };
 
--- Gold accent and resize grip
+-- Gold accent, drawn only as the resize grip
 data.COLOR_GOLD        = { 1.00, 0.84, 0.20, 1.00 };
 data.COLOR_LABEL       = { 0.62, 0.62, 0.67, 1.00 };
 data.COLOR_VALUE       = { 0.93, 0.93, 0.96, 1.00 };
@@ -459,11 +459,11 @@ data.TRACKED_ZONES = T{
         { id = 145, name = 'Giddeus',           skill_cap = 20 },
         { id = 123, name = 'Yuhtunga Jungle',   skill_cap = 40 },
         { id = 124, name = 'Yhoator Jungle',    skill_cap = 40 },
-        { id = 52,  name = 'Bhaflau Thickets' },
-        { id = 51,  name = 'Wajaom Woodlands' },
+        { id = 52,  name = 'Bhaflau Thickets',  skill_cap = 60 },
+        { id = 51,  name = 'Wajaom Woodlands',  skill_cap = 60 },
     },
     Excavation = T{
-        { id = 7,   name = 'Attohwa Chasm' },
+        { id = 7,   name = 'Attohwa Chasm',     skill_cap = 40 },
         { id = 173, name = 'Korroloka Tunnel',  skill_cap = 20 },
         { id = 198, name = 'Maze of Shakhrami', skill_cap = 20 },
         { id = 117, name = 'Tahrongi Canyon',   skill_cap = 10 },
@@ -471,26 +471,26 @@ data.TRACKED_ZONES = T{
     Logging = T{
         { id = 118, name = 'Buburimu Peninsula' },
         { id = 2,   name = "Carpenters' Landing" },
-        { id = 101, name = 'East Ronfaure' },
-        { id = 140, name = 'Ghelsba Outpost' },
+        { id = 101, name = 'East Ronfaure',     skill_cap = 10 },
+        { id = 140, name = 'Ghelsba Outpost',   skill_cap = 20 },
         { id = 104, name = 'Jugner Forest' },
         { id = 24,  name = 'Lufaise Meadows' },
         { id = 25,  name = 'Misareaux Coast' },
-        { id = 124, name = 'Yhoator Jungle' },
-        { id = 123, name = 'Yuhtunga Jungle' },
-        { id = 79,  name = 'Caedarva Mire' },
-        { id = 65,  name = 'Mamook' },
+        { id = 124, name = 'Yhoator Jungle',    skill_cap = 40 },
+        { id = 123, name = 'Yuhtunga Jungle',   skill_cap = 40 },
+        { id = 79,  name = 'Caedarva Mire',     skill_cap = 60 },
+        { id = 65,  name = 'Mamook',            skill_cap = 60 },
     },
     Mining = T{
         { id = 196, name = 'Gusgen Mines' },
-        { id = 62,  name = 'Halvung' },
+        { id = 62,  name = 'Halvung',           skill_cap = 60 },
         { id = 205, name = "Ifrit's Cauldron" },
-        { id = 61,  name = 'Mount Zhayolm' },
+        { id = 61,  name = 'Mount Zhayolm',     skill_cap = 60 },
         { id = 12,  name = 'Newton Movalpolos' },
         { id = 11,  name = 'Oldton Movalpolos' },
-        { id = 143, name = 'Palborough Mines' },
-        { id = 142, name = 'Yughott Grotto' },
-        { id = 172, name = 'Zeruhn Mines' },
+        { id = 143, name = 'Palborough Mines',  skill_cap = 20 },
+        { id = 142, name = 'Yughott Grotto',    skill_cap = 20 },
+        { id = 172, name = 'Zeruhn Mines',      skill_cap = 10 },
     },
 };
 
@@ -560,7 +560,8 @@ data.SKILL_VALUE_INTEGER = 'raising it to (%d+)';
 data.CHARACTER_KEYS = T{ 'fatigue', 'fatigued', 'item_log', 'skill',
                          'skillups', 'attempts', 'successes', 'spoils',
                          'since_skillup', 'procs', 'breaks', 'goldrush',
-                         'tool_breaks', 'lifetime', 'session_log' };
+                         'tool_breaks', 'lifetime', 'session_log',
+                         'moonups', 'moonswings' };
 data.SESSION_KEYS   = T{ 'skillups', 'attempts', 'successes', 'spoils',
                          'since_skillup', 'tool_breaks', 'session_log' };
 data.SPOILS_KEYS    = T{ 'spoils', 'tool_breaks', 'session_log' };
@@ -692,6 +693,50 @@ for _, activity in ipairs(data.ACTIVITIES) do
     data.SKILL_PATTERNS[activity]   =
         ('Your %s skill has increased'):fmt(SKILL_NAMES[activity]);
 end
+
+-- Moon
+-- The 84 day cycle and its eight phases, in cycle order. `upto` is the last
+-- moon index the phase covers; Full Moon wraps, so it opens and closes the
+-- table and MOON_INDEX falls through to it.
+data.MOON_SIGNATURE = 'B0015EC390518B4C24088D4424005068';
+data.MOON_POINTER_OFFSET = 0x34;
+data.MOON_TIME_OFFSET    = 0x0C;
+data.MOON_EPOCH          = 92514960;
+data.MOON_DAY_TICKS      = 3456;
+data.MOON_CYCLE          = 84;
+data.MOON_HALF           = 42;
+data.MOON_CACHE_SECONDS  = 5.0;
+
+data.MOON_MARKER = '>';
+
+data.MOON_PHASES = T{
+    { name = 'New Moon',        upto = 45 },
+    { name = 'Waxing Crescent', upto = 58 },
+    { name = 'First Quarter',   upto = 66 },
+    { name = 'Waxing Gibbous',  upto = 80 },
+    { name = 'Full Moon',       upto = 84 },
+    { name = 'Waning Gibbous',  upto = 17 },
+    { name = 'Last Quarter',    upto = 25 },
+    { name = 'Waning Crescent', upto = 38 },
+};
+
+local MOON_INDEX = T{};
+do
+    -- Walk the cycle from Full Moon's opening run so every index is covered
+    -- once, wrap included.
+    local bounds = T{ 3, 17, 25, 38, 45, 58, 66, 80, 84 };
+    local names  = T{ 'Full Moon', 'Waning Gibbous', 'Last Quarter',
+                      'Waning Crescent', 'New Moon', 'Waxing Crescent',
+                      'First Quarter', 'Waxing Gibbous', 'Full Moon' };
+    local at = 1;
+    for step, edge in ipairs(bounds) do
+        while (at <= edge) do
+            MOON_INDEX[at] = names[step];
+            at = at + 1;
+        end
+    end
+end
+data.MOON_INDEX = MOON_INDEX;
 
 -- Tools
 data.TOOL_KEY       = 'Tools';

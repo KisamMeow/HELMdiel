@@ -9,7 +9,7 @@ export.
 Still in early development: expect bugs, and expect the UI to keep moving until
 1.0.
 
-Ashita v4.30+ addon. Version 0.13.0. Released under GPL-3.0. Coded with help
+Ashita v4.30+ addon. Version 0.14.0. Released under GPL-3.0. Coded with help
 from Claude Opus 5.
 
 ## Screenshots
@@ -71,7 +71,8 @@ Giddeus falls to 100.
 **Zones you have outskilled hold more.** For every 10 skill levels above a
 zone's skill cap you get 50 extra fatigue there, so West Sarutabaruta, which
 caps harvesting at 10, holds 300 once you are at 35. This only applies to zones
-whose skill cap the addon knows; the rest stay at 200.
+whose skill cap the addon knows, which is now 21 of the 30 it tracks; the other
+nine stay at 200.
 
 The counters are a model built from observed play, not a readout of the
 server's real numbers, so gathering with the addon unloaded makes them drift.
@@ -115,8 +116,26 @@ has them.
 
 **Skill Ups** is how often a swing here raised your skill, or **Cap (20)**
 once your skill reaches the zone's ceiling, since a rate stops meaning anything
-once it cannot move. Only a few zones have a known cap. **Hover it** for the
-numbers behind it and how many swings since your last skill up.
+once it cannot move. Most zones have a known cap now; the nine that do not
+always show the rate. **Hover it** for the numbers behind it and how many
+swings since your last skill up.
+
+**Swings in a zone you have outskilled do not count towards that last figure.**
+It answers how long you have been waiting for a skill up, and a finished zone
+was never going to give you one. Everything else about those swings still
+counts — the items, the drop rates, the fatigue.
+
+**The tile reads `MOON 31%`** — how lit the moon is right now, the same figure
+the game shows — over your skill up rate under that phase. **Hover it** for all
+eight phases in a table, with the one you are on marked `>`. Whether the moon
+affects HELM skill ups is not something anyone has proven; this is here so you
+can find out.
+
+The phase tally pools every zone for that activity, since eight phases split
+your data eight ways and per-zone would take forever to say anything. Swings in
+a zone you have outskilled are left out, the same as above. In a capped zone,
+or if the addon cannot read the game clock, the tile goes back to showing the
+zone's own rate.
 
 **The tiles after it are that activity's special skills**, one each — Mining
 gets four, wrapped onto two rows, and Logging none. **Hover one** for the
@@ -176,30 +195,40 @@ Everything gathered this session, whatever zone it came from, sorted by gil so
 whatever paid most is at the top:
 
 ```
+[ ] Hide Vendor Items
+
+  NET GIL                    LIFETIME
+  14,235                     2,104,220
+
 ITEM                   AMOUNT      GIL
 [icon]  Sprig of Dyer's Woad   x12   14,400
 [icon]  Bone Chip              x3       135
-
-Net Gil - 14,235 Gil
-Tools Broken - 300 Gil
-Per Hour - 12,201 Gil   over 1h 10m
 ```
 
 No rarity, just what you are carrying home. It survives reloading and logging
 out.
 
-**Tools Broken is every sickle, pickaxe and hatchet you got through this
-session**, priced from the Tools block in Edit Prices. It comes off Net Gil,
-and Per Hour divides the net. Leave the tools unpriced and nothing is deducted.
+**Hover Net Gil** for what it is made of and how fast you earned it:
 
-**Per Hour runs from your first gather to your last**, not to the current time,
+```
+2,000 Gil gathered this session, minus 150 for broken tools.
+3,689 Gil/hr over 30min.
+```
+
+**The tools deduction is every sickle, pickaxe and hatchet you got through this
+session**, priced from the Tools block in Edit Prices. Leave them unpriced and
+nothing is deducted.
+
+**The rate runs from your first gather to your last**, not to the current time,
 so leaving the window open while you do something else does not drag it down.
 Every reset that clears the tally clears the clock with it.
 
 **Lifetime is everything this character has ever gathered**, less every tool it
 has broken, and it is the one figure here that a session reset leaves alone —
-only Reset All Data clears it. Like the rest it is priced live, so setting a
-price later corrects everything you gathered before you set it.
+only Reset All Data clears it. It is priced at what your items are worth
+**now**, not at what they were worth when you gathered them, so it moves
+whenever you change a price. That is deliberate: it means pricing an item today
+corrects everything you gathered before you got round to it.
 
 **Prices are yours to set**, since the game does not tell addons what anything
 sells for. **Edit Prices** lists every gatherable item with a box beside it —
@@ -295,9 +324,12 @@ file resets the character, same as `/helmdiel reset all`.
 ## Known limitations
 
 - **The raised fatigue cap only applies to zones whose skill cap is known**,
-  and that is 7 of the 30 tracked zones. Everywhere else the bar tops out at
-  200, so if you have outskilled one of those zones the game will let you keep
-  gathering after the bar looks full.
+  and that is 21 of the 30 tracked zones. The nine left are Buburimu Peninsula,
+  Carpenters' Landing, Jugner Forest, Lufaise Meadows and Misareaux Coast for
+  logging, and Gusgen Mines, Ifrit's Cauldron, Newton Movalpolos and Oldton
+  Movalpolos for mining. There the bar tops out at 200, so if you have
+  outskilled one the game will let you keep gathering after the bar looks
+  full.
 - **Skill up rates depend on your skill against a zone's cap**, which HELMdiel
   does not model. Rates recorded at different skill levels are not comparable,
   and a zone that looks slow may just be a poor match for your current skill.
@@ -309,9 +341,10 @@ file resets the character, same as `/helmdiel reset all`.
 
 ## Feedback
 
-**Zone skill caps are the most useful thing you can send**, since they drive
-the fatigue ceiling and only 7 zones have one. Corrections to the message
-patterns and zone lists are next, and `/helmdiel debug` output is ideal.
+**The nine remaining zone skill caps are the most useful thing you can send**,
+since they drive the fatigue ceiling: five logging zones and four mining ones,
+listed under Known limitations. Corrections to the message patterns and zone
+lists are next, and `/helmdiel debug` output is ideal.
 
 Open an issue at
 [github.com/KisamMeow/HELMdiel/issues](https://github.com/KisamMeow/HELMdiel/issues),

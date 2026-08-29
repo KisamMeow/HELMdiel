@@ -19,6 +19,36 @@ If you notice any items being listed twice but spelt differently then type
 
 ## [Unreleased]
 
+## [0.14.0] - 2026-08-28
+
+### Added
+
+- **Skill ups by moon phase.** The Skill Ups tile reads `MOON 31%`, how lit
+  the moon is, over your skill up rate under that phase; hover it for all
+  eight. Pooled across zones, since eight phases split the data thin.
+  **This one may not stay.** Nobody has shown the moon affects HELM skill ups
+  at all — the tile is here so we can find out, and it goes if it turns out to
+  make no difference.
+- **Skill caps for fourteen more zones**, so their fatigue bars now rise past
+  200 once you outskill them. Every harvesting and excavation zone is covered;
+  nine logging and mining zones are still unknown.
+
+### Changed
+
+- **Spoils is summarised by two tiles**, Net Gil and Lifetime, sat under Hide
+  Vendor Items rather than four lines of text at the foot. Hover Net Gil for
+  what it is made of and your gil an hour, and Lifetime for a note that it
+  moves as you adjust prices.
+- **Swings in a zone you have outskilled no longer count** towards the swings
+  since your last skill up, since that zone could never have given you one.
+  Everything else about those swings is recorded as before.
+- **The Skill Ups hover is shorter and plainer**, whichever of the three things
+  it is showing you.
+
+### Fixed
+
+- **Home draws a line under the skill**, the way the activity tabs do.
+
 ## [0.13.0] - 2026-08-26
 
 ### Changed
@@ -498,7 +528,8 @@ Initial public release.
 - The rule that a gather decays *all* other zones for that activity was
   inferred from a two-zone observation.
 
-[Unreleased]: https://github.com/KisamMeow/HELMdiel/compare/v0.13.0...HEAD
+[Unreleased]: https://github.com/KisamMeow/HELMdiel/compare/v0.14.0...HEAD
+[0.14.0]: https://github.com/KisamMeow/HELMdiel/compare/v0.13.0...v0.14.0
 [0.13.0]: https://github.com/KisamMeow/HELMdiel/compare/v0.12.0...v0.13.0
 [0.12.0]: https://github.com/KisamMeow/HELMdiel/compare/v0.11.1...v0.12.0
 [0.11.1]: https://github.com/KisamMeow/HELMdiel/compare/v0.11.0...v0.11.1

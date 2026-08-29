@@ -295,7 +295,8 @@ local function paint_tiles(count, x, y, w, tall)
         if (over and slot.tip ~= nil
             and mx >= left and mx < left + width
             and my >= top and my < top + tall) then
-            imgui.SetTooltip(slot.tip(slot.a, slot.b, slot.c, slot.d, slot.e));
+            local said = slot.tip(slot.a, slot.b, slot.c, slot.d, slot.e);
+            if (said ~= nil) then imgui.SetTooltip(said); end
         end
 
         TILE_MIN[1] = left;
@@ -825,13 +826,9 @@ end
 
 
 local function zone_cap_label(charname, activity, zoneId)
-    local cap   = data.SKILL_CAPS[activity][zoneId];
-    local skill = store.get_skill(charname, activity);
-
-    if (cap ~= nil and skill ~= nil and skill >= cap) then
-        return ('Cap (%d)'):fmt(cap);
-    end
-    return nil;
+    local cap = store.skill_capped(charname, activity, zoneId);
+    if (cap == nil) then return nil; end
+    return ('Cap (%d)'):fmt(cap);
 end
 
 
@@ -851,19 +848,88 @@ local function proc_tip(ability, fired, outof, charname, zoneId)
     return ('%s\n\n%s'):fmt(head, repeat_note(charname, zoneId));
 end
 
-local function skillup_tip(ups, swings, since, capped)
-    local rate = swings > 0
-        and ('%d skill up%s in %d swing%s - %.1f%%')
-            :fmt(ups, ups == 1 and '' or 's', swings, swings == 1 and '' or 's',
-                 ups / swings * 100)
-        or  'No swings recorded in this zone yet.';
+local MOON_LINES    = {};
+local MOON_CAPTIONS = {};
 
-    local drought = ('%d swing%s since the last one')
+local function moon_caption(percent)
+    local label = MOON_CAPTIONS[percent];
+    if (label == nil) then
+        label = ('MOON %d%%'):fmt(percent);
+        MOON_CAPTIONS[percent] = label;
+    end
+    return label;
+end
+
+local function drought_line(since)
+    if (since == 0) then return 'No swings since your last skill up.'; end
+    return ('%d swing%s since your last skill up.')
         :fmt(since, since == 1 and '' or 's');
+end
 
-    if (capped == nil) then return rate .. '\n' .. drought; end
-    return ('Your skill is at this zone\'s ceiling, so it cannot rise here.\n%s\n%s')
-        :fmt(rate, drought);
+local function moon_tip(charname, activity, phase, since)
+    local rows, gap = MOON_LINES, px(data.CELL_GUTTER);
+    local mark  = imgui.CalcTextSize(data.MOON_MARKER);
+    local names, tallies, rates = 0, 0, 0;
+
+    local count = 0;
+    for _, entry in ipairs(data.MOON_PHASES) do
+        local ups, swings = store.moon_record(charname, activity, entry.name);
+        count = count + 1;
+
+        local slot = rows[count];
+        if (slot == nil) then slot = {}; rows[count] = slot; end
+        slot.name   = entry.name;
+        slot.here   = entry.name == phase;
+        slot.tally  = swings > 0 and ('%d/%d'):fmt(ups, swings) or '-';
+        slot.rate   = swings > 0 and ('%.1f%%'):fmt(ups / swings * 100) or '-';
+        slot.name_w  = imgui.CalcTextSize(slot.name);
+        slot.tally_w = imgui.CalcTextSize(slot.tally);
+        slot.rate_w  = imgui.CalcTextSize(slot.rate);
+
+        if (slot.name_w  > names)   then names   = slot.name_w;  end
+        if (slot.tally_w > tallies) then tallies = slot.tally_w; end
+        if (slot.rate_w  > rates)   then rates   = slot.rate_w;  end
+    end
+    for index = count + 1, #rows do rows[index] = nil; end
+
+    imgui.BeginTooltip();
+    imgui.TextColored(data.COLOR_VALUE,
+        ('%s skill ups by moon phase, across every zone.'):fmt(activity));
+    imgui.Spacing();
+
+    for index = 1, count do
+        local slot = rows[index];
+        local ink  = slot.here and data.COLOR_VALUE or data.COLOR_LABEL;
+
+        imgui.TextColored(ink, slot.here and data.MOON_MARKER or '');
+        imgui.SameLine(0, (slot.here and 0 or mark) + gap);
+        imgui.TextColored(ink, slot.name);
+        -- Both figure columns are right aligned, so the digits stack.
+        imgui.SameLine(0, names - slot.name_w + tallies - slot.tally_w + gap);
+        imgui.TextColored(ink, slot.tally);
+        imgui.SameLine(0, rates - slot.rate_w + gap);
+        imgui.TextColored(ink, slot.rate);
+    end
+
+    imgui.Spacing();
+    imgui.TextColored(data.COLOR_LABEL, drought_line(since));
+    imgui.EndTooltip();
+    return nil;
+end
+
+local function skillup_tip(ups, swings, since, cap_at, zoneName)
+    if (cap_at ~= nil) then
+        return ('%s caps at %d. Swings here are not counted.')
+            :fmt(zoneName, cap_at);
+    end
+
+    if (swings == 0) then
+        return ('Nothing swung in %s yet.\n%s'):fmt(zoneName, drought_line(since));
+    end
+
+    return ('%d skill up%s in %d swing%s here, %.1f%%.\n%s'):fmt(
+        ups, ups == 1 and '' or 's', swings, swings == 1 and '' or 's',
+        ups / swings * 100, drought_line(since));
 end
 
 local function render_activity(charname, activity, curZoneId, zoneName)
@@ -876,6 +942,8 @@ local function render_activity(charname, activity, curZoneId, zoneName)
 
     render_skill_head(charname, activity);
     imgui.Spacing();
+    imgui.Separator();
+    imgui.Spacing();
 
     render_fatigue(charname, activity, curZoneId, zoneName);
 
@@ -887,8 +955,18 @@ local function render_activity(charname, activity, curZoneId, zoneName)
     local since  = store.get_since_skillup(charname, activity);
 
     tile(1, 'COLLECTED', ('%d'):fmt(total));
-    tile(2, 'SKILL UPS', capped or as_rate(ups, swings), data.COLOR_SKILLUP,
-         skillup_tip, ups, swings, since, capped);
+    local phase, percent;
+    if (capped == nil) then phase, percent = resources.moon_phase(); end
+
+    if (phase ~= nil) then
+        local mups, mswings = store.moon_record(charname, activity, phase);
+        tile(2, moon_caption(percent), as_rate(mups, mswings), data.COLOR_SKILLUP,
+             moon_tip, charname, activity, phase, since);
+    else
+        tile(2, 'SKILL UPS', capped or as_rate(ups, swings), data.COLOR_SKILLUP,
+             skillup_tip, ups, swings, since,
+             store.skill_capped(charname, activity, curZoneId), zoneName);
+    end
 
     local abilities = data.PROC_ABILITIES[activity];
     for index, ability in ipairs(abilities) do
@@ -944,9 +1022,10 @@ end
 local function span_label(seconds)
     local hours = math.floor(seconds / data.SECONDS_PER_HOUR);
     local mins  = math.floor(seconds % data.SECONDS_PER_HOUR / 60);
-    if (hours > 0) then return ('%dh %dm'):fmt(hours, mins); end
-    if (mins > 0) then return ('%dm'):fmt(mins); end
-    return ('%ds'):fmt(seconds);
+    if (hours > 0 and mins > 0) then return ('%dhr and %dmin'):fmt(hours, mins); end
+    if (hours > 0) then return ('%dhr'):fmt(hours); end
+    if (mins > 0) then return ('%dmin'):fmt(mins); end
+    return ('%dsec'):fmt(seconds);
 end
 
 local function gil(value)
@@ -1062,6 +1141,24 @@ local function render_price_editor()
     imgui.Spacing();
 end
 
+local function net_tip(net, tools, rate, span)
+    local head = ('%s Gil gathered this session, minus %s for broken tools.')
+        :fmt(gil(net + tools), gil(tools));
+
+    if (rate == nil) then
+        return head .. '\nNot enough time between gathers to rate it yet.';
+    end
+    return ('%s\n%s Gil/hr over %s.'):fmt(head, gil(rate), span_label(span));
+end
+
+local function lifetime_tip()
+    return 'Lifetime Gil\nEverything this character has ever gathered, less '
+        .. 'every tool it has broken. Only Reset All Data clears it.\n\n'
+        .. 'It is priced at what your items are worth now, not at what they '
+        .. 'were worth when you gathered them, so this figure moves whenever '
+        .. 'you change a price.';
+end
+
 local function render_spoils(charname)
     if (ui.editing_prices) then
         render_price_editor();
@@ -1074,6 +1171,7 @@ local function render_spoils(charname)
     imgui.Spacing();
 
     local hide    = store.hide_vendor();
+    local total   = 0;
     local items   = SPOILS;
     local widest  = 0;
     local widestc = 0;
@@ -1092,6 +1190,7 @@ local function render_spoils(charname)
         slot.tally_w = imgui.CalcTextSize(slot.tally);
         slot.hidden = hide and slot.vendor;
         items[n] = slot;
+        total = total + slot.profit;
 
         if (not slot.hidden) then
             shown = shown + 1;
@@ -1101,17 +1200,33 @@ local function render_spoils(charname)
     end
     for index = n + 1, #items do items[index] = nil; end
 
-    if (n == 0) then
-        empty('Nothing gathered this session.');
-    else
-        table.sort(items, by_profit_then_name);
+    local lifetime, ever = store.lifetime_gil(charname);
 
+    if (n > 0) then
         if (checkbox('Hide Vendor Items', hide)) then
             store.toggle_hide_vendor();
         end
         hint('Keeps items you marked Vendor out of the list. They still count '
           .. 'towards the total.');
+    end
+
+    if (n > 0 or ever) then
+        local tools = store.tool_cost(charname);
+        local net   = total - tools;
+        local span  = store.session_span(charname);
+        local rate  = span > 0 and net * data.SECONDS_PER_HOUR / span or nil;
+
         imgui.Spacing();
+        tile(1, 'NET GIL', gil(net), data.COLOR_SKILLUP, net_tip, net, tools, rate, span);
+        tile(2, 'LIFETIME', gil(lifetime), data.COLOR_SKILLUP, lifetime_tip, lifetime, ever);
+        render_tiles(2);
+        imgui.Spacing();
+    end
+
+    if (n == 0) then
+        empty('Nothing gathered this session.');
+    else
+        table.sort(items, by_profit_then_name);
 
         SPOIL_ICON[1] = px(data.SPOILS_ICON_SIZE);
         SPOIL_ICON[2] = SPOIL_ICON[1];
@@ -1133,11 +1248,6 @@ local function render_spoils(charname)
         imgui.TextColored(data.COLOR_CAPTION, head[3]);
         imgui.Separator();
         imgui.Spacing();
-
-        local total = 0;
-        for _, item in ipairs(items) do
-            total = total + item.profit;
-        end
 
         if (shown == 0) then
             empty('Every item here is marked Vendor.');
@@ -1164,29 +1274,6 @@ local function render_spoils(charname)
             end
         end
 
-        local tools = store.tool_cost(charname);
-        local net   = total - tools;
-
-        imgui.Spacing();
-        imgui.TextColored(data.COLOR_SKILLUP, ('Net Gil - %s Gil'):fmt(gil(net)));
-        imgui.TextColored(data.COLOR_LABEL,
-            ('Tools Broken - %s Gil'):fmt(gil(tools)));
-
-        local span = store.session_span(charname);
-        if (span > 0) then
-            imgui.TextColored(data.COLOR_GOLD, ('Per Hour - %s Gil   over %s')
-                :fmt(gil(net * data.SECONDS_PER_HOUR / span), span_label(span)));
-        else
-            imgui.TextColored(data.COLOR_GOLD, 'Per Hour - not enough time yet');
-        end
-    end
-
-    local lifetime, ever = store.lifetime_gil(charname);
-    if (ever) then
-        imgui.Spacing();
-        imgui.TextColored(data.COLOR_SKILLUP, ('Lifetime - %s Gil'):fmt(gil(lifetime)));
-        hint('Everything this character has ever gathered, less every tool it '
-          .. 'has broken. Only Reset All Data clears it.');
     end
 
     divider();
