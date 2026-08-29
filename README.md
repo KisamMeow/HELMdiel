@@ -9,7 +9,7 @@ export.
 Still in early development: expect bugs, and expect the UI to keep moving until
 1.0.
 
-Ashita v4.30+ addon. Version 0.14.0. Released under GPL-3.0. Coded with help
+Ashita v4.30+ addon. Version 0.14.1. Released under GPL-3.0. Coded with help
 from Claude Opus 5.
 
 ## Screenshots
@@ -71,7 +71,7 @@ Giddeus falls to 100.
 **Zones you have outskilled hold more.** For every 10 skill levels above a
 zone's skill cap you get 50 extra fatigue there, so West Sarutabaruta, which
 caps harvesting at 10, holds 300 once you are at 35. This only applies to zones
-whose skill cap the addon knows, which is now 21 of the 30 it tracks; the other
+whose skill cap the addon knows, which is now 23 of the 32 it tracks; the other
 nine stay at 200.
 
 The counters are a model built from observed play, not a readout of the
@@ -184,10 +184,10 @@ activity tab — and **Locked (10)** means it needs that skill level first.
 Anything you have ever gathered here never reads as locked, whatever your skill
 says, because gathering it is proof you can.
 
-Drop lists exist for every harvesting and excavation zone, 5 of 11 logging
-zones and 4 of 9 mining zones. **A list is what is known so far, not a
-guarantee it is complete** — a missing item shows up the first time you gather
-it.
+Drop lists exist for every harvesting zone, 4 of 6 excavation zones, 6 of 11
+logging and 5 of 9 mining. **A list is what is known so far, not a guarantee it
+is complete** — a missing item shows up the first time you gather it, and a
+zone with no list at all just shows what you have found there.
 
 ### Spoils
 
@@ -232,7 +232,7 @@ corrects everything you gathered before you got round to it.
 
 **Prices are yours to set**, since the game does not tell addons what anything
 sells for. **Edit Prices** lists every gatherable item with a box beside it —
-41 harvesting, 40 excavation, 30 logging, 39 mining, plus a **Tools** block for
+41 harvesting, 41 excavation, 32 logging, 40 mining, plus a **Tools** block for
 the sickle, pickaxe and hatchet. They save as you type, are shared by all your
 characters, and **no reset clears them**; anything unpriced counts as 0. An
 item showing **(?)** instead of a box has a name your game does not
@@ -306,8 +306,8 @@ in question, and send the exact lines.
 
 - **Harvesting**: West Sarutabaruta, Giddeus, Yuhtunga Jungle, Yhoator Jungle,
   Bhaflau Thickets, Wajaom Woodlands
-- **Excavation**: Attohwa Chasm, Korroloka Tunnel, Maze of Shakhrami, Tahrongi
-  Canyon
+- **Excavation**: Arrapago Reef, Attohwa Chasm, Aydeewa Subterrane, Korroloka
+  Tunnel, Maze of Shakhrami, Tahrongi Canyon
 - **Logging**: Buburimu Peninsula, Carpenters' Landing, East Ronfaure, Ghelsba
   Outpost, Jugner Forest, Lufaise Meadows, Misareaux Coast, Yhoator Jungle,
   Yuhtunga Jungle, Caedarva Mire, Mamook
@@ -324,7 +324,7 @@ file resets the character, same as `/helmdiel reset all`.
 ## Known limitations
 
 - **The raised fatigue cap only applies to zones whose skill cap is known**,
-  and that is 21 of the 30 tracked zones. The nine left are Buburimu Peninsula,
+  and that is 23 of the 32 tracked zones. The nine left are Buburimu Peninsula,
   Carpenters' Landing, Jugner Forest, Lufaise Meadows and Misareaux Coast for
   logging, and Gusgen Mines, Ifrit's Cauldron, Newton Movalpolos and Oldton
   Movalpolos for mining. There the bar tops out at 200, so if you have

@@ -19,6 +19,16 @@ If you notice any items being listed twice but spelt differently then type
 
 ## [Unreleased]
 
+## [0.14.1] - 2026-08-28
+
+### Added
+
+- **Arrapago Reef and Aydeewa Subterrane** are tracked for excavation, both
+  capped at 60. Added to HorizonXI in today's patch; no drop lists for them
+  yet, so they show what you find there.
+- **Eight more known drops**, including a first list for Caedarva Mire, plus
+  skill gates for Emerald and Green Rock in Attohwa Chasm.
+
 ## [0.14.0] - 2026-08-28
 
 ### Added
@@ -528,7 +538,8 @@ Initial public release.
 - The rule that a gather decays *all* other zones for that activity was
   inferred from a two-zone observation.
 
-[Unreleased]: https://github.com/KisamMeow/HELMdiel/compare/v0.14.0...HEAD
+[Unreleased]: https://github.com/KisamMeow/HELMdiel/compare/v0.14.1...HEAD
+[0.14.1]: https://github.com/KisamMeow/HELMdiel/compare/v0.14.0...v0.14.1
 [0.14.0]: https://github.com/KisamMeow/HELMdiel/compare/v0.13.0...v0.14.0
 [0.13.0]: https://github.com/KisamMeow/HELMdiel/compare/v0.12.0...v0.13.0
 [0.12.0]: https://github.com/KisamMeow/HELMdiel/compare/v0.11.1...v0.12.0
