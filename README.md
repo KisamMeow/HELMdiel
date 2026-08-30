@@ -9,7 +9,7 @@ export.
 Still in early development: expect bugs, and expect the UI to keep moving until
 1.0.
 
-Ashita v4.30+ addon. Version 0.14.1. Released under GPL-3.0. Coded with help
+Ashita v4.30+ addon. Version 0.14.2. Released under GPL-3.0. Coded with help
 from Claude Opus 5.
 
 ## Screenshots
@@ -20,8 +20,9 @@ from Claude Opus 5.
 | **Spoils** | **Settings** |
 | ![Spoils tab: the session tally sorted by gil, with Net Gil, Tools Broken and Per Hour under it](docs/screenshots/spoils.png?v=2) | ![Settings tab: the Display, Activities, Skill Levels, Tracking, Export and Reset blocks](docs/screenshots/settings.png?v=2) |
 
-**Home** is the zone you are standing in; the **four activity tabs** are every
-zone for one activity, drops behind a foldout; **Spoils** is the session tally
+**Home** is the zone you are standing in; the **four activity tabs** —
+**Harv**, **Exca**, **Logg** and **Mine** — are every zone for one activity,
+drops behind a foldout; **Spoils** is the session tally
 and its gil; **Settings** holds the display options and the export.
 
 ## Installation
@@ -91,6 +92,9 @@ Bar colours are a share of that zone's own cap:
 | Red | at the cap | 200 | 300 |
 
 ## Reading the window
+
+The window has no title bar. Drag it by the row of buttons at the top, and
+close it with the `×` at the right-hand end of that row.
 
 Home covers only the zone you are standing in. Zones with two activities
 (Yuhtunga and Yhoator Jungle) get a section for each.
@@ -262,7 +266,8 @@ Hover any control for a one-line explanation.
 | UI Scale | 75%, 100% or 125%. Text, icons and spacing together |
 | Shown activities | Unchecking one hides its tab. Tracking continues |
 | Skill levels | Type in a level the game has not told the addon yet |
-| Auto-open on gather | The window pops up when you gather |
+| Auto-Open on Gather | The window pops up when you gather |
+| Auto-Show Activity | Brings a hidden activity back the first time you gather one |
 | Auto-Resize Window | On, it fits its contents. Off, drag the gold corner yourself |
 
 **Export CSV** writes one row per item per zone, with that zone's drop rate,

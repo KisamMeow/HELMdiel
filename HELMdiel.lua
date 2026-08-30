@@ -1,6 +1,6 @@
 addon.name    = 'HELMdiel';
 addon.author  = 'Masuru';
-addon.version = '0.14.1';
+addon.version = '0.14.2';
 addon.desc    = 'Tracks HELM (Harvesting/Excavation/Logging/Mining) regional gathering fatigue on HorizonXI.';
 addon.link    = 'https://github.com/KisamMeow/HELMdiel';
 
@@ -289,6 +289,10 @@ ashita.events.register('text_in', 'helmdiel_text_in', function(e)
 
             if (data.TRACKED_ZONE_SET[activity][zoneId]) then
                 store.register_item_gather(activity, zoneId, item, repeated);
+
+                if (store.auto_show() and store.reveal_activity(activity)) then
+                    msg(('%s was hidden and is showing again.'):fmt(activity));
+                end
             end
         else
             if (not same_node()) then clear_run(); end

@@ -26,6 +26,15 @@ data.HELM_CHAT_MODES = T{
 data.NAV_LEADING  = T{ 'Home' };
 data.NAV_TRAILING = T{ 'Spoils', 'Settings' };
 
+-- Display only. The tab's identity stays the activity name, so nothing that
+-- compares against ACTIVITIES has to know these exist.
+data.NAV_SHORT    = T{
+    Harvesting = 'Harv',
+    Excavation = 'Exca',
+    Logging    = 'Logg',
+    Mining     = 'Mine',
+};
+
 -- Pixel sizes
 data.SKILL_INPUT_WIDTH  = 70;
 data.COMBO_WIDTH        = 120;
@@ -43,8 +52,8 @@ data.TILE_PAD_X        = 13.0;
 data.TILES_PER_ROW     = 3;
 data.TILE_PAD_Y        = 5.0;
 data.TILE_GAP          = 5.0;
-data.FRAME_ROUNDING    = 5.0;
-data.WINDOW_ROUNDING   = 6.0;
+data.FRAME_ROUNDING    = 7.0;
+data.WINDOW_ROUNDING   = 10.0;
 data.WINDOW_MIN_WIDTH  = 330.0;
 data.TITLE_ALIGN       = { 0.5, 0.5 };
 
@@ -86,7 +95,9 @@ data.COLOR_GRIP_ACTIVE = { 1.00, 1.00, 0.75, 1.00 };
 data.COLOR_BUTTON        = data.SURFACE_RAISED;
 data.COLOR_BUTTON_HOVER  = { 0.32, 0.32, 0.36, 0.95 };
 data.COLOR_BUTTON_ACTIVE = { 0.40, 0.40, 0.45, 1.00 };
-data.COLOR_NAV_SELECTED  = { 0.46, 0.46, 0.51, 1.00 };
+data.COLOR_NAV_SELECTED  = data.SURFACE_PLATE;
+data.COLOR_NAV_HOVER     = { 0.25, 0.25, 0.29, 0.90 };
+data.COLOR_NAV_ACTIVE    = data.SURFACE_PLATE;
 data.COLOR_HEADER        = { 0.24, 0.24, 0.28, 0.65 };
 data.COLOR_HEADER_HOVER  = { 0.32, 0.32, 0.36, 0.85 };
 data.COLOR_HEADER_ACTIVE = { 0.38, 0.38, 0.42, 0.95 };
@@ -582,6 +593,17 @@ data.SESSION_CLOCK  = T{ 'session_start', 'session_last' };
 data.SECONDS_PER_HOUR = 3600;
 
 data.PROC_GAP        = 18.0;
+
+-- Nav row furniture, in place of the title bar
+data.NAV_EDGE_PAD     = 7.0;
+data.NAV_TRACK_PAD    = 3.0;
+data.NAV_BTN_PAD_X    = 8.0;
+data.NAV_BTN_PAD_Y    = 3.0;
+data.NAV_BTN_ROUNDING = 5.0;
+data.NAV_DOT          = 2.0;
+data.NAV_DOT_GAP      = 2.0;
+data.NAV_CLOSE_SIZE   = 7.0;
+data.NAV_CLOSE_WEIGHT = 1.5;
 
 -- HELM interaction, and the render bit that clears when an entity despawns
 data.HELM_PACKET    = 0x36;

@@ -86,8 +86,25 @@ function store.activity_enabled(activity)
     return value;
 end
 
+function store.reveal_activity(activity)
+    if (helm_settings.activities[activity] == false) then
+        helm_settings.activities[activity] = true;
+        return true;
+    end
+    return false;
+end
+
 function store.toggle_activity(activity)
     helm_settings.activities[activity] = not store.activity_enabled(activity);
+    settings.save();
+end
+
+function store.auto_show()
+    return helm_settings.window.auto_show == true;
+end
+
+function store.toggle_auto_show()
+    helm_settings.window.auto_show = not store.auto_show();
     settings.save();
 end
 

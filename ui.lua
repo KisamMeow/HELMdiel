@@ -78,7 +78,7 @@ local NAV_LABELS = {};
 local function nav_label(name)
     local label = NAV_LABELS[name];
     if (label == nil) then
-        label = ('%s##nav'):fmt(name);
+        label = ('%s###nav%s'):fmt(data.NAV_SHORT[name] or name, name);
         NAV_LABELS[name] = label;
     end
     return label;
@@ -88,7 +88,6 @@ local SPOILS      = T{};
 local SPOIL_SLOTS = {};
 
 local FIRST_SIZE = { 360, 0 };
-local IS_OPEN    = { false };
 local TABS       = T{};
 local SPOIL_ICON = { 0, 0 };
 local BOX_SIZE   = { 0, 0 };
@@ -1454,9 +1453,16 @@ local function render_settings(charname)
 
     imgui.Spacing();
 
-    if (checkbox('Auto-open on gather', store.auto_popup())) then
+    if (checkbox('Auto-Open on Gather', store.auto_popup())) then
         store.toggle_auto_popup();
     end
+
+    imgui.Spacing();
+
+    if (checkbox('Auto-Show Activity', store.auto_show())) then
+        store.toggle_auto_show();
+    end
+    hint('Brings a hidden activity back the first time you gather one.');
 
     imgui.Spacing();
 
@@ -1535,6 +1541,26 @@ end
 
 local NAV_MIN  = { 0, 0 };
 local NAV_MAX  = { 0, 0 };
+local NAV_CLOSE_MIN = { 0, 0 };
+local NAV_CLOSE_MAX = { 0, 0 };
+local NAV_ROOM = { 0, 0 };
+local NAV_DOT_MIN = { 0, 0 };
+local NAV_DOT_MAX = { 0, 0 };
+local NAV_ARM_A   = { 0, 0 };
+local NAV_ARM_B   = { 0, 0 };
+local NAV_BTN_PAD = { 0, 0 };
+local NAV_TIGHT   = { 0, 0 };
+local NAV_PAD_ROW = { 0, 0 };
+local nav_close_hot = false;
+local nav_track_h   = 0;
+
+local function nav_grip_width()
+    return px(data.NAV_DOT) * 2 + px(data.NAV_DOT_GAP);
+end
+
+local function nav_close_width()
+    return px(data.NAV_CLOSE_SIZE) + px(data.NAV_EDGE_PAD) * 2;
+end
 local nav_fill = nil;
 
 local function nav_track(x, y, w, h)
@@ -1543,8 +1569,51 @@ local function nav_track(x, y, w, h)
     NAV_MAX[1] = x + w;
     NAV_MAX[2] = y + h;
 
-    imgui.GetWindowDrawList():AddRectFilled(NAV_MIN, NAV_MAX,
+    local list = imgui.GetWindowDrawList();
+    list:AddRectFilled(NAV_MIN, NAV_MAX,
         imgui.GetColorU32(data.COLOR_NAV_TRACK), px(data.FRAME_ROUNDING));
+
+    local pad = px(data.NAV_EDGE_PAD);
+    local mid = y + h * 0.5;
+
+    local dot  = px(data.NAV_DOT);
+    local step = dot + px(data.NAV_DOT_GAP);
+    local top  = mid - (dot * 3 + px(data.NAV_DOT_GAP) * 2) * 0.5;
+    local ink  = imgui.GetColorU32(data.COLOR_CAPTION);
+    for col = 0, 1 do
+        for row = 0, 2 do
+            NAV_DOT_MIN[1] = x + pad + col * step;
+            NAV_DOT_MIN[2] = top + row * step;
+            NAV_DOT_MAX[1] = NAV_DOT_MIN[1] + dot;
+            NAV_DOT_MAX[2] = NAV_DOT_MIN[2] + dot;
+            list:AddRectFilled(NAV_DOT_MIN, NAV_DOT_MAX, ink, 0);
+        end
+    end
+
+    local room = nav_close_width();
+    NAV_CLOSE_MIN[1] = x + w - room;
+    NAV_CLOSE_MIN[2] = y;
+    NAV_CLOSE_MAX[1] = x + w;
+    NAV_CLOSE_MAX[2] = y + h;
+
+    local mx, my = imgui.GetMousePos();
+    nav_close_hot = imgui.IsWindowHovered()
+        and mx >= NAV_CLOSE_MIN[1] and mx < NAV_CLOSE_MAX[1]
+        and my >= NAV_CLOSE_MIN[2] and my < NAV_CLOSE_MAX[2];
+
+    local arm = px(data.NAV_CLOSE_SIZE) * 0.5;
+    local cx  = x + w - pad - arm;
+    local thick = px(data.NAV_CLOSE_WEIGHT);
+    local cross = imgui.GetColorU32(
+        nav_close_hot and data.COLOR_VALUE or data.COLOR_LABEL);
+
+    NAV_ARM_A[1] = cx - arm; NAV_ARM_A[2] = mid - arm;
+    NAV_ARM_B[1] = cx + arm; NAV_ARM_B[2] = mid + arm;
+    list:AddLine(NAV_ARM_A, NAV_ARM_B, cross, thick);
+
+    NAV_ARM_A[1] = cx - arm; NAV_ARM_A[2] = mid + arm;
+    NAV_ARM_B[1] = cx + arm; NAV_ARM_B[2] = mid - arm;
+    list:AddLine(NAV_ARM_A, NAV_ARM_B, cross, thick);
 end
 
 local function render_nav(tabs)
@@ -1554,11 +1623,39 @@ local function render_nav(tabs)
     end
     if (not showing) then ui.active_tab = tabs[1]; end
 
+    -- The buttons are shorter than the track and inset into it, so the track
+    -- reads as one segmented control rather than as a backing plate the
+    -- buttons happen to cover. Both pads are reserved with zero-width items,
+    -- which is the only way to claim the height without claiming the width.
+    NAV_BTN_PAD[1] = px(data.NAV_BTN_PAD_X);
+    NAV_BTN_PAD[2] = px(data.NAV_BTN_PAD_Y);
+    imgui.PushStyleVar(ImGuiStyleVar_FramePadding, NAV_BTN_PAD);
+    imgui.PushStyleVar(ImGuiStyleVar_FrameRounding, px(data.NAV_BTN_ROUNDING));
+    imgui.PushStyleVar(ImGuiStyleVar_ItemSpacing, NAV_TIGHT);
+
+    local pad = px(data.NAV_TRACK_PAD);
+    nav_track_h = imgui.GetFrameHeight() + pad * 2;
+
     if (nav_fill ~= false) then
         local x, y = imgui.GetCursorScreenPos();
         nav_fill = pcall(nav_track, x, y, imgui.GetContentRegionAvail(),
-                                          imgui.GetFrameHeight());
+                                          nav_track_h);
     end
+
+    if (nav_fill and nav_close_hot and imgui.IsMouseClicked(0)) then
+        ui.visible = false;
+    end
+
+    if (nav_fill) then
+        NAV_PAD_ROW[1] = 0;
+        NAV_PAD_ROW[2] = pad;
+        imgui.Dummy(NAV_PAD_ROW);
+        imgui.SetCursorPosX(imgui.GetCursorPosX()
+            + nav_grip_width() + px(data.NAV_EDGE_PAD) * 2);
+    end
+
+    imgui.PushStyleColor(ImGuiCol_ButtonHovered, data.COLOR_NAV_HOVER);
+    imgui.PushStyleColor(ImGuiCol_ButtonActive,  data.COLOR_NAV_ACTIVE);
 
     for index, name in ipairs(tabs) do
         if (index > 1) then imgui.SameLine(0, px(data.NAV_GAP)); end
@@ -1573,6 +1670,23 @@ local function render_nav(tabs)
 
         imgui.PopStyleColor(1);
     end
+
+    imgui.PopStyleColor(2);
+
+    -- Reserve the close glyph's corner, or the last button would be drawn over
+    -- it once the nav row is the widest thing in the window.
+    if (nav_fill) then
+        imgui.SameLine(0, px(data.NAV_GAP));
+        NAV_ROOM[1] = nav_close_width();
+        NAV_ROOM[2] = 1;
+        imgui.Dummy(NAV_ROOM);
+
+        NAV_PAD_ROW[1] = 0;
+        NAV_PAD_ROW[2] = pad;
+        imgui.Dummy(NAV_PAD_ROW);
+    end
+
+    imgui.PopStyleVar(3);
 end
 
 function ui.render(charname, curZoneId)
@@ -1600,11 +1714,12 @@ function ui.render(charname, curZoneId)
     imgui.SetNextWindowSize(FIRST_SIZE, ImGuiCond_FirstUseEver);
     imgui.SetNextWindowSizeConstraints(MIN_SIZE, MAX_SIZE);
 
-    local flags = ImGuiWindowFlags_None;
-    if (store.auto_resize()) then flags = ImGuiWindowFlags_AlwaysAutoResize; end
+    local flags = ImGuiWindowFlags_NoTitleBar;
+    if (store.auto_resize()) then
+        flags = flags + ImGuiWindowFlags_AlwaysAutoResize;
+    end
 
-    IS_OPEN[1] = ui.visible;
-    if (imgui.Begin(window_title(charname), IS_OPEN, flags)) then
+    if (imgui.Begin(window_title(charname), nil, flags)) then
         if (sheen_fill ~= false) then
             local sx, sy = imgui.GetCursorScreenPos();
             sheen_fill = pcall(window_sheen, sx, sy,
@@ -1632,7 +1747,6 @@ function ui.render(charname, curZoneId)
     imgui.PopStyleVar(#STYLE_VARS);
     imgui.PopStyleColor(#STYLE_COLORS);
 
-    ui.visible = IS_OPEN[1];
 end
 
 return ui;
