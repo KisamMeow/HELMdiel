@@ -19,7 +19,7 @@ If you notice any items being listed twice but spelt differently then type
 
 ## [Unreleased]
 
-## [0.14.3] - 2026-08-30
+## [0.14.3] - 2026-08-31
 
 ### Added
 
