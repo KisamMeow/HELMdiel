@@ -86,6 +86,8 @@ end
 
 local SPOILS      = T{};
 local SPOIL_SLOTS = {};
+local TOOLS       = T{};
+local TOOL_SLOTS  = {};
 
 local FIRST_SIZE = { 360, 0 };
 local TABS       = T{};
@@ -1151,11 +1153,8 @@ local function net_tip(net, tools, rate, span)
 end
 
 local function lifetime_tip()
-    return 'Lifetime Gil\nEverything this character has ever gathered, less '
-        .. 'every tool it has broken. Only Reset All Data clears it.\n\n'
-        .. 'It is priced at what your items are worth now, not at what they '
-        .. 'were worth when you gathered them, so this figure moves whenever '
-        .. 'you change a price.';
+    return 'Everything this character has gathered, less tools broken.\n'
+        .. "Priced at today's prices, so it moves when you change one.";
 end
 
 local function render_spoils(charname)
@@ -1199,6 +1198,39 @@ local function render_spoils(charname)
     end
     for index = n + 1, #items do items[index] = nil; end
 
+    local tools = TOOLS;
+    local t     = 0;
+    for _, activity in ipairs(data.ACTIVITIES) do
+        local broke = store.get_tool_breaks(charname, activity);
+        if (broke > 0) then
+            local name = data.ACTIVITY_TOOLS[activity];
+            local slot;
+            for index = 1, t do
+                if (tools[index].name == name) then slot = tools[index]; break; end
+            end
+            if (slot == nil) then
+                t = t + 1;
+                slot = pooled(TOOL_SLOTS, t);
+                slot.name    = name;
+                slot.count   = 0;
+                slot.cost    = 0;
+                slot.name_w  = imgui.CalcTextSize(name);
+                tools[t] = slot;
+            end
+            slot.count = slot.count + broke;
+            slot.cost  = slot.cost + broke * store.tool_price(activity);
+        end
+    end
+    for index = t + 1, #tools do tools[index] = nil; end
+
+    for index = 1, t do
+        local slot = tools[index];
+        slot.tally   = ('x%d'):fmt(slot.count);
+        slot.tally_w = imgui.CalcTextSize(slot.tally);
+        if (slot.name_w > widest)   then widest  = slot.name_w; end
+        if (slot.tally_w > widestc) then widestc = slot.tally_w; end
+    end
+
     local lifetime, ever = store.lifetime_gil(charname);
 
     if (n > 0) then
@@ -1210,19 +1242,19 @@ local function render_spoils(charname)
     end
 
     if (n > 0 or ever) then
-        local tools = store.tool_cost(charname);
-        local net   = total - tools;
+        local spent = store.tool_cost(charname);
+        local net   = total - spent;
         local span  = store.session_span(charname);
         local rate  = span > 0 and net * data.SECONDS_PER_HOUR / span or nil;
 
         imgui.Spacing();
-        tile(1, 'NET GIL', gil(net), data.COLOR_SKILLUP, net_tip, net, tools, rate, span);
+        tile(1, 'NET GIL', gil(net), data.COLOR_SKILLUP, net_tip, net, spent, rate, span);
         tile(2, 'LIFETIME', gil(lifetime), data.COLOR_SKILLUP, lifetime_tip, lifetime, ever);
         render_tiles(2);
         imgui.Spacing();
     end
 
-    if (n == 0) then
+    if (n == 0 and t == 0) then
         empty('Nothing gathered this session.');
     else
         table.sort(items, by_profit_then_name);
@@ -1248,7 +1280,7 @@ local function render_spoils(charname)
         imgui.Separator();
         imgui.Spacing();
 
-        if (shown == 0) then
+        if (n > 0 and shown == 0) then
             empty('Every item here is marked Vendor.');
         end
 
@@ -1273,6 +1305,29 @@ local function render_spoils(charname)
             end
         end
 
+        if (t > 0) then
+            imgui.Spacing();
+            imgui.Separator();
+            imgui.Spacing();
+
+            for _, tool in ipairs(tools) do
+                if (show_icons) then
+                    local icon = icons.texture(resources.item_id(tool.name));
+                    if (icon ~= nil) then
+                        imgui.Image(icon.handle, SPOIL_ICON);
+                    else
+                        imgui.Dummy(SPOIL_ICON);
+                    end
+                    imgui.SameLine();
+                end
+
+                imgui.TextColored(data.COLOR_LABEL, tool.name);
+                imgui.SameLine(0, widest - tool.name_w + px(data.CELL_GUTTER));
+                imgui.TextColored(data.COLOR_LABEL, tool.tally);
+                imgui.SameLine(0, widestc - tool.tally_w + px(data.CELL_GUTTER));
+                imgui.TextColored(data.COLOR_COST, '-' .. gil(tool.cost));
+            end
+        end
     end
 
     divider();
@@ -1401,7 +1456,7 @@ local function render_settings(charname)
         store.set_window_opacity(opacity[1]);
     end
     imgui.PopItemWidth();
-    hint('Window and title bar background.');
+    hint('Window background.');
 
     imgui.Spacing();
 
@@ -1456,6 +1511,7 @@ local function render_settings(charname)
     if (checkbox('Auto-Open on Gather', store.auto_popup())) then
         store.toggle_auto_popup();
     end
+    hint('Shows the window when you gather.');
 
     imgui.Spacing();
 

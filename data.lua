@@ -151,6 +151,7 @@ data.COLOR_LOW      = { 0.40, 0.75, 1.00, 1.00 };
 data.COLOR_MID      = { 1.00, 0.90, 0.20, 1.00 };
 data.COLOR_HIGH     = { 0.90, 0.20, 0.20, 1.00 };
 data.COLOR_FATIGUED = { 1.00, 0.30, 0.30, 1.00 };
+data.COLOR_COST     = data.COLOR_FATIGUED;
 
 -- Dropdown options
 local function combo_string(labels)

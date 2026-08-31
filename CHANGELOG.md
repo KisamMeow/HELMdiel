@@ -19,6 +19,23 @@ If you notice any items being listed twice but spelt differently then type
 
 ## [Unreleased]
 
+## [0.14.3] - 2026-08-30
+
+### Added
+
+- **Broken tools are listed at the foot of Spoils**, under a rule, with what
+  they cost you in red.
+
+### Changed
+
+- **The Lifetime Gil tooltip is two lines** instead of six.
+- **Auto-Open on Gather explains itself**, like the settings around it.
+
+### Fixed
+
+- **The Opacity hint** no longer mentions a title bar the window has not had
+  since 0.14.2.
+
 ## [0.14.2] - 2026-08-30
 
 ### Changed
@@ -556,7 +573,8 @@ Initial public release.
 - The rule that a gather decays *all* other zones for that activity was
   inferred from a two-zone observation.
 
-[Unreleased]: https://github.com/KisamMeow/HELMdiel/compare/v0.14.2...HEAD
+[Unreleased]: https://github.com/KisamMeow/HELMdiel/compare/v0.14.3...HEAD
+[0.14.3]: https://github.com/KisamMeow/HELMdiel/compare/v0.14.2...v0.14.3
 [0.14.2]: https://github.com/KisamMeow/HELMdiel/compare/v0.14.1...v0.14.2
 [0.14.1]: https://github.com/KisamMeow/HELMdiel/compare/v0.14.0...v0.14.1
 [0.14.0]: https://github.com/KisamMeow/HELMdiel/compare/v0.13.0...v0.14.0

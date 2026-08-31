@@ -9,7 +9,7 @@ export.
 Still in early development: expect bugs, and expect the UI to keep moving until
 1.0.
 
-Ashita v4.30+ addon. Version 0.14.2. Released under GPL-3.0. Coded with help
+Ashita v4.30+ addon. Version 0.14.3. Released under GPL-3.0. Coded with help
 from Claude Opus 5.
 
 ## Screenshots
