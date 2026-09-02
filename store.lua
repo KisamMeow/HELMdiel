@@ -395,8 +395,9 @@ function store.register_gather(activity, zoneId)
     local fatigue, key = ensure_zone(charname, 'fatigue', activity, zoneId);
     local flags        = ensure_zone(charname, 'fatigued', activity, zoneId);
 
+    local before = fatigue[key] or 0;
     fatigue[key] = math.min(store.fatigue_cap(charname, activity, zoneId),
-                            (fatigue[key] or 0) + 1);
+                            before + 1);
     flags[key]   = nil;
 
     for zid, value in pairs(fatigue) do
@@ -407,6 +408,8 @@ function store.register_gather(activity, zoneId)
             end
         end
     end
+
+    return fatigue[key] > before;
 end
 
 function store.register_fatigue_cap(activity, zoneId)
@@ -458,9 +461,12 @@ function store.register_item_gather(activity, zoneId, itemName, repeated)
     char.spoils[itemName]   = (char.spoils[itemName] or 0) + 1;
     char.lifetime[itemName] = (char.lifetime[itemName] or 0) + 1;
 
-    local now = os.time();
-    char.session_start = char.session_start or now;
-    char.session_last  = now;
+    local now  = os.time();
+    local last = char.session_last;
+    if (last ~= nil and (now - last) <= data.SESSION_IDLE_CUTOFF) then
+        char.session_active = (char.session_active or 0) + (now - last);
+    end
+    char.session_last = now;
 end
 
 function store.get_repeats(charname, zoneId)
@@ -500,9 +506,30 @@ end
 
 function store.session_span(charname)
     local char = helm_settings.characters[charname];
-    if (char == nil or char.session_start == nil) then return 0; end
-    return math.max(0, (char.session_last or char.session_start)
-                       - char.session_start);
+    if (char == nil) then return 0; end
+    return math.max(0, char.session_active or 0);
+end
+
+-- Forget where the clock was, so the next gather opens a fresh interval and
+-- the time away is not counted however short it is. Deliberately does not
+-- create a character record, and deliberately does not save: the only thing
+-- that reads it is the next gather, which saves anyway, and a gap that
+-- outlives a crash is caught by SESSION_IDLE_CUTOFF regardless.
+function store.pause_session(charname)
+    local char = helm_settings.characters[charname];
+    if (char == nil) then return; end
+    char.session_last = nil;
+end
+
+-- A crash, a client kill or a dropped connection never reaches the unload
+-- handler, so session_last survives them and the downtime would be counted if
+-- you were back inside the cutoff. The addon not running is proof nobody was
+-- gathering, so a load pauses every character rather than guessing which one
+-- was live -- at client start no character is known yet anyway.
+function store.pause_all_sessions()
+    for _, char in pairs(helm_settings.characters) do
+        char.session_last = nil;
+    end
 end
 
 function store.register_skill(activity, value)
@@ -512,32 +539,6 @@ end
 function store.register_attempt(activity, zoneId) bump('attempts',  activity, zoneId); end
 function store.register_success(activity, zoneId) bump('successes', activity, zoneId); end
 function store.register_skillup(activity, zoneId) bump('skillups',  activity, zoneId); end
-
-local function moon_bump(field, activity, phase)
-    if (phase == nil) then return; end
-
-    local char  = ensure_char(store.char_name());
-    local group = char[field];
-    if (type(group[activity]) ~= 'table') then group[activity] = T{}; end
-    group[activity][phase] = (group[activity][phase] or 0) + 1;
-end
-
-function store.register_moon_swing(activity, phase)
-    moon_bump('moonswings', activity, phase);
-end
-
-function store.register_moon_skillup(activity, phase)
-    moon_bump('moonups', activity, phase);
-end
-
-function store.moon_record(charname, activity, phase)
-    local char = helm_settings.characters[charname];
-    if (char == nil) then return 0, 0; end
-
-    local ups    = char.moonups    and char.moonups[activity];
-    local swings = char.moonswings and char.moonswings[activity];
-    return (ups and ups[phase]) or 0, (swings and swings[phase]) or 0;
-end
 
 function store.bump_since_skillup(activity)
     local char = ensure_char(store.char_name());

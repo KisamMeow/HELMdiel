@@ -513,7 +513,7 @@ data.TRACKED_ZONES = T{
         { id = 12,  name = 'Newton Movalpolos' },
         { id = 11,  name = 'Oldton Movalpolos' },
         { id = 143, name = 'Palborough Mines',   skill_cap = 20 },
-        { id = 142, name = 'Yughott Grotto',     skill_cap = 20 },
+        { id = 142, name = 'Yughott Grotto',     skill_cap = 10 },
         { id = 172, name = 'Zeruhn Mines',       skill_cap = 10 },
     },
 };
@@ -584,14 +584,19 @@ data.SKILL_VALUE_INTEGER = 'raising it to (%d+)';
 data.CHARACTER_KEYS = T{ 'fatigue', 'fatigued', 'item_log', 'skill',
                          'skillups', 'attempts', 'successes', 'spoils',
                          'since_skillup', 'procs', 'breaks', 'goldrush',
-                         'tool_breaks', 'lifetime', 'session_log',
-                         'moonups', 'moonswings' };
+                         'tool_breaks', 'lifetime', 'session_log' };
 data.SESSION_KEYS   = T{ 'skillups', 'attempts', 'successes', 'spoils',
                          'since_skillup', 'tool_breaks', 'session_log' };
 data.SPOILS_KEYS    = T{ 'spoils', 'tool_breaks', 'session_log' };
-data.SESSION_CLOCK  = T{ 'session_start', 'session_last' };
+data.SESSION_CLOCK  = T{ 'session_start', 'session_last', 'session_active' };
 
 data.SECONDS_PER_HOUR = 3600;
+
+-- Longer than this between two gathers and the gap is not counted as time
+-- spent gathering. Fifteen minutes: hunting for a node can genuinely take
+-- twenty, so a shorter cutoff throws away real gathering time, and a longer one
+-- starts counting being away from the keyboard.
+data.SESSION_IDLE_CUTOFF = 900;
 
 data.PROC_GAP        = 18.0;
 
@@ -728,50 +733,6 @@ for _, activity in ipairs(data.ACTIVITIES) do
     data.SKILL_PATTERNS[activity]   =
         ('Your %s skill has increased'):fmt(SKILL_NAMES[activity]);
 end
-
--- Moon
--- The 84 day cycle and its eight phases, in cycle order. `upto` is the last
--- moon index the phase covers; Full Moon wraps, so it opens and closes the
--- table and MOON_INDEX falls through to it.
-data.MOON_SIGNATURE = 'B0015EC390518B4C24088D4424005068';
-data.MOON_POINTER_OFFSET = 0x34;
-data.MOON_TIME_OFFSET    = 0x0C;
-data.MOON_EPOCH          = 92514960;
-data.MOON_DAY_TICKS      = 3456;
-data.MOON_CYCLE          = 84;
-data.MOON_HALF           = 42;
-data.MOON_CACHE_SECONDS  = 5.0;
-
-data.MOON_MARKER = '>';
-
-data.MOON_PHASES = T{
-    { name = 'New Moon',        upto = 45 },
-    { name = 'Waxing Crescent', upto = 58 },
-    { name = 'First Quarter',   upto = 66 },
-    { name = 'Waxing Gibbous',  upto = 80 },
-    { name = 'Full Moon',       upto = 84 },
-    { name = 'Waning Gibbous',  upto = 17 },
-    { name = 'Last Quarter',    upto = 25 },
-    { name = 'Waning Crescent', upto = 38 },
-};
-
-local MOON_INDEX = T{};
-do
-    -- Walk the cycle from Full Moon's opening run so every index is covered
-    -- once, wrap included.
-    local bounds = T{ 3, 17, 25, 38, 45, 58, 66, 80, 84 };
-    local names  = T{ 'Full Moon', 'Waning Gibbous', 'Last Quarter',
-                      'Waning Crescent', 'New Moon', 'Waxing Crescent',
-                      'First Quarter', 'Waxing Gibbous', 'Full Moon' };
-    local at = 1;
-    for step, edge in ipairs(bounds) do
-        while (at <= edge) do
-            MOON_INDEX[at] = names[step];
-            at = at + 1;
-        end
-    end
-end
-data.MOON_INDEX = MOON_INDEX;
 
 -- Tools
 data.TOOL_KEY       = 'Tools';

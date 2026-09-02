@@ -226,6 +226,10 @@ end
 local CLIP_MIN = { 0, 0 };
 local CLIP_MAX = { 0, 0 };
 local TEXT_POS = { 0, 0 };
+-- One reused cell for every single-value control: ImGui reads it immediately
+-- and keeps no reference. Declared up here because locals resolve in file
+-- order and render_settings is well above the nav scratch tables.
+local ONE      = { 0 };
 
 local function clip_text(list, x0, x1, y0, y1, col, text)
     CLIP_MIN[1] = x0;
@@ -849,73 +853,10 @@ local function proc_tip(ability, fired, outof, charname, zoneId)
     return ('%s\n\n%s'):fmt(head, repeat_note(charname, zoneId));
 end
 
-local MOON_LINES    = {};
-local MOON_CAPTIONS = {};
-
-local function moon_caption(percent)
-    local label = MOON_CAPTIONS[percent];
-    if (label == nil) then
-        label = ('MOON %d%%'):fmt(percent);
-        MOON_CAPTIONS[percent] = label;
-    end
-    return label;
-end
-
 local function drought_line(since)
     if (since == 0) then return 'No swings since your last skill up.'; end
     return ('%d swing%s since your last skill up.')
         :fmt(since, since == 1 and '' or 's');
-end
-
-local function moon_tip(charname, activity, phase, since)
-    local rows, gap = MOON_LINES, px(data.CELL_GUTTER);
-    local mark  = imgui.CalcTextSize(data.MOON_MARKER);
-    local names, tallies, rates = 0, 0, 0;
-
-    local count = 0;
-    for _, entry in ipairs(data.MOON_PHASES) do
-        local ups, swings = store.moon_record(charname, activity, entry.name);
-        count = count + 1;
-
-        local slot = rows[count];
-        if (slot == nil) then slot = {}; rows[count] = slot; end
-        slot.name   = entry.name;
-        slot.here   = entry.name == phase;
-        slot.tally  = swings > 0 and ('%d/%d'):fmt(ups, swings) or '-';
-        slot.rate   = swings > 0 and ('%.1f%%'):fmt(ups / swings * 100) or '-';
-        slot.name_w  = imgui.CalcTextSize(slot.name);
-        slot.tally_w = imgui.CalcTextSize(slot.tally);
-        slot.rate_w  = imgui.CalcTextSize(slot.rate);
-
-        if (slot.name_w  > names)   then names   = slot.name_w;  end
-        if (slot.tally_w > tallies) then tallies = slot.tally_w; end
-        if (slot.rate_w  > rates)   then rates   = slot.rate_w;  end
-    end
-    for index = count + 1, #rows do rows[index] = nil; end
-
-    imgui.BeginTooltip();
-    imgui.TextColored(data.COLOR_VALUE,
-        ('%s skill ups by moon phase, across every zone.'):fmt(activity));
-    imgui.Spacing();
-
-    for index = 1, count do
-        local slot = rows[index];
-        local ink  = slot.here and data.COLOR_VALUE or data.COLOR_LABEL;
-
-        imgui.TextColored(ink, slot.here and data.MOON_MARKER or '');
-        imgui.SameLine(0, (slot.here and 0 or mark) + gap);
-        imgui.TextColored(ink, slot.name);
-        -- Both figure columns are right aligned, so the digits stack.
-        imgui.SameLine(0, names - slot.name_w + tallies - slot.tally_w + gap);
-        imgui.TextColored(ink, slot.tally);
-        imgui.SameLine(0, rates - slot.rate_w + gap);
-        imgui.TextColored(ink, slot.rate);
-    end
-
-    imgui.Spacing();
-    imgui.TextColored(data.COLOR_LABEL, drought_line(since));
-    imgui.EndTooltip();
-    return nil;
 end
 
 local function skillup_tip(ups, swings, since, cap_at, zoneName)
@@ -928,9 +869,9 @@ local function skillup_tip(ups, swings, since, cap_at, zoneName)
         return ('Nothing swung in %s yet.\n%s'):fmt(zoneName, drought_line(since));
     end
 
-    return ('%d skill up%s in %d swing%s here, %.1f%%.\n%s'):fmt(
-        ups, ups == 1 and '' or 's', swings, swings == 1 and '' or 's',
-        ups / swings * 100, drought_line(since));
+    return ('%s\n%d skill up%s in %d swing%s here, %.1f%%.'):fmt(
+        drought_line(since), ups, ups == 1 and '' or 's',
+        swings, swings == 1 and '' or 's', ups / swings * 100);
 end
 
 local function render_activity(charname, activity, curZoneId, zoneName)
@@ -956,18 +897,9 @@ local function render_activity(charname, activity, curZoneId, zoneName)
     local since  = store.get_since_skillup(charname, activity);
 
     tile(1, 'COLLECTED', ('%d'):fmt(total));
-    local phase, percent;
-    if (capped == nil) then phase, percent = resources.moon_phase(); end
-
-    if (phase ~= nil) then
-        local mups, mswings = store.moon_record(charname, activity, phase);
-        tile(2, moon_caption(percent), as_rate(mups, mswings), data.COLOR_SKILLUP,
-             moon_tip, charname, activity, phase, since);
-    else
-        tile(2, 'SKILL UPS', capped or as_rate(ups, swings), data.COLOR_SKILLUP,
-             skillup_tip, ups, swings, since,
-             store.skill_capped(charname, activity, curZoneId), zoneName);
-    end
+    tile(2, 'LAST SKILL UP', capped or ('%d'):fmt(since), data.COLOR_SKILLUP,
+         skillup_tip, ups, swings, since,
+         store.skill_capped(charname, activity, curZoneId), zoneName);
 
     local abilities = data.PROC_ABILITIES[activity];
     for index, ability in ipairs(abilities) do
@@ -1030,7 +962,10 @@ local function span_label(seconds)
 end
 
 local function gil(value)
-    local text = tostring(math.floor(value));
+    value = math.floor(value);
+    if (value < 0) then return '-' .. gil(-value); end
+
+    local text = tostring(value);
     local head = #text % 3;
     if (head == 0) then head = 3; end
 
@@ -1142,14 +1077,16 @@ local function render_price_editor()
     imgui.Spacing();
 end
 
-local function net_tip(net, tools, rate, span)
+local function rate_tip(net, tools, span)
     local head = ('%s Gil gathered this session, minus %s for broken tools.')
         :fmt(gil(net + tools), gil(tools));
 
-    if (rate == nil) then
-        return head .. '\nNot enough time between gathers to rate it yet.';
+    if (span <= 0) then
+        return ('%s\nNet %s Gil. Not enough time between gathers to rate it yet.')
+            :fmt(head, gil(net));
     end
-    return ('%s\n%s Gil/hr over %s.'):fmt(head, gil(rate), span_label(span));
+    return ('%s\nNet %s Gil over %s of gathering.')
+        :fmt(head, gil(net), span_label(span));
 end
 
 local function lifetime_tip()
@@ -1248,7 +1185,8 @@ local function render_spoils(charname)
         local rate  = span > 0 and net * data.SECONDS_PER_HOUR / span or nil;
 
         imgui.Spacing();
-        tile(1, 'NET GIL', gil(net), data.COLOR_SKILLUP, net_tip, net, spent, rate, span);
+        tile(1, 'GIL/HR', rate and gil(rate) or '-', data.COLOR_SKILLUP,
+             rate_tip, net, spent, span);
         tile(2, 'LIFETIME', gil(lifetime), data.COLOR_SKILLUP, lifetime_tip, lifetime, ever);
         render_tiles(2);
         imgui.Spacing();
@@ -1325,7 +1263,7 @@ local function render_spoils(charname)
                 imgui.SameLine(0, widest - tool.name_w + px(data.CELL_GUTTER));
                 imgui.TextColored(data.COLOR_LABEL, tool.tally);
                 imgui.SameLine(0, widestc - tool.tally_w + px(data.CELL_GUTTER));
-                imgui.TextColored(data.COLOR_COST, '-' .. gil(tool.cost));
+                imgui.TextColored(data.COLOR_COST, gil(-tool.cost));
             end
         end
     end
@@ -1409,7 +1347,8 @@ local function render_settings(charname)
     caption('DISPLAY');
 
     imgui.PushItemWidth(px(data.COMBO_WIDTH));
-    local fonted = { store.font_index() - 1 };
+    ONE[1] = store.font_index() - 1;
+    local fonted = ONE;
     if (imgui.Combo('Font', fonted, data.FONT_COMBO)) then
         store.set_font_index(fonted[1] + 1);
     end
@@ -1419,7 +1358,8 @@ local function render_settings(charname)
     imgui.Spacing();
 
     imgui.PushItemWidth(px(data.COMBO_WIDTH));
-    local homed = { store.home_mode_index() - 1 };
+    ONE[1] = store.home_mode_index() - 1;
+    local homed = ONE;
     if (imgui.Combo('Home Detail', homed, data.HOME_MODE_COMBO)) then
         store.set_home_mode_index(homed[1] + 1);
     end
@@ -1451,7 +1391,8 @@ local function render_settings(charname)
     imgui.Spacing();
 
     imgui.PushItemWidth(px(data.SKILL_INPUT_WIDTH));
-    local opacity = { store.window_opacity() };
+    ONE[1] = store.window_opacity();
+    local opacity = ONE;
     if (imgui.SliderFloat('Opacity', opacity, data.OPACITY_MIN, data.OPACITY_MAX, '%.2f')) then
         store.set_window_opacity(opacity[1]);
     end
@@ -1461,7 +1402,8 @@ local function render_settings(charname)
     imgui.Spacing();
 
     imgui.PushItemWidth(px(data.COMBO_WIDTH));
-    local chosen = { store.ui_scale_index() - 1 };
+    ONE[1] = store.ui_scale_index() - 1;
+    local chosen = ONE;
     if (imgui.Combo('UI Scale', chosen, data.UI_SCALE_COMBO)) then
         store.set_ui_scale_index(chosen[1] + 1);
     end
@@ -1487,7 +1429,8 @@ local function render_settings(charname)
 
     imgui.PushItemWidth(px(data.SKILL_INPUT_WIDTH));
     for index, activity in ipairs(data.ACTIVITIES) do
-        local buffer = { store.get_skill(charname, activity) or 0 };
+        ONE[1] = store.get_skill(charname, activity) or 0;
+        local buffer = ONE;
         if (imgui.InputFloat(activity, buffer, 0, 0, '%.1f')) then
             store.set_skill(charname, activity, math.max(0, buffer[1]));
             store.save();

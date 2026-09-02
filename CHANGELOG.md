@@ -19,6 +19,32 @@ If you notice any items being listed twice but spelt differently then type
 
 ## [Unreleased]
 
+## [0.15.0] - 2026-09-02
+
+### Removed
+
+- **Skill ups by moon phase.** A 40-to-50 harvesting run gave 9,562 swings
+  across all eight phases and showed no effect, which is what the tile was
+  added to find out.
+
+### Changed
+
+- **Home's middle tile is Last Skill Up again**, showing swings since your
+  skill last rose. Hover it for the rate.
+- **Spoils leads with Gil/hr.** Hover it for what you gathered, what the tools
+  cost, and how long you have been at it.
+- **The session clock only counts time you were gathering.** A gap of more
+  than fifteen minutes is not counted, and logging out, `/shutdown`, a crash or
+  a disconnect all stop it.
+
+### Fixed
+
+- **Yughott Grotto caps mining skill at 10, not 20.** Past skill 10 there, your
+  fatigue counter stopped at 200 when the real ceiling was 250, so gathering
+  looked like it had stopped counting.
+- **A negative gil figure could render as `-,495`.** Net Gil, Lifetime and the
+  Gil/hr rate all go negative when broken tools outrun what you gathered.
+
 ## [0.14.3] - 2026-08-31
 
 ### Added
@@ -573,7 +599,8 @@ Initial public release.
 - The rule that a gather decays *all* other zones for that activity was
   inferred from a two-zone observation.
 
-[Unreleased]: https://github.com/KisamMeow/HELMdiel/compare/v0.14.3...HEAD
+[Unreleased]: https://github.com/KisamMeow/HELMdiel/compare/v0.15.0...HEAD
+[0.15.0]: https://github.com/KisamMeow/HELMdiel/compare/v0.14.3...v0.15.0
 [0.14.3]: https://github.com/KisamMeow/HELMdiel/compare/v0.14.2...v0.14.3
 [0.14.2]: https://github.com/KisamMeow/HELMdiel/compare/v0.14.1...v0.14.2
 [0.14.1]: https://github.com/KisamMeow/HELMdiel/compare/v0.14.0...v0.14.1

@@ -2,6 +2,7 @@
 CLAUDE.md
 test_harness.lua
 stress_harness.lua
+tools/
 .github/
 docs/*
 !docs/screenshots/

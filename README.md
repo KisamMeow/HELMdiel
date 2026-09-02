@@ -9,7 +9,7 @@ export.
 Still in early development: expect bugs, and expect the UI to keep moving until
 1.0.
 
-Ashita v4.30+ addon. Version 0.14.3. Released under GPL-3.0. Coded with help
+Ashita v4.30+ addon. Version 0.15.0. Released under GPL-3.0. Coded with help
 from Claude Opus 5.
 
 ## Screenshots
@@ -118,28 +118,16 @@ on. **The activity tabs keep the full history instead**, which is where drop
 rates worth trusting live: they need hundreds of gathers and a session rarely
 has them.
 
-**Skill Ups** is how often a swing here raised your skill, or **Cap (20)**
-once your skill reaches the zone's ceiling, since a rate stops meaning anything
-once it cannot move. Most zones have a known cap now; the nine that do not
-always show the rate. **Hover it** for the numbers behind it and how many
-swings since your last skill up.
+**Last Skill Up** is how many swings you have made since your skill last
+rose, or **Cap (20)** once your skill reaches the zone's ceiling, since the
+count stops meaning anything once your skill cannot move. Most zones have a
+known cap now; the nine that do not always show the count. **Hover it** for
+your skill up rate in this zone and the numbers behind it.
 
 **Swings in a zone you have outskilled do not count towards that last figure.**
 It answers how long you have been waiting for a skill up, and a finished zone
 was never going to give you one. Everything else about those swings still
 counts — the items, the drop rates, the fatigue.
-
-**The tile reads `MOON 31%`** — how lit the moon is right now, the same figure
-the game shows — over your skill up rate under that phase. **Hover it** for all
-eight phases in a table, with the one you are on marked `>`. Whether the moon
-affects HELM skill ups is not something anyone has proven; this is here so you
-can find out.
-
-The phase tally pools every zone for that activity, since eight phases split
-your data eight ways and per-zone would take forever to say anything. Swings in
-a zone you have outskilled are left out, the same as above. In a capped zone,
-or if the addon cannot read the game clock, the tile goes back to showing the
-zone's own rate.
 
 **The tiles after it are that activity's special skills**, one each — Mining
 gets four, wrapped onto two rows, and Logging none. **Hover one** for the
@@ -212,20 +200,26 @@ ITEM                   AMOUNT      GIL
 No rarity, just what you are carrying home. It survives reloading and logging
 out.
 
-**Hover Net Gil** for what it is made of and how fast you earned it:
+**Hover Gil/hr** for what it is made of and how long you have been at it:
 
 ```
 2,000 Gil gathered this session, minus 150 for broken tools.
-3,689 Gil/hr over 30min.
+Net 1,850 Gil over 30min of gathering.
 ```
 
 **The tools deduction is every sickle, pickaxe and hatchet you got through this
 session**, priced from the Tools block in Edit Prices. Leave them unpriced and
 nothing is deducted.
 
-**The rate runs from your first gather to your last**, not to the current time,
-so leaving the window open while you do something else does not drag it down.
-Every reset that clears the tally clears the clock with it.
+**The clock only counts time you were actually gathering.** It adds up the
+gaps between one gather and the next, and **a gap of more than fifteen
+minutes is not counted at all** — so going for a walk, sitting in town or being away from
+the keyboard does not drag the figure down.
+
+**It also stops the moment you stop playing.** Logging out to character select,
+`/shutdown`, unloading the addon, a crash or a dropped connection all pause it,
+and gathering again picks up where it left off. Every reset that clears the
+tally clears the clock with it.
 
 **Lifetime is everything this character has ever gathered**, less every tool it
 has broken, and it is the one figure here that a session reset leaves alone —

@@ -1,6 +1,6 @@
 addon.name    = 'HELMdiel';
 addon.author  = 'Masuru';
-addon.version = '0.14.3';
+addon.version = '0.15.0';
 addon.desc    = 'Tracks HELM (Harvesting/Excavation/Logging/Mining) regional gathering fatigue on HorizonXI.';
 addon.link    = 'https://github.com/KisamMeow/HELMdiel';
 
@@ -169,7 +169,6 @@ ashita.events.register('text_in', 'helmdiel_text_in', function(e)
 
         store.register_skill(skill_activity, skill_value);
         store.register_skillup(skill_activity, zoneId);
-        store.register_moon_skillup(skill_activity, resources.moon_phase());
         store.reset_since_skillup(skill_activity);
         store.save();
         return;
@@ -253,12 +252,6 @@ ashita.events.register('text_in', 'helmdiel_text_in', function(e)
             if (store.skill_capped(store.char_name(), activity, zoneId) == nil) then
                 store.bump_since_skillup(activity);
 
-                local phase = resources.moon_phase();
-                store.register_moon_swing(activity, phase);
-                if (state.debug) then
-                    msg(('[moon] swing under %s')
-                        :fmt(phase or 'no readable game clock'));
-                end
             elseif (state.debug) then
                 msg(('[capped] %s swing where skill cannot rise, not counted'
                      .. ' towards the swings since your last skill up'):fmt(activity));
@@ -269,7 +262,13 @@ ashita.events.register('text_in', 'helmdiel_text_in', function(e)
 
         if (not failed) then
             store.register_success(activity, zoneId);
-            store.register_gather(activity, zoneId);
+
+            if (not store.register_gather(activity, zoneId) and state.debug) then
+                msg(('[cap] %s here is at its ceiling of %d and did not rise. '
+                     .. 'If the game still lets you gather, this zone\'s skill '
+                     .. 'cap is recorded too high.'):fmt(activity,
+                     store.fatigue_cap(store.char_name(), activity, zoneId)));
+            end
 
             local item = detect.clean_item_name(detect.extract_after(text, matched));
 
@@ -371,7 +370,17 @@ ui.set_actions(T{ reset_session = reset_session, reset_all = reset_all,
 ui.set_title(addon.version);
 
 ashita.events.register('d3d_present', 'helmdiel_present', function()
-    ui.render(store.player());
+    local name, zoneId = store.player();
+
+    -- Logging out reports the name as 'unknown', so a change of name is the
+    -- signal. Pausing here rather than waiting for the idle cutoff means a log
+    -- out is immediate no matter how quickly you come back.
+    if (name ~= state.player) then
+        if (state.player ~= nil) then store.pause_session(state.player); end
+        state.player = name;
+    end
+
+    ui.render(name, zoneId);
 end);
 
 ashita.events.register('command', 'helmdiel_command', function(e)
@@ -473,6 +482,12 @@ ashita.events.register('command', 'helmdiel_command', function(e)
 end);
 
 ashita.events.register('load', 'helmdiel_load', function()
+    -- Whatever happened last time -- a clean exit, a crash, a disconnect, or
+    -- the client being killed -- nobody was gathering while the addon was not
+    -- running. Nothing else can distinguish those, so the clock always opens a
+    -- fresh interval here.
+    store.pause_all_sessions();
+
     if (not ui.load_font()) then
         err(('Could not load %s. Using the default font.'):fmt(data.FONT_PATH));
     end
@@ -480,5 +495,10 @@ ashita.events.register('load', 'helmdiel_load', function()
 end);
 
 ashita.events.register('unload', 'helmdiel_unload', function()
+    -- /shutdown closes the game outright, so there may be no frame between
+    -- logging out and the addon going away for d3d_present to notice the name
+    -- change. Pausing here covers that, and /addon unload with it. The save
+    -- after is what makes this one stick, unlike the pause in the render loop.
+    store.pause_session(store.char_name());
     store.save();
 end);
