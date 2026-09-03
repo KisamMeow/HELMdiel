@@ -897,7 +897,7 @@ local function render_activity(charname, activity, curZoneId, zoneName)
     local since  = store.get_since_skillup(charname, activity);
 
     tile(1, 'COLLECTED', ('%d'):fmt(total));
-    tile(2, 'LAST SKILL UP', capped or ('%d'):fmt(since), data.COLOR_SKILLUP,
+    tile(2, 'LAST SKILL', capped or ('%d'):fmt(since), data.COLOR_SKILLUP,
          skillup_tip, ups, swings, since,
          store.skill_capped(charname, activity, curZoneId), zoneName);
 

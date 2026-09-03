@@ -9,7 +9,7 @@ export.
 Still in early development: expect bugs, and expect the UI to keep moving until
 1.0.
 
-Ashita v4.30+ addon. Version 0.15.0. Released under GPL-3.0. Coded with help
+Ashita v4.30+ addon. Version 0.15.1. Released under GPL-3.0. Coded with help
 from Claude Opus 5.
 
 ## Screenshots
@@ -118,7 +118,7 @@ on. **The activity tabs keep the full history instead**, which is where drop
 rates worth trusting live: they need hundreds of gathers and a session rarely
 has them.
 
-**Last Skill Up** is how many swings you have made since your skill last
+**Last Skill** is how many swings you have made since your skill last
 rose, or **Cap (20)** once your skill reaches the zone's ceiling, since the
 count stops meaning anything once your skill cannot move. Most zones have a
 known cap now; the nine that do not always show the count. **Hover it** for
