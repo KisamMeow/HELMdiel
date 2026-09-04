@@ -6,9 +6,6 @@ Per-zone fatigue counters, skill levels read from your own skill-up messages,
 drop logging with icons and rarity tiers, a session tally with gil, and CSV
 export.
 
-Still in early development: expect bugs, and expect the UI to keep moving until
-1.0.
-
 Ashita v4.30+ addon. Version 0.15.1. Released under GPL-3.0. Coded with help
 from Claude Opus 5.
 
