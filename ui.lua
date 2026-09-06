@@ -498,6 +498,22 @@ local function hint(text)
     if (imgui.IsItemHovered()) then imgui.SetTooltip(text); end
 end
 
+-- One caption-and-value pair, the same idiom as a stat tile, with the numbers
+-- behind it on the hover.
+-- The tip is a builder and its arguments, called only when something is
+-- actually hovered. Passing hint(tip(...)) instead would build every tooltip on
+-- the tab every frame, which is the allocation the stat tiles were already
+-- fixed for once.
+local function stat(caption, value, tip, ...)
+    imgui.TextColored(data.COLOR_CAPTION, caption);
+    local hot = imgui.IsItemHovered();
+    imgui.SameLine(0, px(data.CELL_GUTTER) * 0.5);
+    imgui.TextColored(data.COLOR_SKILLUP, value);
+    if (tip ~= nil and (hot or imgui.IsItemHovered())) then
+        imgui.SetTooltip(tip(...));
+    end
+end
+
 local PROC_PARTS = {};
 local REPEAT_NAMES = {};
 
@@ -522,7 +538,7 @@ local function repeat_note(charname, zoneId)
             or  'These are left out of the rates above.');
 end
 
-local function render_procs(charname, activity, zoneId, collected, quiet)
+local function render_procs(charname, activity, zoneId, collected, quiet, first, tip)
     local abilities = data.PROC_ABILITIES[activity];
     if (#abilities == 0) then return; end
 
@@ -541,24 +557,92 @@ local function render_procs(charname, activity, zoneId, collected, quiet)
         local slot = PROC_PARTS[index];
         if (slot == nil) then slot = {}; PROC_PARTS[index] = slot; end
         slot.repeats = ability.repeats;
+        slot.ability = ability;
+        slot.short   = ability.short;
+        slot.fired   = fired;
+        slot.outof   = outof;
 
         if (outof > 0) then
             slot.text = ('%s - %d/%d (%.1f%%)')
                 :fmt(ability.name, fired, outof, fired / outof * 100);
+            slot.rate = ('%.1f%%'):fmt(fired / outof * 100);
         else
             slot.text = ('%s - %d/0'):fmt(ability.name, fired);
+            slot.rate = '-';
         end
     end
 
     if (quiet and not shown) then return; end
 
     for index = 1, #abilities do
-        if (index > 1) then imgui.SameLine(0, px(data.PROC_GAP)); end
+        if (index > 1 or first == false) then
+            imgui.SameLine(0, px(data.STAT_GAP));
+        end
 
         local slot = PROC_PARTS[index];
-        imgui.TextDisabled(slot.text);
-        if (slot.repeats) then hint(repeat_note(charname, zoneId)); end
+        if (first == nil) then
+            imgui.TextDisabled(slot.text);
+            if (slot.repeats) then hint(repeat_note(charname, zoneId)); end
+        else
+            stat(slot.short, slot.rate, tip, slot.ability, slot.fired,
+                 slot.outof, charname, zoneId);
+        end
     end
+end
+
+local CHIP_MIN, CHIP_MAX = { 0, 0 }, { 0, 0 };
+local head_fill = nil;
+
+-- Painted into the header's own rect, so neither the chip nor the count is a
+-- laid-out item and neither can reach ContentSize. Both are right-aligned
+-- together, which means only the rect's RIGHT edge is needed -- where the
+-- header's text begins depends on the arrow and the frame padding, and reading
+-- that back would be the fragile half.
+-- state: 0 far below the cap, 1 within CAP_NEAR of it, 2 past it.
+local function head_meta(capText, state, countText, nameWidth)
+    local list   = imgui.GetWindowDrawList();
+    local ax, ay = imgui.GetItemRectMin();
+    local bx, by = imgui.GetItemRectMax();
+
+    local pad  = px(data.CHIP_PAD);
+    local gap  = px(data.CELL_GUTTER);
+    local mid  = ay + (by - ay - imgui.GetTextLineHeight()) * 0.5;
+    local cw   = countText ~= nil and imgui.CalcTextSize(countText) or 0;
+    local capw = capText ~= nil and imgui.CalcTextSize(capText) or 0;
+
+    -- Everything the group needs, against everything the name has left. Too
+    -- narrow and nothing is painted: the zone's own name is never the thing
+    -- that gets covered up.
+    local group = cw + (capText ~= nil and (capw + pad * 2 + gap) or 0);
+    if ((bx - ax) - imgui.GetFrameHeight() - nameWidth - gap < group) then return; end
+
+    local right = bx - gap;
+    if (countText ~= nil) then
+        TEXT_POS[1] = right - cw;
+        TEXT_POS[2] = mid;
+        list:AddText(TEXT_POS, imgui.GetColorU32(data.COLOR_LABEL), countText);
+        right = right - cw - gap;
+    end
+
+    if (capText == nil) then return; end
+
+    CHIP_MIN[1] = right - capw - pad * 2;
+    CHIP_MIN[2] = ay + px(data.CHIP_INSET);
+    CHIP_MAX[1] = right;
+    CHIP_MAX[2] = by - px(data.CHIP_INSET);
+    local plate, ink = data.COLOR_CHIP, data.COLOR_LABEL;
+    if (state == 2) then
+        plate, ink = data.COLOR_CHIP_DONE, data.COLOR_GOLD;
+    elseif (state == 1) then
+        plate, ink = data.COLOR_CHIP_NEAR, data.COLOR_CHIP_NEAR_INK;
+    end
+
+    list:AddRectFilled(CHIP_MIN, CHIP_MAX, imgui.GetColorU32(plate),
+        px(data.NAV_BTN_ROUNDING));
+
+    TEXT_POS[1] = CHIP_MIN[1] + pad;
+    TEXT_POS[2] = mid;
+    list:AddText(TEXT_POS, imgui.GetColorU32(ink), capText);
 end
 
 local function render_fatigue(charname, activity, zoneId, zoneName)
@@ -853,24 +937,18 @@ local function proc_tip(ability, fired, outof, charname, zoneId)
     return ('%s\n\n%s'):fmt(head, repeat_note(charname, zoneId));
 end
 
-local function drought_line(since)
-    if (since == 0) then return 'No swings since your last skill up.'; end
-    return ('%d swing%s since your last skill up.')
-        :fmt(since, since == 1 and '' or 's');
-end
-
-local function skillup_tip(ups, swings, since, cap_at, zoneName)
+local function skillup_tip(ups, swings, cap_at, zoneName)
     if (cap_at ~= nil) then
         return ('%s caps at %d. Swings here are not counted.')
             :fmt(zoneName, cap_at);
     end
 
     if (swings == 0) then
-        return ('Nothing swung in %s yet.\n%s'):fmt(zoneName, drought_line(since));
+        return ('Nothing swung in %s yet.'):fmt(zoneName);
     end
 
-    return ('%s\n%d skill up%s in %d swing%s here, %.1f%%.'):fmt(
-        drought_line(since), ups, ups == 1 and '' or 's',
+    return ('%d skill up%s in %d swing%s here, %.2f%%.'):fmt(
+        ups, ups == 1 and '' or 's',
         swings, swings == 1 and '' or 's', ups / swings * 100);
 end
 
@@ -898,7 +976,7 @@ local function render_activity(charname, activity, curZoneId, zoneName)
 
     tile(1, 'COLLECTED', ('%d'):fmt(total));
     tile(2, 'LAST SKILL', capped or ('%d'):fmt(since), data.COLOR_SKILLUP,
-         skillup_tip, ups, swings, since,
+         skillup_tip, ups, swings,
          store.skill_capped(charname, activity, curZoneId), zoneName);
 
     local abilities = data.PROC_ABILITIES[activity];
@@ -1308,22 +1386,68 @@ local function render_activity_tab(charname, activity)
     for _, zone in ipairs(zones) do
         local log   = store.get_item_log(charname, activity, zone.id);
         local total = count_gathers(log);
+        local capAt = store.skill_capped(charname, activity, zone.id);
+        local cap   = data.SKILL_CAPS[activity] and data.SKILL_CAPS[activity][zone.id];
 
-        local label = zone.name;
-        if (total > 0) then
-            label = ('%s - %d Items Collected'):fmt(zone.name, total);
+        -- Past the cap is gold, within CAP_NEAR of it lit, anything further
+        -- off plain.
+        --
+        -- An unknown skill counts as 0 here, and the asymmetry is deliberate:
+        -- it can light a zone UP but never mark one finished. skill_capped
+        -- still requires a known skill, so an activity you have never touched
+        -- highlights its starter zones -- which is exactly when the guidance is
+        -- worth most -- and can never wrongly call a zone done. Settings
+        -- already shows an unrecorded skill as 0.0, so this is the reading the
+        -- UI was giving anyway.
+        local skill = store.get_skill(charname, activity) or 0;
+        local state = 0;
+        if (capAt ~= nil) then
+            state = 2;
+        elseif (cap ~= nil and (cap - skill) <= data.CAP_NEAR) then
+            state = 1;
         end
 
-        if (imgui.CollapsingHeader(('%s###hh%s%d'):fmt(label, activity, zone.id))) then
+        local capText   = cap ~= nil and ('CAP %d'):fmt(cap) or nil;
+        local countText = total > 0 and ('%d items'):fmt(total) or nil;
+
+        -- The meta rides in the label only when it cannot be painted, so a
+        -- client with no draw list still sees the cap and the count.
+        local label = zone.name;
+        if (head_fill == false) then
+            if (capText ~= nil)   then label = ('%s - %s'):fmt(label, capText); end
+            if (countText ~= nil) then label = ('%s - %s'):fmt(label, countText); end
+        end
+
+        local open = imgui.CollapsingHeader(('%s###hh%s%d'):fmt(label, activity, zone.id));
+
+        if (head_fill ~= false and (capText ~= nil or countText ~= nil)) then
+            head_fill = pcall(head_meta, capText, state, countText,
+                              imgui.CalcTextSize(zone.name));
+        end
+
+        if (open) then
             local ups    = store.get_skillups(charname, activity, zone.id);
             local swings = store.get_attempts(charname, activity, zone.id);
-            if (swings > 0) then
-                imgui.TextColored(data.COLOR_SKILLUP,
-                    ('Skill Ups - %d/%d (%.1f%%)'):fmt(ups, swings,
-                                                       ups / swings * 100));
+
+            -- A zone you have outskilled drops the figure entirely rather than
+            -- showing a rate that can never move again. The gold chip above is
+            -- what says why it is missing.
+            local first = true;
+            if (capAt == nil and swings > 0) then
+                stat('SKILL UPS', ('%.1f%%'):fmt(ups / swings * 100),
+                     skillup_tip, ups, swings, nil, zone.name);
+                first = false;
             end
 
-            render_procs(charname, activity, zone.id, total, true);
+            render_procs(charname, activity, zone.id, total, true, first, proc_tip);
+
+            -- A rule between the figures and the grid, so the strip reads as
+            -- belonging to the zone rather than to the items under it. Drawn
+            -- whether or not the strip had anything to say, so every open zone
+            -- has the same shape.
+            imgui.Spacing();
+            imgui.Separator();
+            imgui.Spacing();
 
             render_item_list(log, total, charname, activity, zone.id);
             imgui.Spacing();

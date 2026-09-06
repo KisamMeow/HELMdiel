@@ -86,6 +86,8 @@ data.COLOR_VALUE       = { 0.93, 0.93, 0.96, 1.00 };
 data.COLOR_CAPTION     = { 0.48, 0.48, 0.54, 1.00 };
 data.COLOR_TILE_BG     = data.SURFACE_PLATE;
 data.COLOR_NAV_TRACK   = data.SURFACE_RAISED;
+data.COLOR_CHIP        = data.SURFACE_PLATE;
+data.COLOR_CHIP_DONE   = { 0.26, 0.22, 0.11, 0.90 };
 data.COLOR_NAV_IDLE    = { 0.00, 0.00, 0.00, 0.00 };
 data.COLOR_GRIP        = { 1.00, 0.84, 0.20, 0.85 };
 data.COLOR_GRIP_HOVER  = { 1.00, 0.90, 0.45, 1.00 };
@@ -136,6 +138,17 @@ data.EXPORT_HEADER_MIN = T{ 'Activity', 'Zone', 'Item', 'Count',
                             'Zone Gathers', 'Drop Rate', 'Skill' };
 
 data.COLOR_SKILLUP  = { 0.40, 0.75, 1.00, 1.00 };
+
+-- The near-cap chip: the zones worth gathering in for skill right now. It is
+-- COLOR_SKILLUP because that is what the chip is about -- every skill up rate
+-- in the addon is already drawn in it -- and because green on a green plate
+-- measured 1.55:1 against the gold state's 3.24:1 and was hard to read. This
+-- pairing measures 3.24:1, the same as gold.
+--
+-- Defined here, below COLOR_SKILLUP, and not beside the other chip colours:
+-- table fields resolve in file order, and a forward reference is silently nil.
+data.COLOR_CHIP_NEAR     = { 0.11, 0.19, 0.28, 0.90 };
+data.COLOR_CHIP_NEAR_INK = data.COLOR_SKILLUP;
 data.COLOR_LOCKED   = { 0.45, 0.45, 0.48, 1.00 };
 
 -- Spoils column headings
@@ -500,18 +513,18 @@ data.TRACKED_ZONES = T{
         { id = 104, name = 'Jugner Forest' },
         { id = 24,  name = 'Lufaise Meadows' },
         { id = 25,  name = 'Misareaux Coast' },
-        { id = 124, name = 'Yhoator Jungle',     skill_cap = 40 },
-        { id = 123, name = 'Yuhtunga Jungle',    skill_cap = 40 },
+        { id = 124, name = 'Yhoator Jungle' },
+        { id = 123, name = 'Yuhtunga Jungle' },
         { id = 79,  name = 'Caedarva Mire',      skill_cap = 60 },
         { id = 65,  name = 'Mamook',             skill_cap = 60 },
     },
     Mining = T{
-        { id = 196, name = 'Gusgen Mines' },
+        { id = 196, name = 'Gusgen Mines',       skill_cap = 20 },
         { id = 62,  name = 'Halvung',            skill_cap = 60 },
-        { id = 205, name = "Ifrit's Cauldron" },
+        { id = 205, name = "Ifrit's Cauldron",   skill_cap = 40 },
         { id = 61,  name = 'Mount Zhayolm',      skill_cap = 60 },
-        { id = 12,  name = 'Newton Movalpolos' },
-        { id = 11,  name = 'Oldton Movalpolos' },
+        { id = 12,  name = 'Newton Movalpolos',  skill_cap = 40 },
+        { id = 11,  name = 'Oldton Movalpolos',  skill_cap = 40 },
         { id = 143, name = 'Palborough Mines',   skill_cap = 20 },
         { id = 142, name = 'Yughott Grotto',     skill_cap = 10 },
         { id = 172, name = 'Zeruhn Mines',       skill_cap = 10 },
@@ -599,6 +612,12 @@ data.SECONDS_PER_HOUR = 3600;
 data.SESSION_IDLE_CUTOFF = 900;
 
 data.PROC_GAP        = 18.0;
+-- Within this many skill of a zone's cap and the chip goes green.
+data.CAP_NEAR        = 20;
+
+data.CHIP_PAD        = 6.0;
+data.CHIP_INSET      = 2.0;
+data.STAT_GAP        = 20.0;
 
 -- Nav row furniture, in place of the title bar
 data.NAV_EDGE_PAD     = 7.0;
@@ -691,6 +710,21 @@ for _, activity in ipairs(data.ACTIVITIES) do
         if (ability.repeats) then data.PROC_REPEATS[ability.name] = true; end
     end
     data.PROC_PATTERNS[activity] = procs;
+
+    -- Display order: the zone whose cap you will reach first, first. Ties go
+    -- alphabetical, and a zone whose cap is not yet known sorts to the bottom
+    -- rather than to the top, where an absent cap would read as zero. Sorted
+    -- once here rather than in the render path, which walks this list every
+    -- frame and must not sort it.
+    table.sort(data.TRACKED_ZONES[activity], function(a, b)
+        local ca, cb = a.skill_cap, b.skill_cap;
+        if (ca ~= cb) then
+            if (ca == nil) then return false; end
+            if (cb == nil) then return true; end
+            return ca < cb;
+        end
+        return a.name < b.name;
+    end);
 
     local set  = T{};
     local caps = T{};

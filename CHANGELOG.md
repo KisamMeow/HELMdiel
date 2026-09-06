@@ -19,6 +19,39 @@ If you notice any items being listed twice but spelt differently then type
 
 ## [Unreleased]
 
+## [0.16.0] - 2026-09-06
+
+### Added
+
+- **Every zone foldout shows its skill cap**, on a chip beside the name. It
+  lights up within 20 skill of the cap, marking the zones worth gathering in
+  for skill, and turns gold once you have passed it.
+- **Mining skill caps are complete** — Gusgen 20, Ifrit's Cauldron, Newton and
+  Oldton 40.
+
+### Removed
+
+- **Yuhtunga and Yhoator's logging caps**, which look unreliable. Harvesting's
+  caps for the same two zones are unchanged.
+
+### Changed
+
+- **A zone foldout is two lines instead of three.** The item count moved up
+  beside the cap, and the skill up and special skill rates share one line.
+- **An outskilled zone drops its skill up rate**, since it can no longer move.
+- **A rule separates a zone's figures from its drops.**
+- **Zones are listed by skill cap**, lowest first, then alphabetically. Zones
+  whose cap is not known yet sit at the bottom.
+- **The Last Skill hover is one line**, and its skill up rate now carries two
+  decimals.
+
+### Fixed
+
+- **An activity you have never skilled now highlights its starter zones.** The
+  cap chip needed a recorded skill, and one is only recorded when the game
+  reports a skill up — so the zones stayed plain until you typed 0.0 into a
+  Settings box already showing 0.0.
+
 ## [0.15.1] - 2026-09-02
 
 ### Fixed
@@ -606,7 +639,8 @@ Initial public release.
 - The rule that a gather decays *all* other zones for that activity was
   inferred from a two-zone observation.
 
-[Unreleased]: https://github.com/KisamMeow/HELMdiel/compare/v0.15.1...HEAD
+[Unreleased]: https://github.com/KisamMeow/HELMdiel/compare/v0.16.0...HEAD
+[0.16.0]: https://github.com/KisamMeow/HELMdiel/compare/v0.15.1...v0.16.0
 [0.15.1]: https://github.com/KisamMeow/HELMdiel/compare/v0.15.0...v0.15.1
 [0.15.0]: https://github.com/KisamMeow/HELMdiel/compare/v0.14.3...v0.15.0
 [0.14.3]: https://github.com/KisamMeow/HELMdiel/compare/v0.14.2...v0.14.3
