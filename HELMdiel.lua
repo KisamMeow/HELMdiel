@@ -495,7 +495,6 @@ ashita.events.register('load', 'helmdiel_load', function()
     -- the client being killed -- nobody was gathering while the addon was not
     -- running. Nothing else can distinguish those, so the clock always opens a
     -- fresh interval here.
-    store.retheme();
     store.pause_all_sessions();
 
     if (not ui.load_font()) then

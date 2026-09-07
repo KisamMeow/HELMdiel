@@ -23,15 +23,6 @@ If you notice any items being listed twice but spelt differently then type
 
 ### Added
 
-- **Themes.** A dropdown at the top of Settings recolours the window: **Stone,
-  Water, Aero, Fire, Blizzard** and **Thunder**, in their FFXI colours. The
-  palette you have been using is **Default**. Item tiers, the fatigue bar and
-  the warnings keep their own colours in every theme, so a figure means the
-  same thing whichever one is on.
-- **Tune Theme**, under the theme dropdown. Sliders for hue, saturation and
-  lift that recolour the window as you drag, so a theme can be dialled in
-  against the game rather than guessed at. Kept per theme, and Reset Theme
-  puts one back. Temporary, while the themes are being settled.
 - **Export Session**, on the Spoils tab between Edit Prices and Reset Session.
   Writes exactly what that reset clears: the session tally with its gil, and
   the tools it cost, as negative rows at the foot.

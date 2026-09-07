@@ -1478,61 +1478,6 @@ local function render_settings(charname)
     caption('DISPLAY');
 
     imgui.PushItemWidth(px(data.COMBO_WIDTH));
-    ONE[1] = store.theme_index() - 1;
-    local themed = ONE;
-    if (imgui.Combo('Theme', themed, data.THEME_COMBO)) then
-        store.set_theme_index(themed[1] + 1);
-    end
-    hint('Recolours the window. Item tiers and warnings keep theirs.');
-    imgui.PopItemWidth();
-
-    -- Scaffolding while the themes are being settled: it moves the live
-    -- palette so a colour can be judged in the client rather than guessed at
-    -- from numbers, and the dials persist so a session of tuning survives a
-    -- reload. Once a theme is locked in its values go into data.lua and this
-    -- can go with them.
-    if (checkbox('Tune Theme', store.tuning())) then
-        store.toggle_tuning();
-    end
-    hint('Sliders to dial the current theme in. Default has nothing to tune.');
-
-    if (store.tuning()) then
-        local hue, sat, lift = store.theme_dials();
-        if (hue == nil) then
-            empty('  Pick a theme other than Default to tune it.');
-        else
-            imgui.PushItemWidth(px(data.SLIDER_WIDTH));
-
-            ONE[1] = hue;
-            if (imgui.SliderFloat('Hue', ONE, data.HUE_MIN, data.HUE_MAX, '%.0f')) then
-                store.set_theme_dial('hue', ONE[1]);
-            end
-
-            ONE[1] = sat;
-            if (imgui.SliderFloat('Saturation', ONE,
-                                  data.SAT_MIN, data.SAT_MAX, '%.2f')) then
-                store.set_theme_dial('sat', ONE[1]);
-            end
-
-            ONE[1] = lift;
-            if (imgui.SliderFloat('Lift', ONE,
-                                  data.LIFT_MIN, data.LIFT_MAX, '%.2f')) then
-                store.set_theme_dial('lift', ONE[1]);
-            end
-
-            imgui.PopItemWidth();
-
-            if (imgui.Button('Reset Theme')) then
-                store.reset_theme_dials();
-            end
-            imgui.SameLine(0, px(data.NAV_GAP));
-            hint('Back to the values in data.lua.');
-        end
-    end
-
-    imgui.Spacing();
-
-    imgui.PushItemWidth(px(data.COMBO_WIDTH));
     ONE[1] = store.font_index() - 1;
     local fonted = ONE;
     if (imgui.Combo('Font', fonted, data.FONT_COMBO)) then

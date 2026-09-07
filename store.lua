@@ -193,79 +193,8 @@ end
 function store.font_name()
     return choice('font', data.FONT_NAMES, data.FONT_DEFAULT);
 end
--- The name is stored, never the menu position, so reordering the list or
--- adding a theme cannot silently change what someone is looking at.
--- Live theme tuning. The dials are kept per theme under window.tune so a
--- session of adjusting survives a reload, and so the numbers can be read back
--- out of the settings file and baked into data.lua once a theme is settled.
-local function tune_for(name)
-    helm_settings.window.tune = helm_settings.window.tune or T{};
-    helm_settings.window.tune[name] = helm_settings.window.tune[name] or T{};
-    return helm_settings.window.tune[name];
-end
-
-function store.tuning()
-    return helm_settings.window.tuning == true;
-end
-function store.toggle_tuning()
-    helm_settings.window.tuning = not store.tuning();
-    settings.save();
-end
-
--- Whatever the sliders are showing: the stored dial if one has been moved,
--- otherwise the theme's own value.
-function store.theme_dials()
-    local name = store.theme();
-    local hue, sat, lift = data.theme_dials(name);
-    if (hue == nil) then return nil; end
-
-    local kept = helm_settings.window.tune and helm_settings.window.tune[name];
-    if (kept ~= nil) then
-        hue  = kept.hue  or hue;
-        sat  = kept.sat  or sat;
-        lift = kept.lift or lift;
-    end
-    return hue, sat, lift;
-end
-
-function store.set_theme_dial(which, value)
-    local name = store.theme();
-    tune_for(name)[which] = value;
-    store.retheme();
-    settings.save();
-end
-
-function store.reset_theme_dials()
-    local name = store.theme();
-    if (helm_settings.window.tune ~= nil) then
-        helm_settings.window.tune[name] = nil;
-    end
-    store.retheme();
-    settings.save();
-end
-
--- Pushes the stored dials into data before applying, so one path decides what
--- the colours are whether they came from the table or from a slider.
-function store.retheme()
-    local name = store.theme();
-    local kept = helm_settings.window.tune and helm_settings.window.tune[name];
-    data.tune_hue  = kept and kept.hue  or nil;
-    data.tune_sat  = kept and kept.sat  or nil;
-    data.tune_lift = kept and kept.lift or nil;
-    data.apply_theme(name);
-end
-
-function store.theme()
-    return choice('theme', data.THEME_NAMES, data.THEME_DEFAULT);
-end
-function store.theme_index()
-    return choice_index('theme', data.THEME_NAMES, store.theme());
-end
-function store.set_theme_index(index)
-    set_choice('theme', data.THEME_NAMES, index);
-    store.retheme();
-end
-
+-- The name is stored, never the menu position, so reordering the list
+-- cannot silently change what someone is looking at.
 function store.font_index()
     return choice_index('font', data.FONT_NAMES, data.FONT_DEFAULT);
 end

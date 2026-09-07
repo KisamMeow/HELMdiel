@@ -263,7 +263,6 @@ Hover any control for a one-line explanation.
 | Skill levels | Type in a level the game has not told the addon yet |
 | Auto-Open on Gather | The window pops up when you gather |
 | Auto-Show Activity | Brings a hidden activity back the first time you gather one |
-| Theme | Recolours the window: Default, or one of the six elements |
 | Auto-Resize Window | On, it fits its contents. Off, drag the gold corner yourself |
 
 **Export CSV** writes one row per item per zone, with that zone's drop rate
