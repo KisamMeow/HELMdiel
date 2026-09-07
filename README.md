@@ -13,7 +13,7 @@ from Claude Opus 5.
 
 | Home | Harvesting |
 |:---:|:---:|
-| ![Home tab: the current zone's skill and fatigue bar, the Collected, Last Skill and special skill tiles, and the drop grid below them](docs/screenshots/home.png?v=3) | ![Harvesting tab: a fatigue bar per worked zone, then a foldout per zone showing its skill cap, its rates and its drops, ordered by cap](docs/screenshots/activity.png?v=3) |
+| ![Home tab: the current zone's skill and fatigue bar, the Collected, Last Skill and special skill tiles, and the drop grid below them](docs/screenshots/home.png?v=3) | ![Harvesting tab: a fatigue bar per worked zone, then a foldout per zone showing its skill cap, its rates and its drops, ordered by cap](docs/screenshots/activity.png?v=4) |
 | **Spoils** | **Settings** |
 | ![Spoils tab: gil per hour and lifetime gil above the session tally, sorted by gil, with broken tools deducted at the foot](docs/screenshots/spoils.png?v=3) | ![Settings tab: the Display, Activities, Skill Levels, Tracking, Export and Reset blocks](docs/screenshots/settings.png?v=3) |
 
