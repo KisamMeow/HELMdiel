@@ -1352,7 +1352,14 @@ local function render_spoils(charname)
         ui.editing_prices = true;
     end
     imgui.SameLine(0, px(data.NAV_GAP));
-    if (danger_button('Reset Spoils Session')) then
+    -- Between the two on purpose: it writes exactly what the button beside it
+    -- would throw away.
+    if (success_button('Export Session')) then
+        actions.export_spoils();
+    end
+    hint('Writes this tab to a spreadsheet: the tally, and the tools it cost.');
+    imgui.SameLine(0, px(data.NAV_GAP));
+    if (danger_button('Reset Session')) then
         store.reset_spoils();
     end
     hint('Clears only this tab.');
@@ -1471,6 +1478,61 @@ local function render_settings(charname)
     caption('DISPLAY');
 
     imgui.PushItemWidth(px(data.COMBO_WIDTH));
+    ONE[1] = store.theme_index() - 1;
+    local themed = ONE;
+    if (imgui.Combo('Theme', themed, data.THEME_COMBO)) then
+        store.set_theme_index(themed[1] + 1);
+    end
+    hint('Recolours the window. Item tiers and warnings keep theirs.');
+    imgui.PopItemWidth();
+
+    -- Scaffolding while the themes are being settled: it moves the live
+    -- palette so a colour can be judged in the client rather than guessed at
+    -- from numbers, and the dials persist so a session of tuning survives a
+    -- reload. Once a theme is locked in its values go into data.lua and this
+    -- can go with them.
+    if (checkbox('Tune Theme', store.tuning())) then
+        store.toggle_tuning();
+    end
+    hint('Sliders to dial the current theme in. Default has nothing to tune.');
+
+    if (store.tuning()) then
+        local hue, sat, lift = store.theme_dials();
+        if (hue == nil) then
+            empty('  Pick a theme other than Default to tune it.');
+        else
+            imgui.PushItemWidth(px(data.SLIDER_WIDTH));
+
+            ONE[1] = hue;
+            if (imgui.SliderFloat('Hue', ONE, data.HUE_MIN, data.HUE_MAX, '%.0f')) then
+                store.set_theme_dial('hue', ONE[1]);
+            end
+
+            ONE[1] = sat;
+            if (imgui.SliderFloat('Saturation', ONE,
+                                  data.SAT_MIN, data.SAT_MAX, '%.2f')) then
+                store.set_theme_dial('sat', ONE[1]);
+            end
+
+            ONE[1] = lift;
+            if (imgui.SliderFloat('Lift', ONE,
+                                  data.LIFT_MIN, data.LIFT_MAX, '%.2f')) then
+                store.set_theme_dial('lift', ONE[1]);
+            end
+
+            imgui.PopItemWidth();
+
+            if (imgui.Button('Reset Theme')) then
+                store.reset_theme_dials();
+            end
+            imgui.SameLine(0, px(data.NAV_GAP));
+            hint('Back to the values in data.lua.');
+        end
+    end
+
+    imgui.Spacing();
+
+    imgui.PushItemWidth(px(data.COMBO_WIDTH));
     ONE[1] = store.font_index() - 1;
     local fonted = ONE;
     if (imgui.Combo('Font', fonted, data.FONT_COMBO)) then
@@ -1514,7 +1576,7 @@ local function render_settings(charname)
 
     imgui.Spacing();
 
-    imgui.PushItemWidth(px(data.SKILL_INPUT_WIDTH));
+    imgui.PushItemWidth(px(data.SLIDER_WIDTH));
     ONE[1] = store.window_opacity();
     local opacity = ONE;
     if (imgui.SliderFloat('Opacity', opacity, data.OPACITY_MIN, data.OPACITY_MAX, '%.2f')) then
@@ -1820,6 +1882,10 @@ function ui.render(charname, curZoneId)
     window_style();
     cell_id      = 0;
     scale        = store.ui_scale();
+    WINDOW_BG[1], WINDOW_BG[2], WINDOW_BG[3] =
+        data.SURFACE_BASE[1], data.SURFACE_BASE[2], data.SURFACE_BASE[3];
+    TITLE_BG[1], TITLE_BG[2], TITLE_BG[3] =
+        data.SURFACE_TITLE[1], data.SURFACE_TITLE[2], data.SURFACE_TITLE[3];
     WINDOW_BG[4] = store.window_opacity();
     TITLE_BG[4]  = store.window_opacity();
     MIN_SIZE[1]  = px(data.WINDOW_MIN_WIDTH);

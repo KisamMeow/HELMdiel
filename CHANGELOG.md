@@ -19,6 +19,41 @@ If you notice any items being listed twice but spelt differently then type
 
 ## [Unreleased]
 
+## [0.17.0] - 2026-09-06
+
+### Added
+
+- **Themes.** A dropdown at the top of Settings recolours the window: **Stone,
+  Water, Aero, Fire, Blizzard** and **Thunder**, in their FFXI colours. The
+  palette you have been using is **Default**. Item tiers, the fatigue bar and
+  the warnings keep their own colours in every theme, so a figure means the
+  same thing whichever one is on.
+- **Tune Theme**, under the theme dropdown. Sliders for hue, saturation and
+  lift that recolour the window as you drag, so a theme can be dialled in
+  against the game rather than guessed at. Kept per theme, and Reset Theme
+  puts one back. Temporary, while the themes are being settled.
+- **Export Session**, on the Spoils tab between Edit Prices and Reset Session.
+  Writes exactly what that reset clears: the session tally with its gil, and
+  the tools it cost, as negative rows at the foot.
+
+### Changed
+
+- **The CSV names its windows.** `Attempts`, `Successes` and `Skill Ups` are
+  now `(Session)`, since they reset with Reset Gather/Skill Ups while `Zone
+  Gathers` beside them does not.
+- **Reset Spoils Session is now Reset Session.**
+- **The Opacity slider is wider**, and far easier to aim with.
+
+### Removed
+
+- **The `Fatigue` column** from the CSV. It is a live counter rather than a
+  measurement, and says nothing a spreadsheet can use.
+
+### Fixed
+
+- **`/helmdiel reset <activity>` left zones reading FATIGUED** at a counter of
+  zero. It cleared the counters but not the flags.
+
 ## [0.16.0] - 2026-09-06
 
 ### Added
@@ -633,7 +668,8 @@ Initial public release.
 - The rule that a gather decays *all* other zones for that activity was
   inferred from a two-zone observation.
 
-[Unreleased]: https://github.com/KisamMeow/HELMdiel/compare/v0.16.0...HEAD
+[Unreleased]: https://github.com/KisamMeow/HELMdiel/compare/v0.17.0...HEAD
+[0.17.0]: https://github.com/KisamMeow/HELMdiel/compare/v0.16.0...v0.17.0
 [0.16.0]: https://github.com/KisamMeow/HELMdiel/compare/v0.15.1...v0.16.0
 [0.15.1]: https://github.com/KisamMeow/HELMdiel/compare/v0.15.0...v0.15.1
 [0.15.0]: https://github.com/KisamMeow/HELMdiel/compare/v0.14.3...v0.15.0

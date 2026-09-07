@@ -1,6 +1,6 @@
 addon.name    = 'HELMdiel';
 addon.author  = 'Masuru';
-addon.version = '0.16.0';
+addon.version = '0.17.0';
 addon.desc    = 'Tracks HELM (Harvesting/Excavation/Logging/Mining) regional gathering fatigue on HorizonXI.';
 addon.link    = 'https://github.com/KisamMeow/HELMdiel';
 
@@ -356,6 +356,15 @@ local function reset_all()
     clear_detection_state();
 end
 
+local function export_spoils()
+    local ok, path, rows = export.write_spoils(store.char_name());
+    if (ok) then
+        msg(('Exported %d spoils rows to %s'):fmt(rows, path));
+    else
+        err(('Could not write %s'):fmt(path));
+    end
+end
+
 local function export_csv()
     local ok, path, rows = export.write(store.char_name());
     if (ok) then
@@ -366,7 +375,7 @@ local function export_csv()
 end
 
 ui.set_actions(T{ reset_session = reset_session, reset_all = reset_all,
-                  export = export_csv });
+                  export = export_csv, export_spoils = export_spoils });
 ui.set_title(addon.version);
 
 ashita.events.register('d3d_present', 'helmdiel_present', function()
@@ -486,6 +495,7 @@ ashita.events.register('load', 'helmdiel_load', function()
     -- the client being killed -- nobody was gathering while the addon was not
     -- running. Nothing else can distinguish those, so the clock always opens a
     -- fresh interval here.
+    store.retheme();
     store.pause_all_sessions();
 
     if (not ui.load_font()) then

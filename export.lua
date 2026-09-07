@@ -52,7 +52,6 @@ function export.build(charname, minimal)
         for _, zone in ipairs(data.TRACKED_ZONES[activity]) do
             local log       = store.get_item_log(charname, activity, zone.id);
             local gathers   = count_items(log);
-            local fatigue   = store.get_fatigue(charname, activity, zone.id);
             local attempts  = store.get_attempts(charname, activity, zone.id);
             local successes = store.get_successes(charname, activity, zone.id);
             local skillups  = store.get_skillups(charname, activity, zone.id);
@@ -71,19 +70,18 @@ function export.build(charname, minimal)
             end);
 
             local zone_row = {
-                ['Character']    = charname,
-                ['Activity']     = activity,
-                ['Zone']         = zone.name,
-                ['Zone Gathers'] = gathers,
-                ['Fatigue']      = fatigue,
-                ['Attempts']     = attempts,
-                ['Successes']    = successes,
-                ['Skill Ups']    = skillups,
-                ['Skill']        = skill,
+                ['Character']            = charname,
+                ['Activity']             = activity,
+                ['Zone']                 = zone.name,
+                ['Zone Gathers']         = gathers,
+                ['Attempts (Session)']   = attempts,
+                ['Successes (Session)']  = successes,
+                ['Skill Ups (Session)']  = skillups,
+                ['Skill']                = skill,
             };
 
             if (#items == 0) then
-                if (not minimal and (fatigue > 0 or attempts > 0 or gathers > 0)) then
+                if (not minimal and (attempts > 0 or gathers > 0)) then
                     table.insert(lines, row(header, zone_row));
                 end
             else
@@ -98,6 +96,85 @@ function export.build(charname, minimal)
     end
 
     return table.concat(lines, NEWLINE) .. NEWLINE, #lines - 1;
+end
+
+-- Exactly what Reset Session clears: the tally, and the tools it cost. Items
+-- come from session_log rather than spoils because it carries the zone as well;
+-- the two hold the same gathers and their totals agree.
+function export.build_spoils(charname, minimal)
+    local header = minimal and data.EXPORT_SPOILS_MIN or data.EXPORT_SPOILS;
+    local lines  = T{ header_row(header) };
+
+    for _, activity in ipairs(data.ACTIVITIES) do
+        for _, zone in ipairs(data.TRACKED_ZONES[activity]) do
+            local log   = store.get_session_log(charname, activity, zone.id);
+            local items = T{};
+            for name, count in pairs(log) do
+                table.insert(items, {
+                    name  = resources.item_name(name),
+                    each  = store.price_of(name),
+                    count = count,
+                });
+            end
+
+            table.sort(items, function(a, b)
+                if (a.count ~= b.count) then return a.count > b.count; end
+                return a.name < b.name;
+            end);
+
+            for _, item in ipairs(items) do
+                table.insert(lines, row(header, {
+                    ['Character'] = charname,
+                    ['Activity']  = activity,
+                    ['Zone']      = zone.name,
+                    ['Item']      = item.name,
+                    ['Count']     = item.count,
+                    ['Gil Each']  = item.each,
+                    ['Gil Total'] = item.each * item.count,
+                }));
+            end
+        end
+    end
+
+    -- Tools last, the way the tab draws them, and negative for the same
+    -- reason: they are what the session cost, not what it earned. No zone,
+    -- because tool_breaks is keyed by activity alone.
+    for _, activity in ipairs(data.ACTIVITIES) do
+        local broke = store.get_tool_breaks(charname, activity);
+        if (broke > 0) then
+            local each = store.tool_price(activity);
+            table.insert(lines, row(header, {
+                ['Character'] = charname,
+                ['Activity']  = activity,
+                ['Item']      = data.ACTIVITY_TOOLS[activity],
+                ['Count']     = broke,
+                ['Gil Each']  = -each,
+                ['Gil Total'] = -each * broke,
+            }));
+        end
+    end
+
+    return table.concat(lines, NEWLINE) .. NEWLINE, #lines - 1;
+end
+
+local function write_csv(charname, stem, text, rows)
+    local path = ('%s%s_%s.csv'):fmt(store.config_path(), stem,
+                                     os.date('%Y-%m-%d_%H%M%S'));
+
+    local ok, handle = pcall(io.open, path, 'w');
+    if (not ok or handle == nil) then return false, path, 0; end
+
+    handle:write(text);
+    handle:close();
+
+    return true, path, rows;
+end
+
+function export.write_spoils(charname)
+    local minimal = store.export_minimal();
+    local text, rows = export.build_spoils(charname, minimal);
+    return write_csv(charname, (minimal and SHARED_STEM or charname) .. '_spoils',
+                     text, rows);
 end
 
 function export.write(charname)

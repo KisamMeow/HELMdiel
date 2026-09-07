@@ -38,6 +38,11 @@ data.NAV_SHORT    = T{
 -- Pixel sizes
 data.SKILL_INPUT_WIDTH  = 70;
 data.COMBO_WIDTH        = 120;
+-- The opacity slider is a drag, not a number box, so it wants room: it shared
+-- SKILL_INPUT_WIDTH's 70px and gave a hundredth of opacity per pixel, four
+-- pixels for a 0.05 step. Wider than the combos and still inside the width the
+-- skill row already sets, so Settings does not grow.
+data.SLIDER_WIDTH       = 200;
 data.CHECK_INSET        = 4.0;
 data.CHECK_GAP          = 8.0;
 data.PRICE_INPUT_WIDTH  = 90;
@@ -130,12 +135,26 @@ data.COLOR_SUCCESS_HOVER  = { 0.22, 0.56, 0.26, 0.95 };
 data.COLOR_SUCCESS_ACTIVE = { 0.28, 0.68, 0.32, 1.00 };
 
 -- CSV export columns
+-- Three of these reset with Reset Gather/Skill Ups while the rest do not, so
+-- the window is named in the column. Zone Gathers is the all-time count and
+-- Successes is the same quantity since the last reset; before a reset they are
+-- identical, which is exactly why they needed telling apart.
 data.EXPORT_HEADER = T{ 'Character', 'Activity', 'Zone', 'Item', 'Count',
-                        'Zone Gathers', 'Drop Rate', 'Fatigue', 'Attempts',
-                        'Successes', 'Skill Ups', 'Skill' };
+                        'Zone Gathers', 'Drop Rate', 'Attempts (Session)',
+                        'Successes (Session)', 'Skill Ups (Session)', 'Skill' };
 
 data.EXPORT_HEADER_MIN = T{ 'Activity', 'Zone', 'Item', 'Count',
                             'Zone Gathers', 'Drop Rate', 'Skill' };
+
+-- The Spoils export covers exactly what Reset Session clears: the tally, and
+-- the tools it cost. Tool rows carry no zone, because tool_breaks is keyed by
+-- activity alone, and their gil is negative for the same reason the tab draws
+-- it in red.
+data.EXPORT_SPOILS = T{ 'Character', 'Activity', 'Zone', 'Item', 'Count',
+                        'Gil Each', 'Gil Total' };
+
+data.EXPORT_SPOILS_MIN = T{ 'Activity', 'Zone', 'Item', 'Count',
+                            'Gil Each', 'Gil Total' };
 
 data.COLOR_SKILLUP  = { 0.40, 0.75, 1.00, 1.00 };
 
@@ -212,6 +231,180 @@ local FONT_NAMES = T{};
 for _, entry in ipairs(data.FONTS) do table.insert(FONT_NAMES, entry.name); end
 data.FONT_NAMES = FONT_NAMES;
 data.FONT_COMBO = combo_string(FONT_NAMES);
+
+--------------------------------------------------------------------------------
+-- Themes
+--------------------------------------------------------------------------------
+--
+-- A theme tints the neutral chrome ramp toward an element's hue. It does not
+-- restate the ramp: every value above was tuned in game against the others, so
+-- a theme that listed its own numbers would have to re-earn all of that and
+-- would drift the first time a rung moved.
+--
+-- ONLY CHROME MOVES. The rarity tiers, the fatigue bar, the danger reds, the
+-- gold accent and the skill up blue all encode data, and a figure has to mean
+-- the same thing whichever theme is on. That is the same rule that keeps chrome
+-- hueless in Default, applied one level up.
+--
+-- A theme names the colour it wants to look like and the ramp supplies the
+-- brightness. Each neutral keeps its own luminance; what changes is its hue and
+-- saturation, taken from the target.
+--
+-- Scaling a grey by a tint direction was the first model and it could not hit a
+-- named colour: the base is not neutral, so the result kept the base's own bias
+-- and a cyan tint came out slate. Aiming at the target and solving back for the
+-- brightness gets the hue right by construction.
+--
+-- Saturation falls away as a colour gets brighter, so near-white text picks up
+-- a hint and a dark surface takes the lot.
+
+data.THEMES = T{
+    { name = 'Default' },
+    { name = 'Stone',    target = { 0.957, 0.855, 0.286 },    -- f4da49
+                         hue = 41 },
+    { name = 'Water',    target = { 0.220, 0.320, 0.950 },
+                         saturation = 1.05 },
+    { name = 'Aero',     target = { 0.250, 0.850, 0.350 } },
+    { name = 'Fire',     target = { 1.000, 0.220, 0.160 } },
+    { name = 'Blizzard', target = { 0.514, 0.878, 1.000 },    -- 83e0ff
+                         hue = 225, saturation = 0.82 },
+    { name = 'Thunder',  target = { 0.660, 0.300, 0.920 } },
+};
+data.THEME_DEFAULT = 'Default';
+
+-- How much of the target's saturation a fully dark surface takes, and how far
+-- a theme may lift the ramp's brightness. Live-adjustable while tuning.
+data.THEME_SATURATION = 0.90;
+data.THEME_LIFT       = 0.15;
+data.SAT_MIN, data.SAT_MAX   = 0.00, 1.50;
+data.LIFT_MIN, data.LIFT_MAX = -0.30, 0.80;
+data.HUE_MIN, data.HUE_MAX   = 0.0, 360.0;
+
+local THEME_NAMES = T{};
+for _, entry in ipairs(data.THEMES) do table.insert(THEME_NAMES, entry.name); end
+data.THEME_NAMES = THEME_NAMES;
+data.THEME_COMBO = combo_string(THEME_NAMES);
+
+-- Every neutral the chrome is built from. Data colours are deliberately absent.
+data.THEMABLE = T{
+    'SURFACE_BASE', 'SURFACE_TITLE', 'SURFACE_RAISED', 'SURFACE_PLATE',
+    'SURFACE_INSET',
+    'COLOR_LABEL', 'COLOR_VALUE', 'COLOR_CAPTION',
+    'COLOR_BUTTON_HOVER', 'COLOR_BUTTON_ACTIVE', 'COLOR_NAV_HOVER',
+    'COLOR_HEADER', 'COLOR_HEADER_HOVER', 'COLOR_HEADER_ACTIVE',
+    'COLOR_INPUT_HOVER', 'COLOR_INPUT_ACTIVE',
+    'COLOR_GRAB', 'COLOR_GRAB_ACTIVE',
+    'COLOR_SCROLL', 'COLOR_SCROLL_HOVER', 'COLOR_SCROLL_ACTIVE',
+    'COLOR_SEPARATOR', 'COLOR_POPUP', 'COLOR_TEXT_SELECT',
+    'COLOR_BAR_BG', 'COLOR_CHIP_NEAR',
+};
+
+-- The untinted values, frozen at load. Every theme is derived from these, so
+-- switching between themes never compounds and Default restores exactly.
+local NEUTRAL = T{};
+for _, key in ipairs(data.THEMABLE) do
+    local c = data[key];
+    NEUTRAL[key] = { c[1], c[2], c[3], c[4] };
+end
+
+local function clamp(v)
+    if (v < 0) then return 0; end
+    if (v > 1) then return 1; end
+    return v;
+end
+
+local function to_hsl(r, g, b)
+    local mx, mn = math.max(r, g, b), math.min(r, g, b);
+    local l, d   = (mx + mn) / 2, mx - mn;
+    if (d == 0) then return 0, 0, l; end
+
+    local sat = d / (1 - math.abs(2 * l - 1));
+    local hue;
+    if (mx == r) then
+        hue = 60 * (((g - b) / d) % 6);
+    elseif (mx == g) then
+        hue = 60 * (((b - r) / d) + 2);
+    else
+        hue = 60 * (((r - g) / d) + 4);
+    end
+    return hue, sat, l;
+end
+
+local function to_rgb(hue, sat, l)
+    local c = (1 - math.abs(2 * l - 1)) * sat;
+    local x = c * (1 - math.abs(((hue / 60) % 2) - 1));
+    local m = l - c / 2;
+
+    local r, g, b;
+    if     (hue < 60)  then r, g, b = c, x, 0;
+    elseif (hue < 120) then r, g, b = x, c, 0;
+    elseif (hue < 180) then r, g, b = 0, c, x;
+    elseif (hue < 240) then r, g, b = 0, x, c;
+    elseif (hue < 300) then r, g, b = x, 0, c;
+    else                    r, g, b = c, 0, x; end
+    return r + m, g + m, b + m;
+end
+
+local function luma(r, g, b)
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+end
+
+-- Live overrides, set by the tuning sliders. nil means the theme's own values.
+data.tune_hue = nil;
+data.tune_sat = nil;
+data.tune_lift = nil;
+
+function data.theme_dials(name)
+    local theme;
+    for _, entry in ipairs(data.THEMES) do
+        if (entry.name == name) then theme = entry; break; end
+    end
+    if (theme == nil or theme.target == nil) then return nil; end
+
+    local hue, sat = to_hsl(theme.target[1], theme.target[2], theme.target[3]);
+    return data.tune_hue or theme.hue or hue,
+           data.tune_sat or theme.saturation or data.THEME_SATURATION,
+           data.tune_lift or theme.lift or data.THEME_LIFT;
+end
+
+-- Writes into the existing tables rather than replacing them, which is what
+-- lets every `= data.SURFACE_PLATE` reference elsewhere follow along without
+-- a single call site knowing themes exist.
+function data.apply_theme(name)
+    local theme;
+    for _, entry in ipairs(data.THEMES) do
+        if (entry.name == name) then theme = entry; break; end
+    end
+    if (theme == nil) then theme = data.THEMES[1]; end
+
+    local hue, satscale, lift;
+    if (theme.target ~= nil) then
+        hue, satscale, lift = data.theme_dials(theme.name);
+    end
+
+    for _, key in ipairs(data.THEMABLE) do
+        local base = NEUTRAL[key];
+        local live = data[key];
+
+        if (theme.target == nil) then
+            live[1], live[2], live[3] = base[1], base[2], base[3];
+        else
+            local _, tsat = to_hsl(theme.target[1], theme.target[2], theme.target[3]);
+            local _, _, l = to_hsl(base[1], base[2], base[3]);
+
+            -- The neutral's own luminance is what the result is scaled back to,
+            -- so the ramp and every contrast built on it survive being themed.
+            local want = luma(base[1], base[2], base[3]) * (1 + lift * (1 - l));
+            local r, g, b = to_rgb(hue, tsat * satscale * (1 - l), l);
+            local have = luma(r, g, b);
+            local k = have > 0 and (want / have) or 1;
+
+            live[1], live[2], live[3] = clamp(r * k), clamp(g * k), clamp(b * k);
+        end
+    end
+
+    return theme.name;
+end
 
 -- Items each zone is known to drop, and the skill a gated one needs
 data.ZONE_ITEMS = T{
@@ -645,7 +838,6 @@ data.TRACKED_ZONE_SET = T{};
 data.ZONE_ACTIVITIES  = T{};
 data.SKILL_PATTERNS   = T{};
 data.ZONE_LABELS      = T{};
-
 
 -- Legacy: listed as HELM drops on the HorizonXI wiki but never seen by this
 -- addon, and not in the spreadsheet. They exist here only so a price can be set

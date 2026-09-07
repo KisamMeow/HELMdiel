@@ -6,7 +6,7 @@ Per-zone fatigue counters, skill levels read from your own skill-up messages,
 drop logging with icons and rarity tiers, a session tally with gil, and CSV
 export.
 
-Ashita v4.30+ addon. Version 0.16.0. Released under GPL-3.0. Coded with help
+Ashita v4.30+ addon. Version 0.17.0. Released under GPL-3.0. Coded with help
 from Claude Opus 5.
 
 ## Screenshots
@@ -218,6 +218,10 @@ the keyboard does not drag the figure down.
 and gathering again picks up where it left off. Every reset that clears the
 tally clears the clock with it.
 
+**Export Session** writes this tab to a spreadsheet before you clear it: the
+tally with its gil, and the tools it cost as negative rows at the foot. It
+covers exactly what **Reset Session** beside it throws away, and nothing else.
+
 **Lifetime is everything this character has ever gathered**, less every tool it
 has broken, and it is the one figure here that a session reset leaves alone —
 only Reset All Data clears it. It is priced at what your items are worth
@@ -259,10 +263,14 @@ Hover any control for a one-line explanation.
 | Skill levels | Type in a level the game has not told the addon yet |
 | Auto-Open on Gather | The window pops up when you gather |
 | Auto-Show Activity | Brings a hidden activity back the first time you gather one |
+| Theme | Recolours the window: Default, or one of the six elements |
 | Auto-Resize Window | On, it fits its contents. Off, drag the gold corner yourself |
 
-**Export CSV** writes one row per item per zone, with that zone's drop rate,
-fatigue and counters alongside, and prints its path in chat. Every export is
+**Export CSV** writes one row per item per zone, with that zone's drop rate
+and counters alongside, and prints its path in chat. **Attempts, Successes and
+Skill Ups are marked `(Session)`** because Reset Gather/Skill Ups clears them
+while Zone Gathers next to them survives — before your first reset the two
+agree, which is exactly why they need telling apart. Every export is
 stamped with the date and time, so they pile up in order rather than
 overwriting.
 
@@ -271,7 +279,7 @@ Ashita/config/addons/HELMdiel/<Character>_export_2026-08-16_134501.csv
 ```
 
 **Minimum Data** cuts it to Activity, Zone, Item, Count, Zone Gathers, Drop
-Rate and Skill, dropping your name, fatigue, attempts, successes and skill ups
+Rate and Skill, dropping your name, attempts, successes and skill ups
 so you can share drop data without attaching who you are. Skill stays, because
 drop rates only mean something against the skill they were gathered at. Your
 name comes off the filename too.
