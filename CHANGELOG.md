@@ -25,7 +25,8 @@ If you notice any items being listed twice but spelt differently then type
 
 - **Every zone foldout shows its skill cap**, on a chip beside the name. It
   lights up within 20 skill of the cap, marking the zones worth gathering in
-  for skill, and turns gold once you have passed it.
+  for skill, and turns gold once you have passed it. An activity you have
+  never skilled lights its starter zones straight away.
 - **Mining skill caps are complete** — Gusgen 20, Ifrit's Cauldron, Newton and
   Oldton 40.
 
@@ -44,13 +45,6 @@ If you notice any items being listed twice but spelt differently then type
   whose cap is not known yet sit at the bottom.
 - **The Last Skill hover is one line**, and its skill up rate now carries two
   decimals.
-
-### Fixed
-
-- **An activity you have never skilled now highlights its starter zones.** The
-  cap chip needed a recorded skill, and one is only recorded when the game
-  reports a skill up — so the zones stayed plain until you typed 0.0 into a
-  Settings box already showing 0.0.
 
 ## [0.15.1] - 2026-09-02
 
