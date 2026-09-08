@@ -27,6 +27,62 @@ local function px(value)
     return value * scale;
 end
 
+-- Text widths, cached per size.
+--
+-- ImGui measures a string by walking it glyph by glyph through the font atlas,
+-- and the item grid asks for two widths per item -- 720 of the 885 calls an
+-- activity tab makes in one frame with every foldout open. Caching removes
+-- almost all of them.
+--
+-- **Keyed by the size text is drawn at, not one flat table.** Two sizes are
+-- live inside a single frame: the item grid pushes a smaller font for the
+-- small-icon style, and the same string is a different width under it. A flat
+-- cache hands the big size's width to the small one and the grid misaligns.
+--
+-- The UI scale needs no separate handling because it multiplies the size, so a
+-- rescale lands in a different bucket on its own. A change of face does not,
+-- so that throws the whole thing away.
+--
+-- The cap is for a long session rather than a frame: percentages are bounded
+-- at about a thousand distinct strings, but gil tallies on Spoils are not.
+local WIDTH_CAP = 4096;
+
+local width_sizes = {};
+local width_face  = nil;
+local width_at    = nil;
+local width_n     = 0;
+
+local function set_metrics(face, size)
+    if (face ~= width_face) then
+        width_sizes = {};
+        width_face  = face;
+        width_n     = 0;
+    end
+
+    local bucket = width_sizes[size];
+    if (bucket == nil) then bucket = {}; width_sizes[size] = bucket; end
+    width_at = bucket;
+end
+
+local function measure(text)
+    local w = width_at[text];
+    if (w == nil) then
+        w = imgui.CalcTextSize(text);
+        if (width_n >= WIDTH_CAP) then
+            -- Emptied in place rather than replaced, so width_at stays valid.
+            -- Rebuilding costs one frame of measuring, which is what every
+            -- frame cost before the cache existed.
+            for _, bucket in pairs(width_sizes) do
+                for key in pairs(bucket) do bucket[key] = nil; end
+            end
+            width_n = 0;
+        end
+        width_at[text] = w;
+        width_n = width_n + 1;
+    end
+    return w;
+end
+
 local cell_id = 0;
 
 -- Reused per-frame scratch
@@ -248,7 +304,7 @@ local right_fill = nil;
 local RIGHT_POS  = { 0, 0 };
 
 local function right_text(text, color, right, top)
-    RIGHT_POS[1] = right - imgui.CalcTextSize(text);
+    RIGHT_POS[1] = right - measure(text);
     RIGHT_POS[2] = top;
     imgui.GetWindowDrawList():AddText(RIGHT_POS,
         imgui.GetColorU32(color), text);
@@ -393,8 +449,8 @@ local function render_skill_head(charname, activity)
     end
 
     if (not right_fill) then
-        local hw = imgui.CalcTextSize(head);
-        local vw = imgui.CalcTextSize(text);
+        local hw = measure(head);
+        local vw = measure(text);
         imgui.SameLine(0, math.max(0, avail - hw - vw));
         imgui.TextColored(data.COLOR_VALUE, text);
     end
@@ -599,7 +655,12 @@ local head_fill = nil;
 -- header's text begins depends on the arrow and the frame padding, and reading
 -- that back would be the fragile half.
 -- state: 0 far below the cap, 1 within CAP_NEAR of it, 2 past it.
-local function head_meta(capText, state, countText, nameWidth)
+-- The cap chip, and nothing else. The item count used to sit to the right of
+-- it, which put the chip at a different x on every row: flush right where a
+-- zone had no drops, further left the longer its count ran. Four chips, three
+-- positions. The count lives on the zone's own stat line now and a zone with
+-- nothing in it says so by dimming its name.
+local function head_meta(capText, state, nameWidth)
     local list   = imgui.GetWindowDrawList();
     local ax, ay = imgui.GetItemRectMin();
     local bx, by = imgui.GetItemRectMax();
@@ -607,24 +668,15 @@ local function head_meta(capText, state, countText, nameWidth)
     local pad  = px(data.CHIP_PAD);
     local gap  = px(data.CELL_GUTTER);
     local mid  = ay + (by - ay - imgui.GetTextLineHeight()) * 0.5;
-    local cw   = countText ~= nil and imgui.CalcTextSize(countText) or 0;
-    local capw = capText ~= nil and imgui.CalcTextSize(capText) or 0;
+    local capw = measure(capText);
 
-    -- Everything the group needs, against everything the name has left. Too
-    -- narrow and nothing is painted: the zone's own name is never the thing
-    -- that gets covered up.
-    local group = cw + (capText ~= nil and (capw + pad * 2 + gap) or 0);
+    -- What the chip needs, against what the name has left. Too narrow and
+    -- nothing is painted: the zone's own name is never the thing that gets
+    -- covered up.
+    local group = capw + pad * 2 + gap;
     if ((bx - ax) - imgui.GetFrameHeight() - nameWidth - gap < group) then return; end
 
     local right = bx - gap;
-    if (countText ~= nil) then
-        TEXT_POS[1] = right - cw;
-        TEXT_POS[2] = mid;
-        list:AddText(TEXT_POS, imgui.GetColorU32(data.COLOR_LABEL), countText);
-        right = right - cw - gap;
-    end
-
-    if (capText == nil) then return; end
 
     CHIP_MIN[1] = right - capw - pad * 2;
     CHIP_MIN[2] = ay + px(data.CHIP_INSET);
@@ -663,8 +715,8 @@ local function render_fatigue(charname, activity, zoneId, zoneName)
     end
 
     if (not right_fill) then
-        local zw = imgui.CalcTextSize(zoneName);
-        local cw = imgui.CalcTextSize(count);
+        local zw = measure(zoneName);
+        local cw = measure(count);
         imgui.SameLine(0, math.max(0, avail - zw - cw));
         imgui.TextColored(data.COLOR_LABEL, count);
     end
@@ -717,8 +769,8 @@ local function danger_button(label)
 
     if (ui.armed == label and not armed) then ui.armed = nil; end
 
-    local wide = imgui.CalcTextSize(label);
-    local ask  = imgui.CalcTextSize(data.CONFIRM_LABEL);
+    local wide = measure(label);
+    local ask  = measure(data.CONFIRM_LABEL);
     DANGER_SIZE[1] = math.max(wide, ask) + px(data.BUTTON_PAD) * 2;
     DANGER_SIZE[2] = imgui.GetFrameHeight();
 
@@ -750,12 +802,10 @@ local function success_button(label)
         data.COLOR_SUCCESS_HOVER, data.COLOR_SUCCESS_ACTIVE);
 end
 
-local function render_item_icon(item, art)
-    BOX_SIZE[1] = art;
-    BOX_SIZE[2] = art;
-    ART_SIZE[1] = art;
-    ART_SIZE[2] = art;
-
+-- BOX_SIZE, ART_SIZE and LINE_GAP are filled once per list by the caller
+-- rather than per item: the icon size and the line gap are the same for every
+-- item in a frame, and this runs 360 times in one under the stress dataset.
+local function render_item_icon(item)
     if (imgui.BeginChild(next_cell_id(), BOX_SIZE,
                          ImGuiChildFlags_None, ImGuiWindowFlags_NoScrollbar)) then
         if (item.icon ~= nil) then
@@ -767,20 +817,18 @@ local function render_item_icon(item, art)
     imgui.EndChild();
 end
 
-local function render_item(item, show_icons, art)
+local function render_item(item, show_icons, art, text_h)
     imgui.BeginGroup();
 
     if (show_icons) then
-        local text_h = imgui.GetTextLineHeight() * 2 + px(data.ITEM_LINE_GAP);
-        local top    = imgui.GetCursorPosY();
+        local top = imgui.GetCursorPosY();
 
         imgui.SetCursorPosY(top + math.max(0, (text_h - art) * 0.5));
-        render_item_icon(item, art);
+        render_item_icon(item);
         imgui.SameLine();
         imgui.SetCursorPosY(top + math.max(0, (art - text_h) * 0.5));
     end
 
-    LINE_GAP[2] = px(data.ITEM_LINE_GAP);
     imgui.PushStyleVar(ImGuiStyleVar_ItemSpacing, LINE_GAP);
 
     imgui.BeginGroup();
@@ -811,7 +859,9 @@ local function render_item_list(log, total, charname, activity, zoneId, proven)
 
     local scaled = (store.icon_size() == data.SPOILS_ICON_SIZE) and frame_font ~= nil;
     if (scaled) then
-        imgui.PushFont(frame_font, px(data.FONT_SIZE - data.SMALL_ICON_FONT_DROP));
+        local small = px(data.FONT_SIZE - data.SMALL_ICON_FONT_DROP);
+        imgui.PushFont(frame_font, small);
+        set_metrics(frame_font, small);
     end
 
     local items  = ITEMS;
@@ -834,8 +884,13 @@ local function render_item_list(log, total, charname, activity, zoneId, proven)
 
         local label = ('%.1f%%'):fmt(pct);
 
-        local text_width = math.max(imgui.CalcTextSize(name),
-                                    imgui.CalcTextSize(label));
+        -- Each width into its own local first. Passing the calls straight to
+        -- math.max lets the second one expand to (width, height) and the line
+        -- height joins the comparison, which is a silently wrong column width
+        -- the moment a name and a label are both narrower than one line.
+        local name_w  = measure(name);
+        local label_w = measure(label);
+        local text_width = math.max(name_w, label_w);
 
         if (text_width > widest) then widest = text_width; end
 
@@ -858,8 +913,9 @@ local function render_item_list(log, total, charname, activity, zoneId, proven)
             if (got[shown]) then locked = nil; end
             local label  = locked and ('Locked (%d)'):fmt(locked) or 'Not seen';
 
-            local text_width = math.max(imgui.CalcTextSize(shown),
-                                        imgui.CalcTextSize(label));
+            local shown_w = measure(shown);
+            local label_w = measure(label);
+            local text_width = math.max(shown_w, label_w);
             if (text_width > widest) then widest = text_width; end
 
             count_n = count_n + 1;
@@ -881,6 +937,16 @@ local function render_item_list(log, total, charname, activity, zoneId, proven)
     local art  = px(store.icon_size());
     local list = store.item_style() == 'List';
 
+    -- Every item in the list shares these. The line height is measured here
+    -- rather than at load because it has to be read under whatever font is
+    -- current, and the small-icon style has pushed a smaller one by now.
+    local gap    = px(data.ITEM_LINE_GAP);
+    local text_h = imgui.GetTextLineHeight() * 2 + gap;
+
+    LINE_GAP[2] = gap;
+    BOX_SIZE[1], BOX_SIZE[2] = art, art;
+    ART_SIZE[1], ART_SIZE[2] = art, art;
+
     local last_rank = nil;
     local column    = 0;
     for index, item in ipairs(items) do
@@ -896,7 +962,7 @@ local function render_item_list(log, total, charname, activity, zoneId, proven)
             imgui.SameLine(0, widest - previous.text_w + px(data.CELL_GUTTER));
         end
 
-        render_item(item, show_icons, art);
+        render_item(item, show_icons, art, text_h);
 
         if (not list) then
             column = column + 1;
@@ -904,7 +970,10 @@ local function render_item_list(log, total, charname, activity, zoneId, proven)
         end
     end
 
-    if (scaled) then imgui.PopFont(); end
+    if (scaled) then
+        imgui.PopFont();
+        set_metrics(frame_font, px(data.FONT_SIZE));
+    end
 end
 
 local function divider()
@@ -935,6 +1004,13 @@ local function proc_tip(ability, fired, outof, charname, zoneId)
 
     if (not ability.repeats) then return head; end
     return ('%s\n\n%s'):fmt(head, repeat_note(charname, zoneId));
+end
+
+-- The count is the denominator every drop rate under it is worked out from,
+-- which is the thing the bare number on the header never said.
+local function items_tip(total, zoneName)
+    return ('%d item%s gathered in %s. Every rate below is out of this.')
+        :fmt(total, total == 1 and '' or 's', zoneName);
 end
 
 local function skillup_tip(ups, swings, cap_at, zoneName)
@@ -1095,7 +1171,7 @@ local function render_price_editor()
 
     local widest = 0;
     for _, slot in ipairs(rows) do
-        slot.name_w = imgui.CalcTextSize(slot.name);
+        slot.name_w = measure(slot.name);
         if (slot.name_w > widest) then widest = slot.name_w; end
     end
 
@@ -1196,11 +1272,11 @@ local function render_spoils(charname)
         slot.key    = itemName;
         slot.name   = resources.item_name(itemName);
         slot.count  = count;
-        slot.name_w = imgui.CalcTextSize(slot.name);
+        slot.name_w = measure(slot.name);
         slot.profit = count * store.price_of(itemName);
         slot.vendor = store.is_vendor(itemName);
         slot.tally  = ('x%d'):fmt(count);
-        slot.tally_w = imgui.CalcTextSize(slot.tally);
+        slot.tally_w = measure(slot.tally);
         slot.hidden = hide and slot.vendor;
         items[n] = slot;
         total = total + slot.profit;
@@ -1229,7 +1305,7 @@ local function render_spoils(charname)
                 slot.name    = name;
                 slot.count   = 0;
                 slot.cost    = 0;
-                slot.name_w  = imgui.CalcTextSize(name);
+                slot.name_w  = measure(name);
                 tools[t] = slot;
             end
             slot.count = slot.count + broke;
@@ -1241,7 +1317,7 @@ local function render_spoils(charname)
     for index = 1, t do
         local slot = tools[index];
         slot.tally   = ('x%d'):fmt(slot.count);
-        slot.tally_w = imgui.CalcTextSize(slot.tally);
+        slot.tally_w = measure(slot.tally);
         if (slot.name_w > widest)   then widest  = slot.name_w; end
         if (slot.tally_w > widestc) then widestc = slot.tally_w; end
     end
@@ -1279,8 +1355,8 @@ local function render_spoils(charname)
         SPOIL_ICON[2] = SPOIL_ICON[1];
 
         local head  = data.SPOILS_HEADERS;
-        local head1 = imgui.CalcTextSize(head[1]);
-        local head2 = imgui.CalcTextSize(head[2]);
+        local head1 = measure(head[1]);
+        local head2 = measure(head[2]);
         if (head1 > widest)  then widest  = head1; end
         if (head2 > widestc) then widestc = head2; end
 
@@ -1390,11 +1466,14 @@ local function render_activity_tab(charname, activity)
     imgui.Separator();
     imgui.Spacing();
 
+    local caps  = data.SKILL_CAPS[activity];
+    local skill = store.get_skill(charname, activity) or 0;
+
     for _, zone in ipairs(zones) do
         local log   = store.get_item_log(charname, activity, zone.id);
         local total = count_gathers(log);
         local capAt = store.skill_capped(charname, activity, zone.id);
-        local cap   = data.SKILL_CAPS[activity] and data.SKILL_CAPS[activity][zone.id];
+        local cap   = caps and caps[zone.id];
 
         -- Past the cap is gold, within CAP_NEAR of it lit, anything further
         -- off plain.
@@ -1406,7 +1485,6 @@ local function render_activity_tab(charname, activity)
         -- worth most -- and can never wrongly call a zone done. Settings
         -- already shows an unrecorded skill as 0.0, so this is the reading the
         -- UI was giving anyway.
-        local skill = store.get_skill(charname, activity) or 0;
         local state = 0;
         if (capAt ~= nil) then
             state = 2;
@@ -1414,22 +1492,30 @@ local function render_activity_tab(charname, activity)
             state = 1;
         end
 
-        local capText   = cap ~= nil and ('CAP %d'):fmt(cap) or nil;
-        local countText = total > 0 and ('%d items'):fmt(total) or nil;
+        local capText = cap ~= nil and ('CAP %d'):fmt(cap) or nil;
 
-        -- The meta rides in the label only when it cannot be painted, so a
-        -- client with no draw list still sees the cap and the count.
+        -- The cap rides in the label only when it cannot be painted, so a
+        -- client with no draw list still sees it. The count is not added back
+        -- here: it has a place inside the zone now, and the fallback should
+        -- show the same information as the paint rather than more.
         local label = zone.name;
-        if (head_fill == false) then
-            if (capText ~= nil)   then label = ('%s - %s'):fmt(label, capText); end
-            if (countText ~= nil) then label = ('%s - %s'):fmt(label, countText); end
+        if (head_fill == false and capText ~= nil) then
+            label = ('%s - %s'):fmt(label, capText);
         end
 
+        -- A zone holding nothing dims its own name, which is what replaced the
+        -- count as the at-a-glance answer to "is there anything in here". It is
+        -- a style push rather than a paint because the label belongs to the
+        -- CollapsingHeader, and ImGuiCol_Text is otherwise never touched -- so
+        -- the push has to be balanced on the same frame it is made.
+        local bare = total == 0;
+        if (bare) then imgui.PushStyleColor(ImGuiCol_Text, data.COLOR_CAPTION); end
         local open = imgui.CollapsingHeader(('%s###hh%s%d'):fmt(label, activity, zone.id));
+        if (bare) then imgui.PopStyleColor(1); end
 
-        if (head_fill ~= false and (capText ~= nil or countText ~= nil)) then
-            head_fill = pcall(head_meta, capText, state, countText,
-                              imgui.CalcTextSize(zone.name));
+        if (head_fill ~= false and capText ~= nil) then
+            local name_w = measure(zone.name);
+            head_fill = pcall(head_meta, capText, state, name_w);
         end
 
         if (open) then
@@ -1439,8 +1525,17 @@ local function render_activity_tab(charname, activity)
             -- A zone you have outskilled drops the figure entirely rather than
             -- showing a rate that can never move again. The gold chip above is
             -- what says why it is missing.
+            -- Leads the line, because it is the denominator every rate after
+            -- it is drawn from. Only when there is something to count: a zone
+            -- with nothing in it has already said so in its name.
             local first = true;
+            if (total > 0) then
+                stat('ITEMS', ('%d'):fmt(total), items_tip, total, zone.name);
+                first = false;
+            end
+
             if (capAt == nil and swings > 0) then
+                if (not first) then imgui.SameLine(0, px(data.STAT_GAP)); end
                 stat('SKILL UPS', ('%.1f%%'):fmt(ups / swings * 100),
                      skillup_tip, ups, swings, nil, zone.name);
                 first = false;
@@ -1466,7 +1561,7 @@ end
 local function activity_pairs()
     local widest = 0;
     for _, activity in ipairs(data.ACTIVITIES) do
-        local width = imgui.CalcTextSize(activity);
+        local width = measure(activity);
         if (width > widest) then widest = width; end
     end
     return widest;
@@ -1550,7 +1645,7 @@ local function render_settings(charname)
             store.toggle_activity(activity);
         end
         if (index % 2 == 1) then
-            imgui.SameLine(0, widest - imgui.CalcTextSize(activity) + px(data.CELL_GUTTER));
+            imgui.SameLine(0, widest - measure(activity) + px(data.CELL_GUTTER));
         end
     end
 
@@ -1567,7 +1662,7 @@ local function render_settings(charname)
             store.save();
         end
         if (index % 2 == 1) then
-            imgui.SameLine(0, widest - imgui.CalcTextSize(activity) + px(data.CELL_GUTTER));
+            imgui.SameLine(0, widest - measure(activity) + px(data.CELL_GUTTER));
         end
     end
     imgui.PopItemWidth();
@@ -1844,6 +1939,7 @@ function ui.render(charname, curZoneId)
 
     frame_font = chosen_font();
     if (frame_font ~= nil) then imgui.PushFont(frame_font, px(data.FONT_SIZE)); end
+    set_metrics(frame_font, px(data.FONT_SIZE));
 
     imgui.SetNextWindowSize(FIRST_SIZE, ImGuiCond_FirstUseEver);
     imgui.SetNextWindowSizeConstraints(MIN_SIZE, MAX_SIZE);

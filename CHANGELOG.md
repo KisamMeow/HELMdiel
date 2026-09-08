@@ -19,6 +19,35 @@ If you notice any items being listed twice but spelt differently then type
 
 ## [Unreleased]
 
+## [0.18.0] - 2026-09-08
+
+### Added
+
+- **Six more logging skill caps** — Carpenters' Landing 10, Buburimu Peninsula
+  and Yuhtunga Jungle 20, Lufaise Meadows, Misareaux Coast and Yhoator Jungle
+  40. Those zones now hold more fatigue once you have outskilled them, and the
+  activity tab orders them by cap. **Jugner Forest is the only zone left with
+  no known cap.**
+- **A first drop list for Arrapago Reef** — seventeen items, five of them
+  behind a skill level. **Excavation now has a list for every zone it tracks.**
+- **Aydeewa Subterrane drops a Philosopher's Stone** at excavation 40.
+- **Darksteel Ore in Yughott Grotto** at mining 20, and **Zinc Ore and
+  Darksteel Ore in Oldton Movalpolos**.
+
+### Changed
+
+- **Maze of Shakhrami's Petrified Log needs excavation 20**, not 10.
+- **A zone's cap chip is the only thing on the right of its foldout now**, so
+  the chips line up down the tab. The item count moved inside, onto the zone's
+  own line beside the skill up and special skill rates.
+- **A zone you have gathered nothing in shows its name dimmed**, which is what
+  tells you at a glance whether a collapsed foldout has anything in it.
+
+### Fixed
+
+- **Yuhtunga Jungle's logging cap is 20, not harvesting's 40.** It was pulled
+  in 0.16.0 for looking wrong, and it was.
+
 ## [0.17.0] - 2026-09-06
 
 ### Added
@@ -659,7 +688,8 @@ Initial public release.
 - The rule that a gather decays *all* other zones for that activity was
   inferred from a two-zone observation.
 
-[Unreleased]: https://github.com/KisamMeow/HELMdiel/compare/v0.17.0...HEAD
+[Unreleased]: https://github.com/KisamMeow/HELMdiel/compare/v0.18.0...HEAD
+[0.18.0]: https://github.com/KisamMeow/HELMdiel/compare/v0.17.0...v0.18.0
 [0.17.0]: https://github.com/KisamMeow/HELMdiel/compare/v0.16.0...v0.17.0
 [0.16.0]: https://github.com/KisamMeow/HELMdiel/compare/v0.15.1...v0.16.0
 [0.15.1]: https://github.com/KisamMeow/HELMdiel/compare/v0.15.0...v0.15.1

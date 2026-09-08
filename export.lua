@@ -157,7 +157,7 @@ function export.build_spoils(charname, minimal)
     return table.concat(lines, NEWLINE) .. NEWLINE, #lines - 1;
 end
 
-local function write_csv(charname, stem, text, rows)
+local function write_csv(stem, text, rows)
     local path = ('%s%s_%s.csv'):fmt(store.config_path(), stem,
                                      os.date('%Y-%m-%d_%H%M%S'));
 
@@ -173,7 +173,7 @@ end
 function export.write_spoils(charname)
     local minimal = store.export_minimal();
     local text, rows = export.build_spoils(charname, minimal);
-    return write_csv(charname, (minimal and SHARED_STEM or charname) .. '_spoils',
+    return write_csv((minimal and SHARED_STEM or charname) .. '_spoils',
                      text, rows);
 end
 

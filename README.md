@@ -6,7 +6,7 @@ Per-zone fatigue counters, skill levels read from your own skill-up messages,
 drop logging with icons and rarity tiers, a session tally with gil, and CSV
 export.
 
-Ashita v4.30+ addon. Version 0.17.0. Released under GPL-3.0. Coded with help
+Ashita v4.30+ addon. Version 0.18.0. Released under GPL-3.0. Coded with help
 from Claude Opus 5.
 
 ## Screenshots
@@ -69,8 +69,8 @@ Giddeus falls to 100.
 **Zones you have outskilled hold more.** For every 10 skill levels above a
 zone's skill cap you get 50 extra fatigue there, so West Sarutabaruta, which
 caps harvesting at 10, holds 300 once you are at 35. This only applies to zones
-whose skill cap the addon knows, which is now 23 of the 32 it tracks; the other
-nine stay at 200.
+whose skill cap the addon knows, which is now 31 of the 32 it tracks; the last
+one stays at 200.
 
 The counters are a model built from observed play, not a readout of the
 server's real numbers, so gathering with the addon unloaded makes them drift.
@@ -327,12 +327,9 @@ file resets the character, same as `/helmdiel reset all`.
 ## Known limitations
 
 - **The raised fatigue cap only applies to zones whose skill cap is known**,
-  and that is 23 of the 32 tracked zones. The nine left are Buburimu Peninsula,
-  Carpenters' Landing, Jugner Forest, Lufaise Meadows and Misareaux Coast for
-  logging, and Gusgen Mines, Ifrit's Cauldron, Newton Movalpolos and Oldton
-  Movalpolos for mining. There the bar tops out at 200, so if you have
-  outskilled one the game will let you keep gathering after the bar looks
-  full.
+  and that is 31 of the 32 tracked zones. The one left is **Jugner Forest** for
+  logging. There the bar tops out at 200, so if you have outskilled it the game
+  will let you keep gathering after the bar looks full.
 - **Skill up rates depend on your skill against a zone's cap**, which HELMdiel
   does not model. Rates recorded at different skill levels are not comparable,
   and a zone that looks slow may just be a poor match for your current skill.
@@ -344,10 +341,11 @@ file resets the character, same as `/helmdiel reset all`.
 
 ## Feedback
 
-**The nine remaining zone skill caps are the most useful thing you can send**,
-since they drive the fatigue ceiling: five logging zones and four mining ones,
-listed under Known limitations. Corrections to the message patterns and zone
-lists are next, and `/helmdiel debug` output is ideal.
+**Jugner Forest's logging cap is the last one missing**, and it drives the
+fatigue ceiling there. After that, the most useful thing you can send is what
+drops in a zone: nine of the 32 have no drop list yet, so they show only what
+you have found yourself. Corrections to the message patterns and zone lists are
+next, and `/helmdiel debug` output is ideal.
 
 Open an issue at
 [github.com/KisamMeow/HELMdiel/issues](https://github.com/KisamMeow/HELMdiel/issues),
