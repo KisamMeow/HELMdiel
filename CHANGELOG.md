@@ -42,6 +42,8 @@ If you notice any items being listed twice but spelt differently then type
   own line beside the skill up and special skill rates.
 - **A zone you have gathered nothing in shows its name dimmed**, which is what
   tells you at a glance whether a collapsed foldout has anything in it.
+- **An optimization pass over the render path.** Nothing looks different; the
+  activity tab just does less work per frame.
 
 ### Fixed
 
