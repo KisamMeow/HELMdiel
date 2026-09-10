@@ -29,23 +29,13 @@ If you notice any items being listed twice but spelt differently then type
 - **Group by Rarity**, in Settings. Turn it off and a zone's items run
   together in one list ordered by drop rate, with no gaps between the rarity
   tiers. Names keep their tier colour either way.
-- **A drop list for Mamook** — ten items, with Bloodwood Log at logging 50.
-- **A drop list for Lufaise Meadows** — seven items, with Oak Log at logging
-  10 and Elm Log at 30.
-- **A drop list for Carpenters' Landing** — eight items.
-- **A drop list for Yhoator Jungle's logging** — nine items, with Ebony Log at
-  logging 20.
-- **A drop list for Yuhtunga Jungle's logging** — nine items.
-- **Six more items for Caedarva Mire**, with Bloodwood Log at logging 50.
-- **Ebony Log in Jugner Forest** at logging 20, **Acorn in Misareaux Coast**,
-  and **Mahogany Log in Buburimu Peninsula** at logging 30.
-- **Skill levels for Mahogany Log in Yhoator Jungle**, 30, and **Ebony Log in
-  Buburimu Peninsula**, 10.
+- **Drop lists for five more logging zones** — Mamook, Lufaise Meadows,
+  Carpenters' Landing, Yhoator Jungle and Yuhtunga Jungle — plus nine more
+  items across zones that already had one.
+- **Thirteen more items have a skill level**, all logging.
 - **Seven items are confirmed drops now rather than wiki listings** — Beehive
   Chip, Kitron, Lqr. Tree Sap, Mahogany Log, Persikos, Rattan Lumber and
   Revival Root.
-- **Skill levels for Misareaux Coast's Oak Log and Elm Log**, 10 and 30, for
-  Jugner Forest's Oak Log, 10, and for Ghelsba Outpost's Elm Log, 10.
 
 ### Changed
 
