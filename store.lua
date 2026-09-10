@@ -12,6 +12,7 @@ local default_settings = T{
         auto_popup   = true,
         home_mode = 'Full',
         item_icons   = true,
+        rarity_groups = true,
         auto_resize  = true,
         opacity      = data.WINDOW_OPACITY,
     },
@@ -23,15 +24,20 @@ local default_settings = T{
     },
 };
 
-local helm_settings = settings.load(default_settings);
-helm_settings.activities = helm_settings.activities or T{};
-helm_settings.window     = helm_settings.window or T{};
-helm_settings.prices     = helm_settings.prices or T{};
-helm_settings.vendor     = helm_settings.vendor or T{};
+local function normalise(s)
+    s.characters = s.characters or T{};
+    s.activities = s.activities or T{};
+    s.window     = s.window or T{};
+    s.prices     = s.prices or T{};
+    s.vendor     = s.vendor or T{};
+    return s;
+end
+
+local helm_settings = normalise(settings.load(default_settings));
 
 settings.register('settings', 'settings_update', function(s)
     if (s ~= nil) then
-        helm_settings = s;
+        helm_settings = normalise(s);
     end
     settings.save();
 end);
@@ -137,6 +143,15 @@ function store.toggle_item_icons()
     settings.save();
 end
 
+function store.rarity_groups()
+    return helm_settings.window.rarity_groups ~= false;
+end
+
+function store.toggle_rarity_groups()
+    helm_settings.window.rarity_groups = not store.rarity_groups();
+    settings.save();
+end
+
 function store.auto_resize()
     return helm_settings.window.auto_resize ~= false;
 end
@@ -238,6 +253,11 @@ end
 
 function store.toggle_list_items()
     set_choice('item_style', data.ITEM_STYLES, store.list_items() and 1 or 2);
+end
+
+function store.items_per_row()
+    if (store.list_items()) then return data.LIST_ITEMS_PER_ROW; end
+    return data.ITEMS_PER_ROW;
 end
 
 local function clamp_opacity(value)

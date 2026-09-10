@@ -19,6 +19,48 @@ If you notice any items being listed twice but spelt differently then type
 
 ## [Unreleased]
 
+## [0.19.0] - 2026-09-10
+
+### Added
+
+- **Jugner Forest's logging cap is 20**, the last one that was missing. **Every
+  tracked zone now has a skill cap**, so the raised fatigue ceiling applies
+  everywhere.
+- **Group by Rarity**, in Settings. Turn it off and a zone's items run
+  together in one list ordered by drop rate, with no gaps between the rarity
+  tiers. Names keep their tier colour either way.
+- **A drop list for Mamook** — ten items, with Bloodwood Log at logging 50.
+- **A drop list for Lufaise Meadows** — seven items, with Oak Log at logging
+  10 and Elm Log at 30.
+- **A drop list for Carpenters' Landing** — eight items.
+- **A drop list for Yhoator Jungle's logging** — nine items, with Ebony Log at
+  logging 20.
+- **A drop list for Yuhtunga Jungle's logging** — nine items.
+- **Six more items for Caedarva Mire**, with Bloodwood Log at logging 50.
+- **Ebony Log in Jugner Forest** at logging 20, **Acorn in Misareaux Coast**,
+  and **Mahogany Log in Buburimu Peninsula** at logging 30.
+- **Skill levels for Mahogany Log in Yhoator Jungle**, 30, and **Ebony Log in
+  Buburimu Peninsula**, 10.
+- **Seven items are confirmed drops now rather than wiki listings** — Beehive
+  Chip, Kitron, Lqr. Tree Sap, Mahogany Log, Persikos, Rattan Lumber and
+  Revival Root.
+- **Skill levels for Misareaux Coast's Oak Log and Elm Log**, 10 and 30, for
+  Jugner Forest's Oak Log, 10, and for Ghelsba Outpost's Elm Log, 10.
+
+### Changed
+
+- **List Item Style is now 2 Column Style, and puts two items on a row**
+  rather than one, which roughly halves how tall a well-worked zone gets.
+- **Locked items sort by skill level**, lowest first, so the next one you can
+  reach is at the top of the block rather than wherever the alphabet put it.
+
+### Fixed
+
+- **East Ronfaure's Elm Log needs logging 10**, not 5.
+- **Opening Spoils on a character that had never gathered unloaded the
+  addon.** Switching character threw away some of the settings the tab
+  needed.
+
 ## [0.18.0] - 2026-09-08
 
 ### Added
@@ -690,7 +732,8 @@ Initial public release.
 - The rule that a gather decays *all* other zones for that activity was
   inferred from a two-zone observation.
 
-[Unreleased]: https://github.com/KisamMeow/HELMdiel/compare/v0.18.0...HEAD
+[Unreleased]: https://github.com/KisamMeow/HELMdiel/compare/v0.19.0...HEAD
+[0.19.0]: https://github.com/KisamMeow/HELMdiel/compare/v0.18.0...v0.19.0
 [0.18.0]: https://github.com/KisamMeow/HELMdiel/compare/v0.17.0...v0.18.0
 [0.17.0]: https://github.com/KisamMeow/HELMdiel/compare/v0.16.0...v0.17.0
 [0.16.0]: https://github.com/KisamMeow/HELMdiel/compare/v0.15.1...v0.16.0

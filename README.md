@@ -6,7 +6,7 @@ Per-zone fatigue counters, skill levels read from your own skill-up messages,
 drop logging with icons and rarity tiers, a session tally with gil, and CSV
 export.
 
-Ashita v4.30+ addon. Version 0.18.0. Released under GPL-3.0. Coded with help
+Ashita v4.30+ addon. Version 0.19.0. Released under GPL-3.0. Coded with help
 from Claude Opus 5.
 
 ## Screenshots
@@ -69,8 +69,7 @@ Giddeus falls to 100.
 **Zones you have outskilled hold more.** For every 10 skill levels above a
 zone's skill cap you get 50 extra fatigue there, so West Sarutabaruta, which
 caps harvesting at 10, holds 300 once you are at 35. This only applies to zones
-whose skill cap the addon knows, which is now 31 of the 32 it tracks; the last
-one stays at 200.
+whose skill cap the addon knows, which is now every zone it tracks.
 
 The counters are a model built from observed play, not a readout of the
 server's real numbers, so gathering with the addon unloaded makes them drift.
@@ -117,9 +116,9 @@ has them.
 
 **Last Skill** is how many swings you have made since your skill last
 rose, or **Cap (20)** once your skill reaches the zone's ceiling, since the
-count stops meaning anything once your skill cannot move. Most zones have a
-known cap now; the nine that do not always show the count. **Hover it** for
-your skill up rate in this zone and the numbers behind it.
+count stops meaning anything once your skill cannot move. Every tracked zone
+has a known cap now. **Hover it** for your skill up rate in this zone and the
+numbers behind it.
 
 **Swings in a zone you have outskilled do not count towards that last figure.**
 It answers how long you have been waiting for a skill up, and a finished zone
@@ -256,7 +255,8 @@ Hover any control for a one-line explanation.
 | Count Gold Rush Drops | On by default. Off keeps a Gold Rush node's repeats out of your drop rates |
 | Item Icons | Item art beside each drop. On by default |
 | Large Item Size | Off gives smaller item art, and smaller item text with it |
-| List Item Style | Off packs three items across instead of one per row |
+| 2 Column Style | Two items to a row. Off packs three across |
+| Group by Rarity | Off runs every item together, ordered by drop rate. On by default |
 | Opacity | How see-through the window is. Stops short of invisible |
 | UI Scale | 75%, 100% or 125%. Text, icons and spacing together |
 | Shown activities | Unchecking one hides its tab. Tracking continues |
@@ -326,10 +326,6 @@ file resets the character, same as `/helmdiel reset all`.
 
 ## Known limitations
 
-- **The raised fatigue cap only applies to zones whose skill cap is known**,
-  and that is 31 of the 32 tracked zones. The one left is **Jugner Forest** for
-  logging. There the bar tops out at 200, so if you have outskilled it the game
-  will let you keep gathering after the bar looks full.
 - **Skill up rates depend on your skill against a zone's cap**, which HELMdiel
   does not model. Rates recorded at different skill levels are not comparable,
   and a zone that looks slow may just be a poor match for your current skill.
@@ -341,11 +337,10 @@ file resets the character, same as `/helmdiel reset all`.
 
 ## Feedback
 
-**Jugner Forest's logging cap is the last one missing**, and it drives the
-fatigue ceiling there. After that, the most useful thing you can send is what
-drops in a zone: nine of the 32 have no drop list yet, so they show only what
-you have found yourself. Corrections to the message patterns and zone lists are
-next, and `/helmdiel debug` output is ideal.
+**Every zone's skill cap is now recorded**, so the most useful thing you can
+send is what drops in a zone: four of the 32 have no drop list yet, so they
+show only what you have found yourself. Corrections to the message patterns and
+zone lists are next, and `/helmdiel debug` output is ideal.
 
 Open an issue at
 [github.com/KisamMeow/HELMdiel/issues](https://github.com/KisamMeow/HELMdiel/issues),

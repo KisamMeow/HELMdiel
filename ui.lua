@@ -101,6 +101,7 @@ end
 local function by_count_then_name(a, b)
     if (a.tier.rank ~= b.tier.rank) then return a.tier.rank < b.tier.rank; end
     if (a.count ~= b.count) then return a.count > b.count; end
+    if (a.needs ~= b.needs) then return (a.needs or 0) < (b.needs or 0); end
     return a.name < b.name;
 end
 
@@ -901,6 +902,7 @@ local function render_item_list(log, total, charname, activity, zoneId, proven)
         slot.label  = label;
         slot.text_w = text_width;
         slot.tier   = get_rarity_tier(pct);
+        slot.needs  = nil;
         slot.muted  = false;
         slot.icon   = show_icons and icons.texture(resources.item_id(itemName)) or nil;
         items[count_n] = slot;
@@ -925,6 +927,7 @@ local function render_item_list(log, total, charname, activity, zoneId, proven)
             slot.label  = label;
             slot.text_w = text_width;
             slot.tier   = locked and data.TIER_LOCKED or data.TIER_UNSEEN;
+            slot.needs  = locked;
             slot.muted  = true;
             slot.icon   = show_icons and icons.texture(resources.item_id(entry.name)) or nil;
             items[count_n] = slot;
@@ -934,8 +937,8 @@ local function render_item_list(log, total, charname, activity, zoneId, proven)
 
     table.sort(items, by_count_then_name);
 
-    local art  = px(store.icon_size());
-    local list = store.item_style() == 'List';
+    local art     = px(store.icon_size());
+    local per_row = store.items_per_row();
 
     -- Every item in the list shares these. The line height is measured here
     -- rather than at load because it has to be read under whatever font is
@@ -947,27 +950,27 @@ local function render_item_list(log, total, charname, activity, zoneId, proven)
     BOX_SIZE[1], BOX_SIZE[2] = art, art;
     ART_SIZE[1], ART_SIZE[2] = art, art;
 
+    local grouped   = store.rarity_groups();
     local last_rank = nil;
     local column    = 0;
     for index, item in ipairs(items) do
-        if (item.tier.rank ~= last_rank) then
+        local rank = item.tier.rank;
+        if (last_rank == nil or (grouped and rank ~= last_rank)) then
             imgui.Spacing();
             imgui.Spacing();
-            last_rank = item.tier.rank;
-            column    = 0;
+            column = 0;
         end
+        last_rank = rank;
 
-        if (not list and column > 0) then
+        if (column > 0) then
             local previous = items[index - 1];
             imgui.SameLine(0, widest - previous.text_w + px(data.CELL_GUTTER));
         end
 
         render_item(item, show_icons, art, text_h);
 
-        if (not list) then
-            column = column + 1;
-            if (column >= data.ITEMS_PER_ROW) then column = 0; end
-        end
+        column = column + 1;
+        if (column >= per_row) then column = 0; end
     end
 
     if (scaled) then
@@ -1609,10 +1612,17 @@ local function render_settings(charname)
 
     imgui.Spacing();
 
-    if (checkbox('List Item Style', store.list_items())) then
+    if (checkbox('2 Column Style', store.list_items())) then
         store.toggle_list_items();
     end
-    hint('Off: a grid three items across.');
+    hint('Two items to a row. Off: three.');
+
+    imgui.Spacing();
+
+    if (checkbox('Group by Rarity', store.rarity_groups())) then
+        store.toggle_rarity_groups();
+    end
+    hint('Off: one run of items ordered by drop rate, with no gaps.');
 
     imgui.Spacing();
 
