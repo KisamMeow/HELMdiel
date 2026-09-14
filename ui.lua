@@ -1732,7 +1732,7 @@ local function render_settings(charname)
     if (danger_button('Reset All Data')) then
         actions.reset_all();
     end
-    hint('Clears everything for this character.');
+    hint('Clears everything for this character except skill levels.');
     imgui.Spacing();
 end
 

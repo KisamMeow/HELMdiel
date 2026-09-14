@@ -80,6 +80,19 @@ function export.build(charname, minimal)
                 ['Skill']                = skill,
             };
 
+            for _, proc in ipairs(data.EXPORT_PROCS) do
+                if (proc.activity == activity) then
+                    local fired = store.get_proc(charname, proc.ability.name, zone.id);
+                    local outof = gathers;
+                    if (proc.ability.basis == 'breaks') then
+                        outof = fired + store.get_breaks(charname, activity, zone.id);
+                    end
+                    if (outof > 0) then
+                        zone_row[proc.column] = ('%.1f'):fmt(fired / outof * 100);
+                    end
+                end
+            end
+
             if (#items == 0) then
                 if (not minimal and (attempts > 0 or gathers > 0)) then
                     table.insert(lines, row(header, zone_row));

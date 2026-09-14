@@ -19,6 +19,31 @@ If you notice any items being listed twice but spelt differently then type
 
 ## [Unreleased]
 
+## [0.20.0] - 2026-09-14
+
+### Added
+
+- **Drop lists for Halvung, Mount Zhayolm, Newton Movalpolos and Ifrit's
+  Cauldron** — twelve, twelve, eight and eight items. **Every tracked zone has
+  a drop list now.**
+- **Ten items are confirmed drops now rather than wiki listings** — Aht
+  Urhgan Brass, Bomb Arm, Bomb Ash, Demon Horn, Iron Sand, Moblin Mask,
+  Orpiment, Sulfur, Troll Pauldron and Troll Vambrace.
+- **Skill levels for five mining drops** — Darksteel Ore at 20 and Gold and
+  Mythril Ore at 10 in Oldton Movalpolos, Mythril Ore at 10 in Palborough
+  Mines, and Darksteel Ore at 10 in Gusgen Mines.
+- **Special skill activation rates in the CSV export**, one column per
+  ability, per zone — the same percentages the activity tabs show.
+
+### Changed
+
+- **Reset All Data keeps your skill levels.** Nothing resets them now.
+
+### Fixed
+
+- **Ghelsba Outpost's Elm Log is not gated.** It was listed as needing logging
+  10.
+
 ## [0.19.0] - 2026-09-10
 
 ### Added
@@ -722,7 +747,8 @@ Initial public release.
 - The rule that a gather decays *all* other zones for that activity was
   inferred from a two-zone observation.
 
-[Unreleased]: https://github.com/KisamMeow/HELMdiel/compare/v0.19.0...HEAD
+[Unreleased]: https://github.com/KisamMeow/HELMdiel/compare/v0.20.0...HEAD
+[0.20.0]: https://github.com/KisamMeow/HELMdiel/compare/v0.19.0...v0.20.0
 [0.19.0]: https://github.com/KisamMeow/HELMdiel/compare/v0.18.0...v0.19.0
 [0.18.0]: https://github.com/KisamMeow/HELMdiel/compare/v0.17.0...v0.18.0
 [0.17.0]: https://github.com/KisamMeow/HELMdiel/compare/v0.16.0...v0.17.0

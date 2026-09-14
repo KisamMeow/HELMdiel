@@ -139,7 +139,9 @@ data.COLOR_SUCCESS_ACTIVE = { 0.28, 0.68, 0.32, 1.00 };
 -- Three of these reset with Reset Gather/Skill Ups while the rest do not, so
 -- the window is named in the column. Zone Gathers is the all-time count and
 -- Successes is the same quantity since the last reset; before a reset they are
--- identical, which is exactly why they needed telling apart.
+-- identical, which is exactly why they needed telling apart. One rate column
+-- per special skill is appended to both headers where PROC_ABILITIES is
+-- derived, further down.
 data.EXPORT_HEADER = T{ 'Character', 'Activity', 'Zone', 'Item', 'Count',
                         'Zone Gathers', 'Drop Rate', 'Attempts (Session)',
                         'Successes (Session)', 'Skill Ups (Session)', 'Skill' };
@@ -514,7 +516,7 @@ data.ZONE_ITEMS = T{
             { name = 'Arrowwood Log' },
             { name = 'Ash Log' },
             { name = 'Chestnut Log' },
-            { name = 'Elm Log', skill = 10 },
+            { name = 'Elm Log' },
             { name = 'Holly Log' },
             { name = 'Maple Log' },
             { name = 'Willow Log' },
@@ -523,18 +525,56 @@ data.ZONE_ITEMS = T{
     Mining     = T{
         [11] = T{
             { name = 'Copper Ore' },
-            { name = 'Darksteel Ore' },
+            { name = 'Darksteel Ore', skill = 20 },
             { name = 'Goblin Die' },
-            { name = 'Gold Ore' },
+            { name = 'Gold Ore', skill = 10 },
             { name = 'Igneous Rock' },
             { name = 'Iron Ore' },
             { name = 'Moblin Armor' },
             { name = 'Moblin Helm' },
             { name = 'Moblin Mail' },
-            { name = 'Mythril Ore' },
+            { name = 'Mythril Ore', skill = 10 },
             { name = 'Silver Ore' },
             { name = 'Tin Ore' },
             { name = 'Zinc Ore' },
+        },
+        [12] = T{
+            { name = 'Copper Ore' },
+            { name = 'Igneous Rock' },
+            { name = 'Iron Ore' },
+            { name = 'Mythril Ore' },
+            { name = 'Red Rock' },
+            { name = 'Silver Ore' },
+            { name = 'Tin Ore' },
+            { name = 'Zinc Ore' },
+        },
+        [61] = T{
+            { name = 'Bomb Ash' },
+            { name = 'Demon Horn' },
+            { name = 'Flint Stone' },
+            { name = 'Iron Ore' },
+            { name = 'Iron Sand' },
+            { name = 'Moblin Armor' },
+            { name = 'Moblin Helm' },
+            { name = 'Moblin Mail' },
+            { name = 'Moblin Mask' },
+            { name = 'Sulfur' },
+            { name = 'Troll Pauldron' },
+            { name = 'Troll Vambrace' },
+        },
+        [62] = T{
+            { name = 'Aht Urhgan Brass' },
+            { name = 'Bomb Ash' },
+            { name = 'Flint Stone' },
+            { name = 'Gold Ore' },
+            { name = 'Iron Sand' },
+            { name = 'Moblin Armor' },
+            { name = 'Moblin Helm' },
+            { name = 'Moblin Mail' },
+            { name = 'Moblin Mask' },
+            { name = 'Sulfur' },
+            { name = 'Troll Pauldron' },
+            { name = 'Troll Vambrace' },
         },
         [142] = T{
             { name = 'Copper Ore' },
@@ -552,7 +592,7 @@ data.ZONE_ITEMS = T{
             { name = 'Black Rock' },
             { name = 'Copper Ore' },
             { name = 'Iron Ore' },
-            { name = 'Mythril Ore' },
+            { name = 'Mythril Ore', skill = 10 },
             { name = 'Painite', skill = 20 },
             { name = 'Pebble' },
             { name = 'Silver Ore' },
@@ -571,13 +611,23 @@ data.ZONE_ITEMS = T{
         },
         [196] = T{
             { name = 'Copper Ore' },
-            { name = 'Darksteel Ore' },
+            { name = 'Darksteel Ore', skill = 10 },
             { name = 'Iron Ore' },
             { name = 'Pebble' },
             { name = 'Silver Ore' },
             { name = 'Tin Ore' },
             { name = 'White Rock' },
             { name = 'Zinc Ore' },
+        },
+        [205] = T{
+            { name = 'Bomb Arm' },
+            { name = 'Bomb Ash' },
+            { name = 'Flint Stone' },
+            { name = 'Iron Ore' },
+            { name = 'Iron Sand' },
+            { name = 'Orpiment' },
+            { name = 'Red Rock' },
+            { name = 'Sulfur' },
         },
     },
 };
@@ -772,87 +822,118 @@ data.LEGACY_ITEMS = T{
     },
     Mining     = T{
         'Adaman Ore',
-        'Aht Urhgan Brass',
         'Aluminum Ore',
-        'Bomb Arm',
-        'Bomb Ash',
-        'Demon Horn',
         'Green Rock',
-        'Iron Sand',
         'Khroma Ore',
         'Luminium Ore',
         'Mine Gravel',
-        'Moblin Mask',
         'Orichalcum Ore',
-        'Orpiment',
         'Platinum Ore',
         'Plumbago',
-        'Sulfur',
-        'Troll Pauldron',
-        'Troll Vambrace',
         'Yellow Rock',
     },
 };
 
--- What an NPC pays for one of an item, read off the sell menu in game. Flat
--- rather than keyed by activity: the price belongs to the item, and several of
--- these drop from more than one activity, which a per-activity table would
--- store twice and let drift. Nothing reads this yet.
+-- What an NPC pays for one of an item, read off the sell menu in game. One
+-- flat table, since the price belongs to the item; the labels only group the
+-- source by which activity drops it, with anything two or more share at the
+-- top. Alphabetical within each block. Nothing reads this yet.
 data.NPC_PRICES = T{
-    ['Acorn']           = 2,
-    ['Almond']          = 38,
-    ['Arrowwood Log']   = 5,
-    ['Ash Log']         = 26,
-    ['Beehive Chip']    = 11,
-    ['Buburimu Grape']  = 41,
-    ['Chestnut']        = 33,
-    ['Chestnut Log']    = 482,
-    ['Crawler Cocoon']  = 34,
-    ['Danceshroom']     = 656,
-    ['Date']            = 71,
-    ['Dogwood Log']     = 5,
-    ['Dryad Root']      = 247,
-    ["Dyer's Woad"]     = 186,
-    ['Ebony Log']       = 1312,
-    ['Faerie Apple']    = 12,
-    ['Flax Flower']     = 55,
-    ['Fresh Marjoram']  = 1,
-    ['Fresh Mugwort']   = 88,
-    ['Fruit Seeds']     = 88,
-    ['Grain Seeds']     = 77,
-    ['Holly Log']       = 157,
-    ['Honey']           = 33,
-    ['Im. Tea Leaves']  = 4,
-    ['King Locust']     = 210,
-    ['King Truffle']    = 1537,
-    ['Kitron']          = 358,
-    ['Lauan Log']       = 9,
-    ['Lqr. Tree Sap']   = 896,
-    ['Malboro Fiber']   = 5125,
-    ['Maple Log']       = 16,
-    ['Mohbwa Grass']    = 1,
-    ['Moko Grass']      = 5,
-    ['Mushrm. Locust']  = 314,
-    ['Peph. Hive Chip'] = 17,
-    ['Persikos']        = 486,
-    ['Phalaenopsis']    = 782,
-    ['Phoenix Feather'] = 1599,
-    ['Pine Nuts']       = 3,
-    ['Rattan Lumber']   = 44,
-    ['Red Moko Grass']  = 33,
-    ['Revival Root']    = 57,
-    ['Rosewood Log']    = 943,
-    ['Saruta Cotton']   = 16,
-    ['Scream Fungus']   = 208,
-    ['Sleepshroom']     = 27,
-    ['Spider Web']      = 676,
-    ['Toad Oil']        = 615,
-    ['Tree Cuttings']   = 531,
-    ['Walnut Log']      = 134,
-    ['Willow Log']      = 44,
-    ['Woozyshroom']     = 247,
-    ['Yagudo Cherry']   = 12,
-    ['Yew Log']         = 97,
+    -- Shared
+    ['Beehive Chip']     = 11,
+    ['Grain Seeds']      = 77,
+    ['Pebble']           = 1,
+    ['Red Rock']         = 205,
+    -- Harvesting
+    ['Crawler Cocoon']   = 34,
+    ['Danceshroom']      = 656,
+    ["Dyer's Woad"]      = 186,
+    ['Flax Flower']      = 55,
+    ['Fresh Marjoram']   = 1,
+    ['Fresh Mugwort']    = 88,
+    ['Honey']            = 33,
+    ['Im. Tea Leaves']   = 4,
+    ['King Locust']      = 210,
+    ['King Truffle']     = 1537,
+    ['Malboro Fiber']    = 5125,
+    ['Mohbwa Grass']     = 1,
+    ['Moko Grass']       = 5,
+    ['Mushrm. Locust']   = 314,
+    ['Peph. Hive Chip']  = 17,
+    ['Phalaenopsis']     = 782,
+    ['Phoenix Feather']  = 1599,
+    ['Red Moko Grass']   = 33,
+    ['Saruta Cotton']    = 16,
+    ['Scream Fungus']    = 208,
+    ['Sleepshroom']      = 27,
+    ['Spider Web']       = 676,
+    ['Toad Oil']         = 615,
+    ['Woozyshroom']      = 247,
+    -- Excavation
+    -- Logging
+    ['Acorn']            = 2,
+    ['Almond']           = 38,
+    ['Arrowwood Log']    = 5,
+    ['Ash Log']          = 26,
+    ['Buburimu Grape']   = 41,
+    ['Chestnut']         = 33,
+    ['Chestnut Log']     = 482,
+    ['Date']             = 71,
+    ['Dogwood Log']      = 5,
+    ['Dryad Root']       = 247,
+    ['Ebony Log']        = 1312,
+    ['Elm Log']          = 393,
+    ['Faerie Apple']     = 12,
+    ['Fruit Seeds']      = 88,
+    ['Holly Log']        = 157,
+    ['Kitron']           = 358,
+    ['Lauan Log']        = 9,
+    ['Lqr. Tree Sap']    = 896,
+    ['Maple Log']        = 16,
+    ['Persikos']         = 486,
+    ['Pine Nuts']        = 3,
+    ['Rattan Lumber']    = 44,
+    ['Revival Root']     = 57,
+    ['Rosewood Log']     = 943,
+    ['Tree Cuttings']    = 531,
+    ['Walnut Log']       = 134,
+    ['Willow Log']       = 44,
+    ['Yagudo Cherry']    = 12,
+    ['Yew Log']          = 97,
+    -- Mining
+    ['Aht Urhgan Brass'] = 90,
+    ['Black Rock']       = 207,
+    ['Bomb Arm']         = 165,
+    ['Bomb Ash']         = 113,
+    ['Copper Ore']       = 3,
+    ['Darksteel Ore']    = 486,
+    ['Demon Horn']       = 682,
+    ['Flint Stone']      = 5,
+    ['Gold Ore']         = 430,
+    ['Igneous Rock']     = 178,
+    ['Iron Ore']         = 165,
+    ['Iron Sand']        = 86,
+    ['Mythril Ore']      = 256,
+    ['Orpiment']         = 219,
+    ['Silver Ore']       = 77,
+    ['Snapping Mole']    = 45,
+    ['Sulfur']           = 49,
+    ['Tin Ore']          = 11,
+    ['White Rock']       = 205,
+    ['Zinc Ore']         = 27,
+};
+
+-- Drops the sell menu greys out. Kept apart from a price of 0, which would
+-- read as "an NPC pays nothing" rather than "no NPC buys it", and apart from
+-- an absent entry, which only says nobody has checked. Alphabetical.
+data.NPC_UNSELLABLE = T{
+    'Goblin Die',
+    'Moblin Armor',
+    'Moblin Helm',
+    'Moblin Mail',
+    'Moblin Mask',
+    'Troll Pauldron',
+    'Troll Vambrace',
 };
 
 data.LEGACY_SET    = T{};
@@ -861,6 +942,7 @@ data.SKILL_CAPS    = T{};
 data.PROC_PATTERNS = T{};
 data.PROC_NAMES    = T{};
 data.PROC_REPEATS  = T{};
+data.EXPORT_PROCS  = T{};
 
 for _, activity in ipairs(data.ACTIVITIES) do
     local procs = T{};
@@ -868,6 +950,15 @@ for _, activity in ipairs(data.ACTIVITIES) do
         table.insert(procs, ability.pattern);
         data.PROC_NAMES[ability.pattern] = ability.name;
         if (ability.repeats) then data.PROC_REPEATS[ability.name] = true; end
+
+        local column = ability.short:lower()
+            :gsub('(%a)(%a*)', function(a, b) return a:upper() .. b; end)
+            .. ' Rate';
+        table.insert(data.EXPORT_PROCS, {
+            activity = activity, ability = ability, column = column,
+        });
+        table.insert(data.EXPORT_HEADER,     column);
+        table.insert(data.EXPORT_HEADER_MIN, column);
     end
     data.PROC_PATTERNS[activity] = procs;
 

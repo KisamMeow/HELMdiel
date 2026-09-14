@@ -729,8 +729,11 @@ end
 
 function store.reset_all()
     local charname = store.char_name();
+    local was  = helm_settings.characters[charname];
+    local kept = was and was.skill;
     helm_settings.characters[charname] = nil;
-    ensure_char(charname);
+    local char = ensure_char(charname);
+    if (type(kept) == 'table') then char.skill = kept; end
     settings.save();
 end
 

@@ -6,7 +6,7 @@ Per-zone fatigue counters, skill levels read from your own skill-up messages,
 drop logging with icons and rarity tiers, a session tally with gil, and CSV
 export.
 
-Ashita v4.30+ addon. Version 0.19.0. Released under GPL-3.0. Coded with help
+Ashita v4.30+ addon. Version 0.20.0. Released under GPL-3.0. Coded with help
 from Claude Opus 5.
 
 ## Screenshots
@@ -50,7 +50,7 @@ renamed. To load it every time, add that line to `Ashita/scripts/default.txt`.
 | `/helmdiel names` | Lists any tracked item name that is not what your game calls it |
 | `/helmdiel set <activity> <value>` | Sets the current zone's fatigue |
 | `/helmdiel skill <activity> <value>` | Sets your skill level |
-| `/helmdiel reset all` | Wipes everything for this character |
+| `/helmdiel reset all` | Wipes everything for this character except skill levels |
 | `/helmdiel reset <activity>` | Wipes one activity, all zones |
 | `/helmdiel reset <activity> zone` | Wipes one activity, current zone only |
 
@@ -172,10 +172,10 @@ activity tab — and **Locked (10)** means it needs that skill level first.
 Anything you have ever gathered here never reads as locked, whatever your skill
 says, because gathering it is proof you can.
 
-Drop lists exist for every harvesting zone, 4 of 6 excavation zones, 6 of 11
-logging and 5 of 9 mining. **A list is what is known so far, not a guarantee it
-is complete** — a missing item shows up the first time you gather it, and a
-zone with no list at all just shows what you have found there.
+Every tracked zone has a drop list. **A list is what is known so far, not a
+guarantee it is complete** — several were built by a character below skill
+10, so anything unlocked higher is simply not on them yet. A missing item shows
+up the first time you gather it.
 
 ### Spoils
 
@@ -265,11 +265,14 @@ Hover any control for a one-line explanation.
 | Auto-Show Activity | Brings a hidden activity back the first time you gather one |
 | Auto-Resize Window | On, it fits its contents. Off, drag the gold corner yourself |
 
-**Export CSV** writes one row per item per zone, with that zone's drop rate
-and counters alongside, and prints its path in chat. **Attempts, Successes and
-Skill Ups are marked `(Session)`** because Reset Gather/Skill Ups clears them
-while Zone Gathers next to them survives — before your first reset the two
-agree, which is exactly why they need telling apart. Every export is
+**Export CSV** writes one row per item per zone, with that zone's drop rate,
+counters and special-skill activation rates alongside, and prints its path in
+chat. **Attempts, Successes and Skill Ups are marked `(Session)`** because
+Reset Gather/Skill Ups clears them while Zone Gathers next to them survives —
+before your first reset the two agree, which is exactly why they need telling
+apart. **The four rate columns** — Discipline, Technique, Gold Rush and
+Motherlode — are the same percentages the activity tabs show for each zone,
+filled on that activity's rows and blank on the others. Every export is
 stamped with the date and time, so they pile up in order rather than
 overwriting.
 
@@ -278,10 +281,10 @@ Ashita/config/addons/HELMdiel/<Character>_export_2026-08-16_134501.csv
 ```
 
 **Minimum Data** cuts it to Activity, Zone, Item, Count, Zone Gathers, Drop
-Rate and Skill, dropping your name, attempts, successes and skill ups
-so you can share drop data without attaching who you are. Skill stays, because
-drop rates only mean something against the skill they were gathered at. Your
-name comes off the filename too.
+Rate, Skill and the four rates, dropping your name, attempts, successes and
+skill ups so you can share drop data without attaching who you are. Skill
+stays, because drop rates only mean something against the skill they were
+gathered at. Your name comes off the filename too.
 
 **Both reset buttons take two clicks.** The first arms it and the button asks
 `Confirm?`; the second does the work. It disarms itself after a few seconds.
@@ -289,7 +292,8 @@ name comes off the filename too.
 - **Reset Gather/Skill Ups** clears the Home counters and the Spoils tab, and
   starts a new session. Fatigue, drop history, skill levels and special skill
   counts are kept, since those last two are measured against the drop history.
-- **Reset All Data** clears everything for this character.
+- **Reset All Data** clears everything for this character except skill
+  levels, which no reset touches.
 
 ## Detection
 
@@ -322,7 +326,8 @@ drops are not logged.
 
 Data is stored per character at
 `Ashita/config/addons/HELMdiel/<Character>_<id>/settings.lua`. Deleting that
-file resets the character, same as `/helmdiel reset all`.
+file resets the character, same as `/helmdiel reset all` but without keeping
+the skill levels.
 
 ## Known limitations
 
@@ -337,10 +342,11 @@ file resets the character, same as `/helmdiel reset all`.
 
 ## Feedback
 
-**Every zone's skill cap is now recorded**, so the most useful thing you can
-send is what drops in a zone: four of the 32 have no drop list yet, so they
-show only what you have found yourself. Corrections to the message patterns and
-zone lists are next, and `/helmdiel debug` output is ideal.
+**Every zone has a skill cap and a drop list now**, but most lists are what
+one or two characters have seen rather than everything the zone gives, and
+several were built below skill 10. The most useful thing you can send is a
+drop that is not listed, or the skill level an item unlocks at. Corrections
+to the message patterns are next, and `/helmdiel debug` output is ideal.
 
 Open an issue at
 [github.com/KisamMeow/HELMdiel/issues](https://github.com/KisamMeow/HELMdiel/issues),
