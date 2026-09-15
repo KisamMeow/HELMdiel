@@ -19,6 +19,32 @@ If you notice any items being listed twice but spelt differently then type
 
 ## [Unreleased]
 
+## [0.21.0] - 2026-09-15
+
+### Added
+
+- **What Gold Rush and Motherlode give in each Mining zone.** The two tiles
+  name their ore under the rate, the Mining tab shows it beside the rate, and
+  those ores carry a gold corner on their icon in the drop grid. Their
+  percentages draw in gold while Count Gold Rush/Motherlode Drops is on.
+- **Oak Log in Carpenters' Landing** at logging 10, and **Rosewood Log in
+  Yuhtunga Jungle** at logging 20.
+
+### Changed
+
+- **Count Gold Rush Drops is now Count Gold Rush/Motherlode Drops.** Motherlode
+  upgrades what a Gold Rush node repeats, so its ore is part of the same run
+  and the setting covers both.
+- **Flipping that setting updates your rates at once**, on Home, the activity
+  tabs and the export. It used to apply only to gathers made after the change.
+  The first time you untick it after updating, Home's session figures will
+  not move until your next session reset; everything else moves straight
+  away. An item whose every gather came from a node leaves the grid rather
+  than showing 0.0%.
+- **On the activity tabs each special skill has its own line** under the
+  zone's counts, which brings a Mining zone's foldout back to the width of its
+  drop grid.
+
 ## [0.20.0] - 2026-09-14
 
 ### Added
@@ -747,7 +773,8 @@ Initial public release.
 - The rule that a gather decays *all* other zones for that activity was
   inferred from a two-zone observation.
 
-[Unreleased]: https://github.com/KisamMeow/HELMdiel/compare/v0.20.0...HEAD
+[Unreleased]: https://github.com/KisamMeow/HELMdiel/compare/v0.21.0...HEAD
+[0.21.0]: https://github.com/KisamMeow/HELMdiel/compare/v0.20.0...v0.21.0
 [0.20.0]: https://github.com/KisamMeow/HELMdiel/compare/v0.19.0...v0.20.0
 [0.19.0]: https://github.com/KisamMeow/HELMdiel/compare/v0.18.0...v0.19.0
 [0.18.0]: https://github.com/KisamMeow/HELMdiel/compare/v0.17.0...v0.18.0

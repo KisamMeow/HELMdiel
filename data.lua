@@ -50,6 +50,7 @@ data.PRICE_EDITOR_HEIGHT = 320.0;
 data.FATIGUE_BAR_HEIGHT = 5.0;
 data.ICON_SIZE         = 32;
 data.SPOILS_ICON_SIZE  = 16;
+data.PIP_RATIO         = 0.45;
 data.ITEMS_PER_ROW     = 3;
 data.LIST_ITEMS_PER_ROW = 2;
 data.CELL_GUTTER       = 14;
@@ -409,6 +410,7 @@ data.ZONE_ITEMS = T{
             { name = 'Arrowwood Log' },
             { name = 'Ash Log' },
             { name = 'Dryad Root' },
+            { name = 'Oak Log', skill = 10 },
             { name = 'Tree Cuttings' },
             { name = 'Walnut Log' },
             { name = 'Willow Log' },
@@ -498,7 +500,7 @@ data.ZONE_ITEMS = T{
             { name = 'Persikos' },
             { name = 'Rattan Lumber' },
             { name = 'Revival Root' },
-            { name = 'Rosewood Log' },
+            { name = 'Rosewood Log', skill = 20 },
             { name = 'Tree Cuttings' },
         },
         [124] = T{
@@ -723,9 +725,26 @@ data.PROC_ABILITIES = T{
     Logging    = T{},
     Mining     = T{
         { name = 'Gold Rush',  short = 'GOLD RUSH',
-          pattern = 'Gold Rush!', basis = 'successes', repeats = true },
+          pattern = 'Gold Rush!', basis = 'successes', repeats = true,
+          node = 'rush' },
         { name = 'Motherlode', short = 'MOTHERLODE',
-          pattern = 'You hit the mother lode', basis = 'successes' },
+          pattern = 'You hit the mother lode', basis = 'successes',
+          repeats = true, node = 'lode' },
+    },
+};
+
+-- What a node repeats after Gold Rush, and what Motherlode upgrades that to.
+data.GOLD_RUSH_ITEMS = T{
+    Mining = T{
+        [11]  = { rush = 'Gold Ore',      lode = 'Platinum Ore' },
+        [12]  = { rush = 'Gold Ore',      lode = 'Platinum Ore' },
+        [61]  = { rush = 'Darksteel Ore', lode = 'Adaman Ore' },
+        [62]  = { rush = 'Platinum Ore',  lode = 'Orichalcum Ore' },
+        [142] = { rush = 'Silver Ore',    lode = 'Gold Ore' },
+        [143] = { rush = 'Silver Ore',    lode = 'Gold Ore' },
+        [172] = { rush = 'Iron Ore',      lode = 'Darksteel Ore' },
+        [196] = { rush = 'Iron Ore',      lode = 'Darksteel Ore' },
+        [205] = { rush = 'Darksteel Ore', lode = 'Adaman Ore' },
     },
 };
 
@@ -754,10 +773,13 @@ data.SKILL_VALUE_INTEGER = 'raising it to (%d+)';
 data.CHARACTER_KEYS = T{ 'fatigue', 'fatigued', 'item_log', 'skill',
                          'skillups', 'attempts', 'successes', 'spoils',
                          'since_skillup', 'procs', 'breaks', 'goldrush',
-                         'tool_breaks', 'lifetime', 'session_log' };
+                         'session_goldrush', 'tool_breaks', 'lifetime',
+                         'session_log' };
 data.SESSION_KEYS   = T{ 'skillups', 'attempts', 'successes', 'spoils',
-                         'since_skillup', 'tool_breaks', 'session_log' };
-data.SPOILS_KEYS    = T{ 'spoils', 'tool_breaks', 'session_log' };
+                         'since_skillup', 'tool_breaks', 'session_log',
+                         'session_goldrush' };
+data.SPOILS_KEYS    = T{ 'spoils', 'tool_breaks', 'session_log',
+                         'session_goldrush' };
 data.SESSION_CLOCK  = T{ 'session_start', 'session_last', 'session_active' };
 
 data.SECONDS_PER_HOUR = 3600;
@@ -862,6 +884,7 @@ data.NPC_PRICES = T{
     ['Peph. Hive Chip']  = 17,
     ['Phalaenopsis']     = 782,
     ['Phoenix Feather']  = 1599,
+    ['Puffball']         = 309,
     ['Red Moko Grass']   = 33,
     ['Saruta Cotton']    = 16,
     ['Scream Fungus']    = 208,
@@ -890,6 +913,7 @@ data.NPC_PRICES = T{
     ['Lauan Log']        = 9,
     ['Lqr. Tree Sap']    = 896,
     ['Maple Log']        = 16,
+    ['Oak Log']          = 809,
     ['Persikos']         = 486,
     ['Pine Nuts']        = 3,
     ['Rattan Lumber']    = 44,
@@ -942,14 +966,21 @@ data.SKILL_CAPS    = T{};
 data.PROC_PATTERNS = T{};
 data.PROC_NAMES    = T{};
 data.PROC_REPEATS  = T{};
+data.REPEAT_ACTIVITIES = T{};
 data.EXPORT_PROCS  = T{};
 
 for _, activity in ipairs(data.ACTIVITIES) do
     local procs = T{};
     for _, ability in ipairs(data.PROC_ABILITIES[activity]) do
+        ability.activity = activity;
         table.insert(procs, ability.pattern);
         data.PROC_NAMES[ability.pattern] = ability.name;
-        if (ability.repeats) then data.PROC_REPEATS[ability.name] = true; end
+        if (ability.repeats) then
+            data.PROC_REPEATS[ability.name] = true;
+            if (data.REPEAT_ACTIVITIES[#data.REPEAT_ACTIVITIES] ~= activity) then
+                table.insert(data.REPEAT_ACTIVITIES, activity);
+            end
+        end
 
         local column = ability.short:lower()
             :gsub('(%a)(%a*)', function(a, b) return a:upper() .. b; end)

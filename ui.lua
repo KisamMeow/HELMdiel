@@ -321,6 +321,7 @@ local function tile(index, label, value, color, tip, a, b, c, d, e)
     if (slot == nil) then slot = {}; TILES[index] = slot; end
     slot.label, slot.value, slot.color, slot.tip = label, value, color, tip;
     slot.a, slot.b, slot.c, slot.d, slot.e = a, b, c, d, e;
+    slot.note = nil;
     return slot;
 end
 
@@ -334,25 +335,40 @@ local function tiles_per_row(count)
     return count;
 end
 
-local function paint_tiles(count, x, y, w, tall)
+-- A row is a line taller when any tile on it carries a note.
+local function tile_row_height(count, per, row, base, drop)
+    local first = (row - 1) * per + 1;
+    for index = first, math.min(count, first + per - 1) do
+        if (TILES[index].note ~= nil) then return base + drop; end
+    end
+    return base;
+end
+
+local function paint_tiles(count, x, y, w, base, drop)
     local list  = imgui.GetWindowDrawList();
     local gap   = px(data.TILE_GAP);
     local per   = tiles_per_row(count);
     local width = (w - gap * (per - 1)) / per;
     local padx  = px(data.TILE_PAD_X);
     local pady  = px(data.TILE_PAD_Y);
-    local drop  = imgui.GetTextLineHeight() + px(data.ITEM_LINE_GAP);
     local plate = imgui.GetColorU32(data.COLOR_TILE_BG);
     local cap   = imgui.GetColorU32(data.COLOR_CAPTION);
+    local gold  = imgui.GetColorU32(data.COLOR_GOLD);
 
     -- Hover, by hand.
     local mx, my = imgui.GetMousePos();
     local over   = imgui.IsWindowHovered();
 
+    local row, top, tall = 0, y - gap, 0;
     for index = 1, count do
         local slot = TILES[index];
+        local at   = math.floor((index - 1) / per) + 1;
+        if (at ~= row) then
+            top  = top + tall + gap;
+            row  = at;
+            tall = tile_row_height(count, per, row, base, drop);
+        end
         local left = x + (width + gap) * ((index - 1) % per);
-        local top  = y + (tall + gap) * math.floor((index - 1) / per);
 
         if (over and slot.tip ~= nil
             and mx >= left and mx < left + width
@@ -374,10 +390,15 @@ local function paint_tiles(count, x, y, w, tall)
         TEXT_POS[2] = top + pady + drop;
         clip_text(list, left, left + width, top, top + tall,
             imgui.GetColorU32(slot.color or data.COLOR_VALUE), slot.value);
+
+        if (slot.note ~= nil) then
+            TEXT_POS[2] = top + pady + drop * 2;
+            clip_text(list, left, left + width, top, top + tall, gold, slot.note);
+        end
     end
 end
 
-local function lay_out_tiles(count, avail, height)
+local function lay_out_tiles(count, avail, base, drop)
     local gap = px(data.TILE_GAP);
 
     TILE_PAD[1] = px(data.TILE_PAD_X);
@@ -388,7 +409,6 @@ local function lay_out_tiles(count, avail, height)
     local per = tiles_per_row(count);
 
     TILE_SIZE[1] = (avail - gap * (per - 1)) / per;
-    TILE_SIZE[2] = height;
 
     imgui.PushStyleColor(ImGuiCol_ChildBg, data.COLOR_TILE_BG);
     imgui.PushStyleVar(ImGuiStyleVar_ChildRounding, px(data.FRAME_ROUNDING));
@@ -396,12 +416,19 @@ local function lay_out_tiles(count, avail, height)
     imgui.PushStyleVar(ImGuiStyleVar_ItemSpacing, TILE_LINE);
 
     for index = 1, count do
-        if ((index - 1) % per > 0) then imgui.SameLine(0, gap); end
+        local column = (index - 1) % per;
+        if (column > 0) then
+            imgui.SameLine(0, gap);
+        else
+            TILE_SIZE[2] = tile_row_height(count, per,
+                math.floor((index - 1) / per) + 1, base, drop);
+        end
         local slot = TILES[index];
         imgui.BeginChild(('##hhtile%d'):fmt(index), TILE_SIZE,
             ImGuiChildFlags_AlwaysUseWindowPadding, ImGuiWindowFlags_NoScrollbar);
         imgui.TextColored(data.COLOR_CAPTION, slot.label);
         imgui.TextColored(slot.color or data.COLOR_VALUE, slot.value);
+        if (slot.note ~= nil) then imgui.TextColored(data.COLOR_GOLD, slot.note); end
         imgui.EndChild();
     end
 
@@ -410,23 +437,29 @@ local function lay_out_tiles(count, avail, height)
 end
 
 local function render_tiles(count)
-    local avail  = imgui.GetContentRegionAvail();
-    local height = imgui.GetTextLineHeight() * 2 + px(data.ITEM_LINE_GAP)
-                   + px(data.TILE_PAD_Y) * 2;
-    local rows   = math.ceil(count / tiles_per_row(count));
+    local avail = imgui.GetContentRegionAvail();
+    local drop  = imgui.GetTextLineHeight() + px(data.ITEM_LINE_GAP);
+    local base  = imgui.GetTextLineHeight() * 2 + px(data.ITEM_LINE_GAP)
+                  + px(data.TILE_PAD_Y) * 2;
+    local per   = tiles_per_row(count);
+    local rows  = math.ceil(count / per);
 
     if (tile_fill ~= false) then
         local x, y = imgui.GetCursorScreenPos();
-        tile_fill = pcall(paint_tiles, count, x, y, avail, height);
+        tile_fill = pcall(paint_tiles, count, x, y, avail, base, drop);
     end
 
     if (not tile_fill) then
-        lay_out_tiles(count, avail, height);
+        lay_out_tiles(count, avail, base, drop);
         return;
     end
 
+    local height = (rows - 1) * px(data.TILE_GAP);
+    for row = 1, rows do
+        height = height + tile_row_height(count, per, row, base, drop);
+    end
     TILE_SIZE[1] = 0;
-    TILE_SIZE[2] = rows * height + (rows - 1) * px(data.TILE_GAP);
+    TILE_SIZE[2] = height;
     imgui.Dummy(TILE_SIZE);
 end
 
@@ -574,6 +607,24 @@ end
 local PROC_PARTS = {};
 local REPEAT_NAMES = {};
 
+local function node_pair(activity, zoneId)
+    local zones = data.GOLD_RUSH_ITEMS[activity];
+    return zones and zones[zoneId] or nil;
+end
+
+local function node_ore(ability, zoneId)
+    if (ability.node == nil) then return nil; end
+    local pair = node_pair(ability.activity, zoneId);
+    return pair and pair[ability.node] or nil;
+end
+
+local function node_half(pair, name)
+    if (pair == nil) then return nil; end
+    if (name == pair.rush) then return 'rush'; end
+    if (name == pair.lode) then return 'lode'; end
+    return nil;
+end
+
 local function repeat_note(charname, zoneId)
     local names, count = REPEAT_NAMES, 0;
 
@@ -595,7 +646,7 @@ local function repeat_note(charname, zoneId)
             or  'These are left out of the rates above.');
 end
 
-local function render_procs(charname, activity, zoneId, collected, quiet, first, tip)
+local function render_procs(charname, activity, zoneId, collected, tip)
     local abilities = data.PROC_ABILITIES[activity];
     if (#abilities == 0) then return; end
 
@@ -613,36 +664,23 @@ local function render_procs(charname, activity, zoneId, collected, quiet, first,
 
         local slot = PROC_PARTS[index];
         if (slot == nil) then slot = {}; PROC_PARTS[index] = slot; end
-        slot.repeats = ability.repeats;
         slot.ability = ability;
         slot.short   = ability.short;
         slot.fired   = fired;
         slot.outof   = outof;
-
-        if (outof > 0) then
-            slot.text = ('%s - %d/%d (%.1f%%)')
-                :fmt(ability.name, fired, outof, fired / outof * 100);
-            slot.rate = ('%.1f%%'):fmt(fired / outof * 100);
-        else
-            slot.text = ('%s - %d/0'):fmt(ability.name, fired);
-            slot.rate = '-';
-        end
+        slot.rate    = outof > 0 and ('%.1f%%'):fmt(fired / outof * 100) or '-';
     end
 
-    if (quiet and not shown) then return; end
+    if (not shown) then return; end
 
     for index = 1, #abilities do
-        if (index > 1 or first == false) then
-            imgui.SameLine(0, px(data.STAT_GAP));
-        end
-
         local slot = PROC_PARTS[index];
-        if (first == nil) then
-            imgui.TextDisabled(slot.text);
-            if (slot.repeats) then hint(repeat_note(charname, zoneId)); end
-        else
-            stat(slot.short, slot.rate, tip, slot.ability, slot.fired,
-                 slot.outof, charname, zoneId);
+        stat(slot.short, slot.rate, tip, slot.ability, slot.fired,
+             slot.outof, charname, zoneId);
+        local ore = node_ore(slot.ability, zoneId);
+        if (ore ~= nil) then
+            imgui.SameLine(0, px(data.CELL_GUTTER) * 0.5);
+            imgui.TextColored(data.COLOR_GOLD, ore);
         end
     end
 end
@@ -806,14 +844,39 @@ end
 -- BOX_SIZE, ART_SIZE and LINE_GAP are filled once per list by the caller
 -- rather than per item: the icon size and the line gap are the same for every
 -- item in a frame, and this runs 360 times in one under the stress dataset.
-local function render_item_icon(item)
+local pip_fill = nil;
+local PIP_A, PIP_B, PIP_C = { 0, 0 }, { 0, 0 }, { 0, 0 };
+
+local function paint_pip(x, y, art)
+    local list = imgui.GetWindowDrawList();
+    local legs = art * data.PIP_RATIO;
+    local edge = px(1.5);
+
+    PIP_A[1], PIP_A[2] = x + art - legs - edge, y;
+    PIP_B[1], PIP_B[2] = x + art, y;
+    PIP_C[1], PIP_C[2] = x + art, y + legs + edge;
+    list:AddTriangleFilled(PIP_A, PIP_B, PIP_C,
+        imgui.GetColorU32(data.SURFACE_BASE));
+
+    PIP_A[1] = x + art - legs;
+    PIP_C[2] = y + legs;
+    list:AddTriangleFilled(PIP_A, PIP_B, PIP_C,
+        imgui.GetColorU32(data.COLOR_GOLD));
+end
+
+local function render_item_icon(item, art)
     if (imgui.BeginChild(next_cell_id(), BOX_SIZE,
                          ImGuiChildFlags_None, ImGuiWindowFlags_NoScrollbar)) then
+        local sx, sy;
+        if (item.node ~= nil and pip_fill ~= false) then
+            sx, sy = imgui.GetCursorScreenPos();
+        end
         if (item.icon ~= nil) then
             imgui.Image(item.icon.handle, ART_SIZE);
         else
             imgui.Dummy(ART_SIZE);
         end
+        if (sx ~= nil) then pip_fill = pcall(paint_pip, sx, sy, art); end
     end
     imgui.EndChild();
 end
@@ -825,7 +888,7 @@ local function render_item(item, show_icons, art, text_h)
         local top = imgui.GetCursorPosY();
 
         imgui.SetCursorPosY(top + math.max(0, (text_h - art) * 0.5));
-        render_item_icon(item);
+        render_item_icon(item, art);
         imgui.SameLine();
         imgui.SetCursorPosY(top + math.max(0, (art - text_h) * 0.5));
     end
@@ -836,6 +899,8 @@ local function render_item(item, show_icons, art, text_h)
     imgui.TextColored(item.tier.color, item.name);
     if (item.muted) then
         imgui.TextColored(item.tier.color, item.label);
+    elseif (item.gilt) then
+        imgui.TextColored(data.COLOR_GOLD, item.label);
     else
         imgui.TextDisabled(item.label);
     end
@@ -878,6 +943,9 @@ local function render_item_list(log, total, charname, activity, zoneId, proven)
         for itemName in pairs(proven) do got[resources.item_name(itemName)] = true; end
     end
 
+    local pair    = node_pair(activity, zoneId);
+    local counted = pair ~= nil and store.count_repeats();
+
     for itemName, count in pairs(log) do
         local pct  = total > 0 and (count / total * 100) or 0;
         local name = resources.item_name(itemName);
@@ -904,6 +972,8 @@ local function render_item_list(log, total, charname, activity, zoneId, proven)
         slot.tier   = get_rarity_tier(pct);
         slot.needs  = nil;
         slot.muted  = false;
+        slot.node   = node_half(pair, name);
+        slot.gilt   = counted and slot.node ~= nil;
         slot.icon   = show_icons and icons.texture(resources.item_id(itemName)) or nil;
         items[count_n] = slot;
     end
@@ -929,6 +999,8 @@ local function render_item_list(log, total, charname, activity, zoneId, proven)
             slot.tier   = locked and data.TIER_LOCKED or data.TIER_UNSEEN;
             slot.needs  = locked;
             slot.muted  = true;
+            slot.node   = node_half(pair, shown);
+            slot.gilt   = false;
             slot.icon   = show_icons and icons.texture(resources.item_id(entry.name)) or nil;
             items[count_n] = slot;
         end
@@ -1005,6 +1077,13 @@ local function proc_tip(ability, fired, outof, charname, zoneId)
             :fmt(ability.name, fired, outof, outof_what, fired / outof * 100);
     end
 
+    local ore = node_ore(ability, zoneId);
+    if (ore ~= nil) then
+        head = ('%s\n%s'):fmt(head, ability.node == 'lode'
+            and ('Upgrades the node to %s.'):fmt(ore)
+            or  ('The node repeats %s.'):fmt(ore));
+    end
+
     if (not ability.repeats) then return head; end
     return ('%s\n\n%s'):fmt(head, repeat_note(charname, zoneId));
 end
@@ -1065,8 +1144,9 @@ local function render_activity(charname, activity, curZoneId, zoneName)
         if (ability.basis == 'breaks') then
             outof = fired + store.get_breaks(charname, activity, curZoneId);
         end
-        tile(2 + index, ability.short, as_rate(fired, outof), nil,
-             proc_tip, ability, fired, outof, charname, curZoneId);
+        local slot = tile(2 + index, ability.short, as_rate(fired, outof), nil,
+                          proc_tip, ability, fired, outof, charname, curZoneId);
+        slot.note = node_ore(ability, curZoneId);
     end
 
     render_tiles(2 + #abilities);
@@ -1541,10 +1621,9 @@ local function render_activity_tab(charname, activity)
                 if (not first) then imgui.SameLine(0, px(data.STAT_GAP)); end
                 stat('SKILL UPS', ('%.1f%%'):fmt(ups / swings * 100),
                      skillup_tip, ups, swings, nil, zone.name);
-                first = false;
             end
 
-            render_procs(charname, activity, zone.id, total, true, first, proc_tip);
+            render_procs(charname, activity, zone.id, total, proc_tip);
 
             -- A rule between the figures and the grid, so the strip reads as
             -- belonging to the zone rather than to the items under it. Drawn
@@ -1679,11 +1758,11 @@ local function render_settings(charname)
 
     caption('TRACKING');
 
-    if (checkbox('Count Gold Rush Drops', store.count_repeats())) then
+    if (checkbox('Count Gold Rush/Motherlode Drops', store.count_repeats())) then
         store.toggle_count_repeats();
     end
-    hint('Gold Rush makes a node repeat one item. Off keeps those repeats out '
-         .. 'of your drop rates.');
+    hint('Gold Rush makes a node repeat one item and Motherlode upgrades it. '
+         .. 'Off keeps those repeats out of your drop rates.');
 
     imgui.Spacing();
 

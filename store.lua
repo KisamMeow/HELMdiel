@@ -129,8 +129,37 @@ end
 function store.count_repeats()
     return helm_settings.window.count_repeats ~= false;
 end
+
+local function shift_repeats(char, from, into, add)
+    local runs = char[from];
+    if (runs == nil) then return; end
+
+    for zone, items in pairs(runs) do
+        for _, activity in ipairs(data.REPEAT_ACTIVITIES) do
+            if (data.TRACKED_ZONE_SET[activity][tonumber(zone)]) then
+                local logs = char[into];
+                if (logs == nil) then logs = T{}; char[into] = logs; end
+                local group = logs[activity];
+                if (group == nil) then group = T{}; logs[activity] = group; end
+                local log = group[zone];
+                if (log == nil) then log = T{}; group[zone] = log; end
+
+                for item, n in pairs(items) do
+                    local now = (log[item] or 0) + (add and n or -n);
+                    if (now > 0) then log[item] = now; else log[item] = nil; end
+                end
+            end
+        end
+    end
+end
+
 function store.toggle_count_repeats()
-    helm_settings.window.count_repeats = not store.count_repeats();
+    local counted = not store.count_repeats();
+    helm_settings.window.count_repeats = counted;
+    for _, char in pairs(helm_settings.characters) do
+        shift_repeats(char, 'goldrush',         'item_log',    counted);
+        shift_repeats(char, 'session_goldrush', 'session_log', counted);
+    end
     settings.save();
 end
 
@@ -470,6 +499,10 @@ function store.register_item_gather(activity, zoneId, itemName, repeated)
         local run = char.goldrush[key] or T{};
         char.goldrush[key] = run;
         run[itemName] = (run[itemName] or 0) + 1;
+
+        local since = char.session_goldrush[key] or T{};
+        char.session_goldrush[key] = since;
+        since[itemName] = (since[itemName] or 0) + 1;
     end
 
     if (not repeated or store.count_repeats()) then

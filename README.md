@@ -6,7 +6,7 @@ Per-zone fatigue counters, skill levels read from your own skill-up messages,
 drop logging with icons and rarity tiers, a session tally with gil, and CSV
 export.
 
-Ashita v4.30+ addon. Version 0.20.0. Released under GPL-3.0. Coded with help
+Ashita v4.30+ addon. Version 0.21.0. Released under GPL-3.0. Coded with help
 from Claude Opus 5.
 
 ## Screenshots
@@ -138,13 +138,24 @@ percent of the time. They start from 0.9.6, so **if you gathered before then,
 use Reset All Data for an accurate rate**, after exporting if you want to keep
 the drop data.
 
-### Gold Rush
+### Gold Rush and Motherlode
 
-Gold Rush repeats one item until the node runs out. Those extra items are real
-but they are not a fair sample of what the zone drops, so **Count Gold Rush
-Drops** in Settings decides whether they count towards your drop percentages.
-It is on by default. Either way they are always in your Spoils tally, and
-hovering the Gold Rush tile lists exactly which items came from a node here.
+Gold Rush repeats one item until the node runs out, and Motherlode, which can
+only fire at a node Gold Rush has already hit, upgrades that item a tier for
+the rest of it. Those extra items are real but they are not a fair sample of
+what the zone drops, so **Count Gold Rush/Motherlode Drops** in Settings
+decides whether they count towards your drop percentages. It is on by default,
+and flipping it moves every repeat you have ever recorded in or out of your
+rates at once. Either way they are always in your Spoils tally, and hovering
+either tile lists exactly which items came from a node here.
+
+**Each Mining zone shows what its nodes give.** The Gold Rush tile names the
+ore the node repeats and the Motherlode tile the ore it upgrades to, in gold;
+on the Mining tab the same two names follow the rates. In the drop grid those
+two ores carry a gold corner on their icon — worth a look when one of them
+reads `Locked`, since Motherlode can hand out ore your skill would not. While
+Count Gold Rush/Motherlode Drops is on, their percentages draw in gold too,
+because node repeats are in the figure.
 
 HELMdiel follows the node itself rather than guessing from the item name, so
 moving to another vein ends the run even if it gives the same ore.
@@ -252,7 +263,7 @@ Hover any control for a one-line explanation.
 |---|---|
 | Font | Segoe UI, Consolas, Arial, Tahoma or Trebuchet MS |
 | Home Detail | Full, Normal (no item list) or Compact (skill and fatigue only) |
-| Count Gold Rush Drops | On by default. Off keeps a Gold Rush node's repeats out of your drop rates |
+| Count Gold Rush/Motherlode Drops | On by default. Off keeps a node's Gold Rush and Motherlode repeats out of your drop rates |
 | Item Icons | Item art beside each drop. On by default |
 | Large Item Size | Off gives smaller item art, and smaller item text with it |
 | 2 Column Style | Two items to a row. Off packs three across |
