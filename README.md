@@ -6,7 +6,7 @@ Per-zone fatigue counters, skill levels read from your own skill-up messages,
 drop logging with icons and rarity tiers, a session tally with gil, and CSV
 export.
 
-Ashita v4.30+ addon. Version 0.21.0. Released under GPL-3.0. Coded with help
+Ashita v4.30+ addon. Version 0.22.0. Released under GPL-3.0. Coded with help
 from Claude Opus 5.
 
 ## Screenshots
@@ -126,11 +126,20 @@ was never going to give you one. Everything else about those swings still
 counts — the items, the drop rates, the fatigue.
 
 **The tiles after it are that activity's special skills**, one each — Mining
-gets four, wrapped onto two rows, and Logging none. **Hover one** for the
-ability's full name and the numbers behind its rate. Most count against the
-Items Collected figure beside them; Practiced Technique counts against the
-pickaxes that broke or would have, since it fires instead of a break. The
-activity tabs carry the same rates inside each zone's foldout.
+gets four, wrapped onto two rows. **Hover one** for the ability's full name
+and the numbers behind its rate. Most count against the Items Collected figure
+beside them; Practiced Technique counts against the pickaxes that broke or
+would have, since it fires instead of a break. The activity tabs carry the
+same rates inside each zone's foldout.
+
+**Logging's tile is Rotting Timber**, which is not a skill but is tracked like
+one: `Rotting timber splinters and falls apart in your hands` takes the swing
+and the fatigue and gives nothing, so it is read as an item lost. Each one
+counts towards Items Collected, so every drop rate in a Logging zone is a
+share of what the swings took including the rotten ones, and the tile shows
+the rotten share. The grid draws no cell for it; the export carries it as a
+`Rotting Timber` row and a `Rotting Rate` column, and Spoils lists how many
+were lost, at no gil.
 
 These rates divide into your whole drop history rather than this session, since
 a session is far too small a sample to measure an ability that fires a few
@@ -205,7 +214,8 @@ ITEM                   AMOUNT      GIL
 ```
 
 No rarity, just what you are carrying home. It survives reloading and logging
-out.
+out. Past twenty items the list scrolls rather than growing the window; the
+headings and the broken-tool rows stay put either way.
 
 **Hover Gil/hr** for what it is made of and how long you have been at it:
 

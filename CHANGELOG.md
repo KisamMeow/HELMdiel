@@ -19,6 +19,35 @@ If you notice any items being listed twice but spelt differently then type
 
 ## [Unreleased]
 
+## [0.22.0] - 2026-09-20
+
+### Added
+
+- **A Rotting Timber tile for Logging**, with its rate on Home and on the
+  Logging tab, and a `Rotting Rate` column in the export. Each one counts as
+  a lost item towards Items Collected, so a zone's drop rates are shares of
+  everything the swings took, rotten included. Spoils lists how many were
+  lost, at no gil.
+
+### Changed
+
+- **Spoils scrolls past twenty items** instead of growing the window. The
+  headings and the tool rows stay in place.
+
+### Fixed
+
+- **Maze of Shakhrami does not drop Bone Chip or Chicken Bone.** Both were
+  listed from the wiki and neither has turned up in play.
+- **Arrapago Reef's Rock Salt was listed under a second spelling**, `Chunk of
+  Rock Salt`, which gave it two rows in the price editor.
+- **Giddeus's Phoenix Feather needs harvesting 40**, not 30, and **Shall Shell
+  in Korroloka Tunnel, Cactus Stems and Antlion Jaw in Attohwa Chasm are not
+  gated** — all three were listed at a level.
+- **Every Gold Rush and Motherlode ore is on its zone's drop list**, so the
+  grid shows it. Eight were missing — Gold, Platinum, Darksteel, Adaman and
+  Orichalcum Ore across six zones — and go in without a skill level until one
+  is known.
+
 ## [0.21.0] - 2026-09-15
 
 ### Added
@@ -773,7 +802,8 @@ Initial public release.
 - The rule that a gather decays *all* other zones for that activity was
   inferred from a two-zone observation.
 
-[Unreleased]: https://github.com/KisamMeow/HELMdiel/compare/v0.21.0...HEAD
+[Unreleased]: https://github.com/KisamMeow/HELMdiel/compare/v0.22.0...HEAD
+[0.22.0]: https://github.com/KisamMeow/HELMdiel/compare/v0.21.0...v0.22.0
 [0.21.0]: https://github.com/KisamMeow/HELMdiel/compare/v0.20.0...v0.21.0
 [0.20.0]: https://github.com/KisamMeow/HELMdiel/compare/v0.19.0...v0.20.0
 [0.19.0]: https://github.com/KisamMeow/HELMdiel/compare/v0.18.0...v0.19.0

@@ -176,6 +176,10 @@ data.COLOR_LOCKED   = { 0.45, 0.45, 0.48, 1.00 };
 
 -- Spoils column headings
 data.SPOILS_HEADERS = T{ 'ITEM', 'AMOUNT', 'GIL' };
+data.SPOILS_SCROLL_AFTER = 20;
+data.SPOILS_ICON_GAP     = 8.0;
+data.SCROLLBAR_WIDTH     = 14.0;
+data.WINDOW_PADDING      = 8.0;
 
 -- Known drops you have not collected
 data.TIER_UNSEEN = { rank = 6, name = 'Not seen', color = data.COLOR_LOCKED };
@@ -317,7 +321,7 @@ data.ZONE_ITEMS = T{
             { name = 'Honey' },
             { name = 'King Locust' },
             { name = 'Moko Grass' },
-            { name = 'Phoenix Feather', skill = 30 },
+            { name = 'Phoenix Feather', skill = 40 },
             { name = 'Red Moko Grass', skill = 10 },
             { name = 'Saruta Cotton' },
             { name = 'Spider Web', skill = 30 },
@@ -327,10 +331,10 @@ data.ZONE_ITEMS = T{
     },
     Excavation = T{
         [7] = T{
-            { name = 'Antlion Jaw', skill = 20 },
+            { name = 'Antlion Jaw' },
             { name = 'Bat Fang' },
             { name = 'Bone Chip' },
-            { name = 'Cactus Stems', skill = 20 },
+            { name = 'Cactus Stems' },
             { name = 'Chicken Bone' },
             { name = 'Emerald', skill = 40 },
             { name = 'Green Rock', skill = 10 },
@@ -342,7 +346,6 @@ data.ZONE_ITEMS = T{
             { name = 'Aquamarine', skill = 30 },
             { name = 'Black Pearl' },
             { name = 'Bone Chip' },
-            { name = 'Chunk of Rock Salt' },
             { name = 'Coral Fragment' },
             { name = 'Crab Shell' },
             { name = 'Gold Ingot', skill = 40 },
@@ -353,6 +356,7 @@ data.ZONE_ITEMS = T{
             { name = 'Oxblood', skill = 30 },
             { name = 'Pearl' },
             { name = 'Pebble' },
+            { name = 'Rock Salt' },
             { name = 'Shall Shell' },
             { name = 'Soulflayer Robe', skill = 40 },
             { name = 'Turquoise' },
@@ -385,15 +389,13 @@ data.ZONE_ITEMS = T{
             { name = 'Pearl', skill = 40 },
             { name = 'Rock Salt' },
             { name = 'Seashell' },
-            { name = 'Shall Shell', skill = 10 },
+            { name = 'Shall Shell' },
             { name = 'Shell Bug' },
         },
         [198] = T{
             { name = 'Bat Fang' },
             { name = 'Beetle Jaw' },
             { name = 'Beetle Shell' },
-            { name = 'Bone Chip' },
-            { name = 'Chicken Bone' },
             { name = 'Giant Femur' },
             { name = 'Petrified Log', skill = 20 },
             { name = 'Purple Rock', skill = 10 },
@@ -536,22 +538,27 @@ data.ZONE_ITEMS = T{
             { name = 'Moblin Helm' },
             { name = 'Moblin Mail' },
             { name = 'Mythril Ore', skill = 10 },
+            { name = 'Platinum Ore' },
             { name = 'Silver Ore' },
             { name = 'Tin Ore' },
             { name = 'Zinc Ore' },
         },
         [12] = T{
             { name = 'Copper Ore' },
+            { name = 'Gold Ore' },
             { name = 'Igneous Rock' },
             { name = 'Iron Ore' },
             { name = 'Mythril Ore' },
+            { name = 'Platinum Ore' },
             { name = 'Red Rock' },
             { name = 'Silver Ore' },
             { name = 'Tin Ore' },
             { name = 'Zinc Ore' },
         },
         [61] = T{
+            { name = 'Adaman Ore' },
             { name = 'Bomb Ash' },
+            { name = 'Darksteel Ore' },
             { name = 'Demon Horn' },
             { name = 'Flint Stone' },
             { name = 'Iron Ore' },
@@ -574,6 +581,8 @@ data.ZONE_ITEMS = T{
             { name = 'Moblin Helm' },
             { name = 'Moblin Mail' },
             { name = 'Moblin Mask' },
+            { name = 'Orichalcum Ore' },
+            { name = 'Platinum Ore' },
             { name = 'Sulfur' },
             { name = 'Troll Pauldron' },
             { name = 'Troll Vambrace' },
@@ -593,6 +602,7 @@ data.ZONE_ITEMS = T{
         [143] = T{
             { name = 'Black Rock' },
             { name = 'Copper Ore' },
+            { name = 'Gold Ore' },
             { name = 'Iron Ore' },
             { name = 'Mythril Ore', skill = 10 },
             { name = 'Painite', skill = 20 },
@@ -622,8 +632,10 @@ data.ZONE_ITEMS = T{
             { name = 'Zinc Ore' },
         },
         [205] = T{
+            { name = 'Adaman Ore' },
             { name = 'Bomb Arm' },
             { name = 'Bomb Ash' },
+            { name = 'Darksteel Ore' },
             { name = 'Flint Stone' },
             { name = 'Iron Ore' },
             { name = 'Iron Sand' },
@@ -708,11 +720,13 @@ data.FAILURE_PATTERNS = T{
 data.BARREN_PATTERNS = T{
     Harvesting = T{},
     Excavation = T{},
-    Logging    = T{ 'Rotting timber splinters' },
+    Logging    = T{},
     Mining     = T{},
 };
 
--- Special skills, counted when they fire. Logging's are not known yet.
+-- Special skills, counted when they fire. Logging's are not known yet;
+-- Rotting Timber is not one, but it is tracked as one and also counted as
+-- a lost item in the drop list, since it is the swing that took the item.
 data.PROC_ABILITIES = T{
     Harvesting = T{
         { name = "Gatherer's Discipline", short = 'DISCIPLINE',
@@ -722,7 +736,11 @@ data.PROC_ABILITIES = T{
         { name = 'Practiced Technique',   short = 'TECHNIQUE',
           pattern = 'practiced technique preserves', basis = 'breaks' },
     },
-    Logging    = T{},
+    Logging    = T{
+        { name = 'Rotting Timber', short = 'ROTTING',
+          pattern = 'Rotting timber splinters', basis = 'successes',
+          barren = true },
+    },
     Mining     = T{
         { name = 'Gold Rush',  short = 'GOLD RUSH',
           pattern = 'Gold Rush!', basis = 'successes', repeats = true,
@@ -843,14 +861,11 @@ data.LEGACY_ITEMS = T{
         'Petrified Log',
     },
     Mining     = T{
-        'Adaman Ore',
         'Aluminum Ore',
         'Green Rock',
         'Khroma Ore',
         'Luminium Ore',
         'Mine Gravel',
-        'Orichalcum Ore',
-        'Platinum Ore',
         'Plumbago',
         'Yellow Rock',
     },
@@ -864,20 +879,27 @@ data.NPC_PRICES = T{
     -- Shared
     ['Beehive Chip']     = 11,
     ['Grain Seeds']      = 77,
+    ['Green Rock']       = 210,
     ['Pebble']           = 1,
     ['Red Rock']         = 205,
+    ['Vegetable Seeds']  = 77,
+    ['Yellow Rock']      = 205,
     -- Harvesting
+    ['Cattleya']         = 307,
+    ['Coral Fungus']     = 166,
     ['Crawler Cocoon']   = 34,
     ['Danceshroom']      = 656,
     ["Dyer's Woad"]      = 186,
     ['Flax Flower']      = 55,
     ['Fresh Marjoram']   = 1,
     ['Fresh Mugwort']    = 88,
+    ['Herb Seeds']       = 77,
     ['Honey']            = 33,
     ['Im. Tea Leaves']   = 4,
     ['King Locust']      = 210,
     ['King Truffle']     = 1537,
     ['Malboro Fiber']    = 5125,
+    ['Mistletoe']        = 482,
     ['Mohbwa Grass']     = 1,
     ['Moko Grass']       = 5,
     ['Mushrm. Locust']   = 314,
@@ -886,13 +908,40 @@ data.NPC_PRICES = T{
     ['Phoenix Feather']  = 1599,
     ['Puffball']         = 309,
     ['Red Moko Grass']   = 33,
+    ['Reishi Mushroom']  = 1281,
     ['Saruta Cotton']    = 16,
     ['Scream Fungus']    = 208,
+    ['Skull Locust']     = 106,
     ['Sleepshroom']      = 27,
     ['Spider Web']       = 676,
     ['Toad Oil']         = 615,
+    ['Wild Onion']       = 85,
+    ['Win. Tea Leaves']  = 4,
     ['Woozyshroom']      = 247,
     -- Excavation
+    ['Antlion Jaw']      = 2808,
+    ['Bat Fang']         = 8,
+    ['Beetle Jaw']       = 133,
+    ['Beetle Shell']     = 69,
+    ['Blue Rock']        = 205,
+    ['Bone Chip']        = 20,
+    ['Cactus Stems']     = 531,
+    ['Chicken Bone']     = 11,
+    ['Crab Shell']       = 392,
+    ['Fish Scales']      = 26,
+    ['Giant Femur']      = 208,
+    ['H.Q. Scp. Shell']  = 3505,
+    ['Helmet Mole']      = 731,
+    ['Lugworm']          = 1,
+    ['Purple Rock']      = 206,
+    ['Rock Salt']        = 4,
+    ['Scorpion Claw']    = 279,
+    ['Scorpion Shell']   = 423,
+    ['Seashell']         = 33,
+    ['Shall Shell']      = 307,
+    ['Shell Bug']        = 18,
+    ['Silica']           = 264,
+    ['Turtle Shell']     = 1254,
     -- Logging
     ['Acorn']            = 2,
     ['Almond']           = 38,
@@ -966,6 +1015,8 @@ data.SKILL_CAPS    = T{};
 data.PROC_PATTERNS = T{};
 data.PROC_NAMES    = T{};
 data.PROC_REPEATS  = T{};
+data.PROC_SWINGS   = T{};
+data.BARREN_ITEM   = T{};
 data.REPEAT_ACTIVITIES = T{};
 data.EXPORT_PROCS  = T{};
 
@@ -980,6 +1031,11 @@ for _, activity in ipairs(data.ACTIVITIES) do
             if (data.REPEAT_ACTIVITIES[#data.REPEAT_ACTIVITIES] ~= activity) then
                 table.insert(data.REPEAT_ACTIVITIES, activity);
             end
+        end
+        if (ability.barren) then
+            data.PROC_SWINGS[ability.name] = true;
+            data.BARREN_ITEM[activity]     = ability.name;
+            table.insert(data.BARREN_PATTERNS[activity], ability.pattern);
         end
 
         local column = ability.short:lower()

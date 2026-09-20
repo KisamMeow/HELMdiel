@@ -153,6 +153,8 @@ local BOX_SIZE   = { 0, 0 };
 local ART_SIZE   = { 0, 0 };
 local LINE_GAP   = { 0, 0 };
 local PRICE_BOX  = { 0, 0 };
+local SPOIL_BOX  = { 0, 0 };
+local spoils_floor = 0;
 
 local STYLE_COLORS;
 local STYLE_VARS;
@@ -945,37 +947,40 @@ local function render_item_list(log, total, charname, activity, zoneId, proven)
 
     local pair    = node_pair(activity, zoneId);
     local counted = pair ~= nil and store.count_repeats();
+    local lost    = data.BARREN_ITEM[activity];
 
     for itemName, count in pairs(log) do
-        local pct  = total > 0 and (count / total * 100) or 0;
-        local name = resources.item_name(itemName);
-        seen[name] = true;
+        if (itemName ~= lost) then
+            local pct  = total > 0 and (count / total * 100) or 0;
+            local name = resources.item_name(itemName);
+            seen[name] = true;
 
-        local label = ('%.1f%%'):fmt(pct);
+            local label = ('%.1f%%'):fmt(pct);
 
-        -- Each width into its own local first. Passing the calls straight to
-        -- math.max lets the second one expand to (width, height) and the line
-        -- height joins the comparison, which is a silently wrong column width
-        -- the moment a name and a label are both narrower than one line.
-        local name_w  = measure(name);
-        local label_w = measure(label);
-        local text_width = math.max(name_w, label_w);
+            -- Each width into its own local first. Passing the calls straight to
+            -- math.max lets the second one expand to (width, height) and the line
+            -- height joins the comparison, which is a silently wrong column width
+            -- the moment a name and a label are both narrower than one line.
+            local name_w  = measure(name);
+            local label_w = measure(label);
+            local text_width = math.max(name_w, label_w);
 
-        if (text_width > widest) then widest = text_width; end
+            if (text_width > widest) then widest = text_width; end
 
-        count_n = count_n + 1;
-        local slot = pooled(SLOTS, count_n);
-        slot.name   = name;
-        slot.count  = count;
-        slot.label  = label;
-        slot.text_w = text_width;
-        slot.tier   = get_rarity_tier(pct);
-        slot.needs  = nil;
-        slot.muted  = false;
-        slot.node   = node_half(pair, name);
-        slot.gilt   = counted and slot.node ~= nil;
-        slot.icon   = show_icons and icons.texture(resources.item_id(itemName)) or nil;
-        items[count_n] = slot;
+            count_n = count_n + 1;
+            local slot = pooled(SLOTS, count_n);
+            slot.name   = name;
+            slot.count  = count;
+            slot.label  = label;
+            slot.text_w = text_width;
+            slot.tier   = get_rarity_tier(pct);
+            slot.needs  = nil;
+            slot.muted  = false;
+            slot.node   = node_half(pair, name);
+            slot.gilt   = counted and slot.node ~= nil;
+            slot.icon   = show_icons and icons.texture(resources.item_id(itemName)) or nil;
+            items[count_n] = slot;
+        end
     end
 
     for _, entry in ipairs(known) do
@@ -1339,6 +1344,7 @@ local function render_spoils(charname)
 
     local spoils     = store.get_spoils(charname);
     local show_icons = store.item_icons();
+    local left       = imgui.GetCursorScreenPos();
 
     imgui.Spacing();
 
@@ -1357,6 +1363,7 @@ local function render_spoils(charname)
         slot.count  = count;
         slot.name_w = measure(slot.name);
         slot.profit = count * store.price_of(itemName);
+        slot.gil    = gil(slot.profit);
         slot.vendor = store.is_vendor(itemName);
         slot.tally  = ('x%d'):fmt(count);
         slot.tally_w = measure(slot.tally);
@@ -1401,6 +1408,7 @@ local function render_spoils(charname)
         local slot = tools[index];
         slot.tally   = ('x%d'):fmt(slot.count);
         slot.tally_w = measure(slot.tally);
+        slot.gil     = gil(-slot.cost);
         if (slot.name_w > widest)   then widest  = slot.name_w; end
         if (slot.tally_w > widestc) then widestc = slot.tally_w; end
     end
@@ -1445,7 +1453,7 @@ local function render_spoils(charname)
 
         if (show_icons) then
             imgui.Dummy(SPOIL_ICON);
-            imgui.SameLine();
+            imgui.SameLine(0, px(data.SPOILS_ICON_GAP));
         end
         imgui.TextColored(data.COLOR_CAPTION, head[1]);
         imgui.SameLine(0, widest - head1 + px(data.CELL_GUTTER));
@@ -1459,6 +1467,29 @@ local function render_spoils(charname)
             empty('Every item here is marked Vendor.');
         end
 
+        local scroll = shown > data.SPOILS_SCROLL_AFTER;
+        if (scroll) then
+            local widestg = 0;
+            for _, item in ipairs(items) do
+                if (not item.hidden) then
+                    local w = measure(item.gil);
+                    if (w > widestg) then widestg = w; end
+                end
+            end
+
+            local pitch = imgui.GetTextLineHeightWithSpacing();
+            local line  = imgui.GetTextLineHeight();
+            if (SPOIL_ICON[2] > line) then pitch = pitch + SPOIL_ICON[2] - line; end
+
+            local columns = (show_icons and (SPOIL_ICON[1] + px(data.SPOILS_ICON_GAP)) or 0)
+                          + widest + widestc + widestg + px(data.CELL_GUTTER) * 2
+                          + px(data.SCROLLBAR_WIDTH);
+            local narrowest = px(data.WINDOW_MIN_WIDTH) - px(data.WINDOW_PADDING) * 2;
+            SPOIL_BOX[1] = math.max(columns, spoils_floor, narrowest);
+            SPOIL_BOX[2] = pitch * data.SPOILS_SCROLL_AFTER;
+            imgui.BeginChild('##hhspoils', SPOIL_BOX, ImGuiChildFlags_None);
+        end
+
         for _, item in ipairs(items) do
             if (not item.hidden) then
                 if (show_icons) then
@@ -1468,7 +1499,7 @@ local function render_spoils(charname)
                     else
                         imgui.Dummy(SPOIL_ICON);
                     end
-                    imgui.SameLine();
+                    imgui.SameLine(0, px(data.SPOILS_ICON_GAP));
                 end
 
                 local ink = item.vendor and data.COLOR_LABEL or data.COLOR_VALUE;
@@ -1476,9 +1507,11 @@ local function render_spoils(charname)
                 imgui.SameLine(0, widest - item.name_w + px(data.CELL_GUTTER));
                 imgui.TextColored(ink, item.tally);
                 imgui.SameLine(0, widestc - item.tally_w + px(data.CELL_GUTTER));
-                imgui.TextColored(data.COLOR_SKILLUP, gil(item.profit));
+                imgui.TextColored(data.COLOR_SKILLUP, item.gil);
             end
         end
+
+        if (scroll) then imgui.EndChild(); end
 
         if (t > 0) then
             imgui.Spacing();
@@ -1493,14 +1526,14 @@ local function render_spoils(charname)
                     else
                         imgui.Dummy(SPOIL_ICON);
                     end
-                    imgui.SameLine();
+                    imgui.SameLine(0, px(data.SPOILS_ICON_GAP));
                 end
 
                 imgui.TextColored(data.COLOR_LABEL, tool.name);
                 imgui.SameLine(0, widest - tool.name_w + px(data.CELL_GUTTER));
                 imgui.TextColored(data.COLOR_LABEL, tool.tally);
                 imgui.SameLine(0, widestc - tool.tally_w + px(data.CELL_GUTTER));
-                imgui.TextColored(data.COLOR_COST, gil(-tool.cost));
+                imgui.TextColored(data.COLOR_COST, tool.gil);
             end
         end
     end
@@ -1522,6 +1555,7 @@ local function render_spoils(charname)
         store.reset_spoils();
     end
     hint('Clears only this tab.');
+    spoils_floor = imgui.GetItemRectMax() - left;
     imgui.Spacing();
 end
 
