@@ -11,11 +11,11 @@ from Claude Opus 5.
 
 ## Screenshots
 
-| Home | Harvesting |
+| Home | Logging |
 |:---:|:---:|
-| ![Home tab: the current zone's skill and fatigue bar, the Collected, Last Skill and special skill tiles, and the drop grid below them](docs/screenshots/home.png?v=3) | ![Harvesting tab: a fatigue bar per worked zone, then a foldout per zone showing its skill cap, its rates and its drops, ordered by cap](docs/screenshots/activity.png?v=4) |
+| ![Home tab: one section per activity tracked in this zone, each with its skill and fatigue bar, its Collected, Last Skill and special skill tiles, and its drop grid](docs/screenshots/home.png?v=4) | ![Logging tab: a fatigue bar for the worked zone, then a foldout per zone ordered by skill cap, two of them open on their items, skill up and Rotting rates, their gil a gather, and their drops](docs/screenshots/activity.png?v=5) |
 | **Spoils** | **Settings** |
-| ![Spoils tab: gil per hour and lifetime gil above the session tally, sorted by gil, with broken tools deducted at the foot](docs/screenshots/spoils.png?v=3) | ![Settings tab: the Display, Activities, Skill Levels, Tracking, Export and Reset blocks](docs/screenshots/settings.png?v=3) |
+| ![Spoils tab: gil per hour and lifetime gil above the session tally, sorted by gil, with broken tools deducted at the foot](docs/screenshots/spoils.png?v=4) | ![Settings tab: the Display, Activities, Skill Levels, Tracking, Export and Reset blocks](docs/screenshots/settings.png?v=4) |
 
 **Home** is the zone you are standing in; the **four activity tabs** —
 **Harv**, **Exca**, **Logg** and **Mine** — are every zone for one activity,
