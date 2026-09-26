@@ -6,7 +6,7 @@ Per-zone fatigue counters, skill levels read from your own skill-up messages,
 drop logging with icons and rarity tiers, a session tally with gil, and CSV
 export.
 
-Ashita v4.30+ addon. Version 0.23.2. Released under GPL-3.0. Coded with help
+Ashita v4.30+ addon. Version 0.24.0. Released under GPL-3.0. Coded with help
 from Claude Opus 5.
 
 ## Screenshots
@@ -197,8 +197,7 @@ of working it.
 
 **A zone needs 190 timed gathers before it shows an hourly figure**, which is
 one fatigue cap with room to spare. Until then `GIL/HR` reads `-`, and the
-hover counts you in: *Yhoator Jungle has timed 12 of the 190 gathers it needs
-for an hourly rate.*
+hover counts you in: *12 of 190 gathers timed here.*
 
 **190 rather than 200 because the first gather of every visit times nothing.**
 It opens an interval; the next one closes it. So a full 200-gather run gives
@@ -218,6 +217,27 @@ data to recover a rate from.
 **A zone with nothing priced shows neither**, since a missing price only means
 nobody has checked one yet. Prices are set with **Edit Prices** on the Spoils
 tab.
+
+**Time spent hunting for the next point counts against the rate**, because it
+is part of the hour. A zone where half your gathers come seconds apart but the
+gaps between clusters run minutes is worth less than one you work steadily, and
+the rate says so. Where that happens the hover adds the shape: *Half come
+within 20s. Long gaps take 64% of the time.*
+
+**Untick `Vendor` beside a price** where the number you entered is what the
+auction house pays rather than what a vendor does. Every item starts ticked.
+The rate still counts everything, but the hover then names the **vendor
+floor** underneath it: what the same hour is worth if you sell only to NPCs
+and wait for nothing.
+
+**That box also decides what `Hide Vendor Items` hides**, so on a fresh file
+it hides everything. Untick the few items you sell yourself and the filter
+becomes a way to see only those.
+
+**Hover `PER GATHER` for what a full run is worth** — your gil a gather across
+that zone's whole fatigue ceiling, which rises as you outskill it. That is the
+figure to plan a trip around; the hourly rate only describes the time you are
+actually there.
 
 ### Drops
 

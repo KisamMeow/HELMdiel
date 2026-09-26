@@ -793,14 +793,14 @@ data.CHARACTER_KEYS = T{ 'fatigue', 'fatigued', 'item_log', 'skill',
                          'skillups', 'attempts', 'successes', 'spoils',
                          'since_skillup', 'procs', 'breaks', 'goldrush',
                          'session_goldrush', 'tool_breaks', 'lifetime',
-                         'session_log', 'zone_time', 'zone_timed' };
+                         'session_log', 'zone_time', 'zone_timed',
+                         'zone_bucket', 'zone_bucket_time' };
 data.SESSION_KEYS   = T{ 'skillups', 'attempts', 'successes', 'spoils',
                          'since_skillup', 'tool_breaks', 'session_log',
                          'session_goldrush' };
 data.SPOILS_KEYS    = T{ 'spoils', 'tool_breaks', 'session_log',
                          'session_goldrush' };
-data.SESSION_CLOCK  = T{ 'session_start', 'session_last', 'session_active',
-                         'session_zone' };
+data.SESSION_CLOCK  = T{ 'session_last', 'session_active', 'session_zone' };
 
 data.SECONDS_PER_HOUR = 3600;
 
@@ -818,6 +818,18 @@ data.SESSION_IDLE_CUTOFF = 720;
 -- could never qualify on one fatigue run, which is the unit the whole addon
 -- is built around.
 data.PACE_MIN = 190;
+
+-- Upper edges, in seconds, of the buckets a timed interval is counted into.
+-- A mean over a bare sum cannot tell a steady rhythm from a fast one broken by
+-- a few long node hunts, and the two say very different things about a zone.
+-- Counting into buckets costs seven integers a zone and makes the median
+-- reachable. The last edge is SESSION_IDLE_CUTOFF: nothing longer is timed.
+data.PACE_BUCKETS = T{ 10, 20, 40, 90, 180, 360, 720 };
+
+-- Below this share of the elapsed time in the slower gaps, a zone is steady
+-- enough that the rate speaks for itself and the spread line is noise. Half is
+-- the point where the mean stops describing what the gathering felt like.
+data.SPREAD_SHARE_MIN = 0.5;
 
 data.PROC_GAP        = 18.0;
 -- Within this many skill of a zone's cap and the chip goes green.
@@ -1010,6 +1022,17 @@ data.NPC_PRICES = T{
 -- Drops the sell menu greys out. Kept apart from a price of 0, which would
 -- read as "an NPC pays nothing" rather than "no NPC buys it", and apart from
 -- an absent entry, which only says nobody has checked. Alphabetical.
+-- What a tool costs to replace, from the merchants that sell them. The mirror
+-- of NPC_PRICES and deliberately its own table: that one is what an NPC pays
+-- you, this is what you pay, and one table holding both directions would be
+-- read the wrong way round the first time anything consumed it. Keyed by the
+-- ACTIVITY_TOOLS name.
+data.TOOL_COSTS = T{
+    ['Hatchet'] = 450,
+    ['Pickaxe'] = 180,
+    ['Sickle']  = 400,
+};
+
 data.NPC_UNSELLABLE = T{
     'Goblin Die',
     'Moblin Armor',

@@ -57,6 +57,37 @@ itself once you have put a proper shift into each zone.
 
 ## [Unreleased]
 
+## [0.24.0] - 2026-09-26
+
+### Added
+
+- **The `Vendor` box now also says what kind of price you typed**, and every
+  item starts ticked. Untick it where the price is an auction house one, and
+  a zone's hourly rate names the vendor floor underneath it — the part you
+  could carry to an NPC today without waiting for a sale.
+- **A zone's hover values a full fatigue run**, at its real ceiling rather
+  than a flat 200, so you can see what one trip there is worth before you
+  make it.
+- **The hover says how much of the zone is timed**, so a rate measured over
+  recent gathers against a much older drop history declares itself.
+
+### Changed
+
+- **Every hover is shorter.** Same facts, fewer words — the worst of them was
+  five lines and is now four. `GIL/HR` leads with the rate rather than the
+  per-gather figure, since that is what the label promises.
+- **The hover shows how bursty a zone is** where most of the time goes on the
+  gaps between clusters, rather than on gathering: *Half come within 20s. Long
+  gaps take 64% of the time.* The rate itself still counts that time, because
+  it is part of the hour.
+- **The rate warns when node repeats are left out of your drop counts**, which
+  makes it run a little high. Only on Mining zones where a node has actually
+  repeated, and only while the box is unticked.
+- **`Hide Vendor Items` now hides everything on a fresh file**, since every
+  item counts as vendor until you untick it. Untick the ones you sell
+  yourself and it becomes a way to show only those. Any Vendor marks from
+  before this version are ignored rather than guessed at.
+
 ## [0.23.2] - 2026-09-26
 
 ### Fixed
@@ -897,7 +928,8 @@ Initial public release.
 - The rule that a gather decays *all* other zones for that activity was
   inferred from a two-zone observation.
 
-[Unreleased]: https://github.com/KisamMeow/HELMdiel/compare/v0.23.2...HEAD
+[Unreleased]: https://github.com/KisamMeow/HELMdiel/compare/v0.24.0...HEAD
+[0.24.0]: https://github.com/KisamMeow/HELMdiel/compare/v0.23.2...v0.24.0
 [0.23.2]: https://github.com/KisamMeow/HELMdiel/compare/v0.23.1...v0.23.2
 [0.23.1]: https://github.com/KisamMeow/HELMdiel/compare/v0.23.0...v0.23.1
 [0.23.0]: https://github.com/KisamMeow/HELMdiel/compare/v0.22.0...v0.23.0

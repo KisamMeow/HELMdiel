@@ -637,15 +637,15 @@ local function repeat_note(charname, zoneId)
     for index = count + 1, #names do names[index] = nil; end
 
     if (count == 0) then
-        return 'Nothing has dropped from a Gold Rush node here yet.';
+        return 'Nothing has dropped from a node here yet.';
     end
 
     table.sort(names);
-    return ('From Gold Rush nodes here:\n%s\n\n%s'):fmt(
+    return ('From nodes here:\n%s\n\n%s'):fmt(
         table.concat(names, '\n', 1, count),
         store.count_repeats()
-            and 'These are counted in the rates above.'
-            or  'These are left out of the rates above.');
+            and 'Counted in the rates above.'
+            or  'Left out of the rates above.');
 end
 
 local function render_procs(charname, activity, zoneId, collected, tip)
@@ -1077,30 +1077,29 @@ local function stop_note(ability, charname, zoneId)
     local caps = data.SKILL_CAPS[ability.activity];
     local cap  = caps and caps[zoneId];
     if (cap == nil) then
-        return ('Reported to stop once you are within %d of a zone\'s skill cap.')
+        return ('Reported to stop within %d of a zone\'s skill cap.')
             :fmt(ability.stops_near);
     end
 
     local at    = cap - ability.stops_near;
     local skill = store.get_skill(charname, ability.activity);
     if (skill ~= nil and skill >= at) then
-        return ('Reported to stop within %d of a zone\'s cap, so it should '
-             .. 'already have stopped here at %d.'):fmt(ability.stops_near, at);
+        return ('Reported to stop at %d; you are past that.'):fmt(at);
     end
 
-    return ('Reported to stop within %d of a zone\'s cap, which is %d here.')
-        :fmt(ability.stops_near, at);
+    return ('Reported to stop at %d, within %d of the cap.')
+        :fmt(at, ability.stops_near);
 end
 
 local function proc_tip(ability, fired, outof, charname, zoneId)
     local head;
     if (outof <= 0) then
-        head = ('%s\nNothing here has given it a chance to fire yet.')
+        head = ('%s\nNothing has given it a chance to fire yet.')
             :fmt(ability.name);
     else
         local outof_what = ability.basis == 'breaks'
-            and 'tools that would have broken' or 'gathers here';
-        head = ('%s\n%d of %d %s, every session - %.1f%%')
+            and 'tools that would have broken' or 'gathers';
+        head = ('%s\n%d of %d %s, %.1f%% - every session')
             :fmt(ability.name, fired, outof, outof_what, fired / outof * 100);
     end
 
@@ -1122,21 +1121,20 @@ end
 -- The count is the denominator every drop rate under it is worked out from,
 -- which is the thing the bare number on the header never said.
 local function items_tip(total, zoneName)
-    return ('%d item%s gathered in %s. Every rate below is out of this.')
-        :fmt(total, total == 1 and '' or 's', zoneName);
+    return ('%d item%s here. Every rate below divides this.')
+        :fmt(total, total == 1 and '' or 's');
 end
 
 local function skillup_tip(ups, swings, cap_at, zoneName)
     if (cap_at ~= nil) then
-        return ('%s caps at %d. Swings here are not counted.')
-            :fmt(zoneName, cap_at);
+        return ('Caps at %d. Swings here are not counted.'):fmt(cap_at);
     end
 
     if (swings == 0) then
-        return ('Nothing swung in %s yet.'):fmt(zoneName);
+        return 'Nothing swung here yet.';
     end
 
-    return ('%d skill up%s in %d swing%s here, %.2f%%.'):fmt(
+    return ('%d skill up%s in %d swing%s, %.2f%%.'):fmt(
         ups, ups == 1 and '' or 's',
         swings, swings == 1 and '' or 's', ups / swings * 100);
 end
@@ -1311,7 +1309,7 @@ local function render_price_editor()
 
         if (item.legacy) then
             imgui.TextColored(data.COLOR_CAPTION, item.name);
-            hint('Listed on the wiki but never seen by this addon.');
+            hint('On the wiki, never seen by this addon.');
         else
             imgui.TextDisabled(item.name);
         end
@@ -1329,6 +1327,8 @@ local function render_price_editor()
                 if (checkbox('Vendor', store.is_vendor(item.key), item.id)) then
                     store.toggle_vendor(item.key);
                 end
+                hint('On: a vendor price. Off: an auction house one.\n'
+                  .. 'Zone rates name the vendor floor under them.');
             end
         end
     end
@@ -1346,20 +1346,18 @@ local function render_price_editor()
 end
 
 local function rate_tip(net, tools, span)
-    local head = ('%s Gil gathered this session, minus %s for broken tools.')
-        :fmt(gil(net + tools), gil(tools));
+    local head = ('%s Gil less %s of tools.'):fmt(gil(net + tools), gil(tools));
 
     if (span <= 0) then
-        return ('%s\nNet %s Gil. Not enough time between gathers to rate it yet.')
+        return ('%s\nNet %s Gil. Not enough time yet to rate it.')
             :fmt(head, gil(net));
     end
-    return ('%s\nNet %s Gil over %s of gathering.')
-        :fmt(head, gil(net), span_label(span));
+    return ('%s\nNet %s over %s.'):fmt(head, gil(net), span_label(span));
 end
 
 local function lifetime_tip()
-    return 'Everything this character has gathered, less tools broken.\n'
-        .. "Priced at today's prices, so it moves when you change one.";
+    return 'Everything gathered, less tools broken.\n'
+        .. "Today's prices, so it moves when you change one.";
 end
 
 local function render_spoils(charname)
@@ -1445,8 +1443,8 @@ local function render_spoils(charname)
         if (checkbox('Hide Vendor Items', hide)) then
             store.toggle_hide_vendor();
         end
-        hint('Keeps items you marked Vendor out of the list. They still count '
-          .. 'towards the total.');
+        hint('Hides Vendor items from the list. They still count towards '
+          .. 'the total.');
     end
 
     if (n > 0 or ever) then
@@ -1575,7 +1573,7 @@ local function render_spoils(charname)
     if (success_button('Export Session')) then
         actions.export_spoils();
     end
-    hint('Writes this tab to a spreadsheet: the tally, and the tools it cost.');
+    hint('Writes this tab to a spreadsheet, tools included.');
     imgui.SameLine(0, px(data.NAV_GAP));
     if (danger_button('Reset Session')) then
         store.reset_spoils();
@@ -1590,22 +1588,69 @@ end
 -- A zone's hourly figure comes from that zone's own clock or from nothing at
 -- all. While it is waiting, the hover counts it in rather than saying no:
 -- the number it is short of is the useful half.
-local function gil_hour_tip(each, pace, span, timed, zoneName)
-    if (pace == nil) then
-        return ('%s has timed %d of the %d gathers it needs for an hourly '
-             .. 'rate.\nThe clock runs between gathers here and stops when '
-             .. 'you leave.'):fmt(zoneName, timed, data.PACE_MIN);
-    end
-
-    return ('%s Gil a gather at %.0f gathers an hour, timed in %s.\n'
-         .. 'Over %s of gathering there.')
-        :fmt(gil(each), pace, zoneName, span_label(span));
+-- A repeat ticks the clock whatever the box says, but only reaches the drop
+-- log when it is ticked, so with it off the pace counts gathers the gil half
+-- does not. This reads the setting to explain itself, never to reinterpret a
+-- log -- the double-subtraction the migration forbids is arithmetic, not
+-- wording.
+local function repeat_caveat(charname, zoneId)
+    if (store.count_repeats()) then return nil; end
+    if (next(store.get_repeats(charname, zoneId)) == nil) then return nil; end
+    return 'Repeats not counted, so this reads high.';
 end
 
-local function gil_each_tip(gross, cost, total, zoneName)
-    return ('%s Gil from %d gather%s in %s, minus %s for broken tools.\n'
-         .. "Priced at today's prices, so it moves when you change one.")
-        :fmt(gil(gross), total, total == 1 and '' or 's', zoneName, gil(cost));
+-- The coverage line is the one that stops the era gap being silent: the gil
+-- half divides every gather ever made here, the pace covers only what the
+-- clock saw, and those are the same window today and drift apart later.
+-- The rate is a mean, which cannot say whether a zone is steady or comes in
+-- bursts. Only drawn where the slower gaps hold most of the time, which is
+-- exactly when the mean stops matching what the gathering felt like.
+local function spread_note(charname, activity, zoneId)
+    local typical, slow = store.zone_spread(charname, activity, zoneId);
+    if (typical == nil or slow < data.SPREAD_SHARE_MIN) then return nil; end
+
+    return ('Half come within %ds. Long gaps take %.0f%% of the time.')
+        :fmt(typical, slow * 100);
+end
+
+local function gil_hour_tip(each, floor, pace, span, timed, total,
+                            charname, activity, zoneId)
+    if (pace == nil) then
+        return ('%d of %d gathers timed here.\nThe clock runs between gathers '
+             .. 'and stops when you leave.'):fmt(timed, data.PACE_MIN);
+    end
+
+    -- The rate leads, because the rate is what the label promises.
+    local head = ('%.0f an hour, %s a gather, timed here.\n'
+               .. '%d of %d gathers timed, over %s.')
+        :fmt(pace, gil(each), timed, total, span_label(span));
+
+    -- Only when some of the value is priced at the auction house. A zone
+    -- priced entirely off vendors has one figure and should show one.
+    if (floor < each) then
+        head = ('%s\nVendor floor %s an hour.'):fmt(head, gil(floor * pace));
+    end
+
+    local spread = spread_note(charname, activity, zoneId);
+    if (spread ~= nil) then head = ('%s\n%s'):fmt(head, spread); end
+
+    local caveat = repeat_caveat(charname, zoneId);
+    if (caveat == nil) then return head; end
+    return ('%s\n%s'):fmt(head, caveat);
+end
+
+-- The last line answers what an hourly rate cannot: a zone closes at its
+-- fatigue ceiling, so what one full run there is worth is the figure a
+-- session is actually planned around. It needs no clock.
+local function gil_each_tip(gross, cost, total, charname, activity, zoneId)
+    local each = (gross - cost) / total;
+    local run  = store.fatigue_cap(charname, activity, zoneId);
+
+    return ('%s Gil over %d gather%s, less %s of tools.\n'
+         .. 'A full %d run is worth about %s.\n'
+         .. "Today's prices, so it moves when you change one.")
+        :fmt(gil(gross), total, total == 1 and '' or 's', gil(cost),
+             run, gil(each * run));
 end
 
 local function render_activity_tab(charname, activity)
@@ -1710,9 +1755,10 @@ local function render_activity_tab(charname, activity)
 
             -- A zone nothing is priced in says nothing rather than zero: a
             -- missing price only means nobody has checked one yet.
-            local gross, cost = store.zone_gil(charname, activity, zone.id);
+            local gross, cost, vendor = store.zone_gil(charname, activity, zone.id);
             if (gross > 0) then
-                local each = (gross - cost) / total;
+                local each  = (gross - cost) / total;
+                local floor = (vendor - cost) / total;
 
                 -- A zone's own clock or nothing. There is deliberately no
                 -- fallback to a character-wide pace: borrowing one is what
@@ -1720,10 +1766,11 @@ local function render_activity_tab(charname, activity)
                 local rate, span, timed = store.zone_pace(charname, activity, zone.id);
 
                 stat('GIL/HR', rate and gil(each * rate) or '-',
-                     gil_hour_tip, each, rate, span, timed, zone.name);
+                     gil_hour_tip, each, floor, rate, span, timed, total,
+                     charname, activity, zone.id);
                 imgui.SameLine(0, px(data.STAT_GAP));
                 stat('PER GATHER', gil(each), gil_each_tip,
-                     gross, cost, total, zone.name);
+                     gross, cost, total, charname, activity, zone.id);
             end
 
             -- A rule between the figures and the grid, so the strip reads as
@@ -1762,7 +1809,7 @@ local function render_settings(charname)
         store.set_font_index(fonted[1] + 1);
     end
     imgui.PopItemWidth();
-    hint('Typeface for the whole window. All of these ship with Windows.');
+    hint('Typeface for the window. All ship with Windows.');
 
     imgui.Spacing();
 
@@ -1773,8 +1820,8 @@ local function render_settings(charname)
         store.set_home_mode_index(homed[1] + 1);
     end
     imgui.PopItemWidth();
-    hint('Full shows everything. Normal drops the item list. '
-         .. 'Compact leaves only skill and fatigue.');
+    hint('Full: everything. Normal: no item list.\n'
+         .. 'Compact: skill and fatigue only.');
 
     imgui.Spacing();
 
@@ -1802,7 +1849,7 @@ local function render_settings(charname)
     if (checkbox('Group by Rarity', store.rarity_groups())) then
         store.toggle_rarity_groups();
     end
-    hint('Off: one run of items ordered by drop rate, with no gaps.');
+    hint('Off: one run ordered by drop rate, no gaps.');
 
     imgui.Spacing();
 
@@ -1862,8 +1909,8 @@ local function render_settings(charname)
     if (checkbox('Count Gold Rush/Motherlode Drops', store.count_repeats())) then
         store.toggle_count_repeats();
     end
-    hint('Gold Rush makes a node repeat one item and Motherlode upgrades it. '
-         .. 'Off keeps those repeats out of your drop rates.');
+    hint('Gold Rush repeats an item, Motherlode upgrades it.\n'
+         .. 'Off keeps repeats out of your drop rates.');
 
     imgui.Spacing();
 
@@ -1877,7 +1924,7 @@ local function render_settings(charname)
     if (checkbox('Auto-Show Activity', store.auto_show())) then
         store.toggle_auto_show();
     end
-    hint('Brings a hidden activity back the first time you gather one.');
+    hint('Brings a hidden activity back when you gather one.');
 
     imgui.Spacing();
 
@@ -1912,7 +1959,7 @@ local function render_settings(charname)
     if (danger_button('Reset All Data')) then
         actions.reset_all();
     end
-    hint('Clears everything for this character except skill levels.');
+    hint('Clears everything for this character but skill levels.');
     imgui.Spacing();
 end
 
