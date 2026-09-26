@@ -6,7 +6,7 @@ Per-zone fatigue counters, skill levels read from your own skill-up messages,
 drop logging with icons and rarity tiers, a session tally with gil, and CSV
 export.
 
-Ashita v4.30+ addon. Version 0.22.0. Released under GPL-3.0. Coded with help
+Ashita v4.30+ addon. Version 0.23.0. Released under GPL-3.0. Coded with help
 from Claude Opus 5.
 
 ## Screenshots
@@ -168,6 +168,34 @@ because node repeats are in the figure.
 
 HELMdiel follows the node itself rather than guessing from the item name, so
 moving to another vein ends the run even if it gives the same ore.
+
+### What a zone earns
+
+**Each zone's foldout on an activity tab carries two gil figures.** `PER
+GATHER` is everything you have ever gathered there at today's prices, less the
+tools that broke in that zone, divided by its gathers. `GIL/HR` is that figure
+at the pace you gather it.
+
+**Each zone times itself.** The clock counts the gap between two gathers in the
+same zone, so a zone's hourly figure is measured where you earned it and does
+not move while you gather anywhere else. It stops when you leave, when you
+change tools, and after fifteen minutes idle, and the run between two zones is
+charged to neither — nothing records when you arrived. **Hover either figure**
+for the numbers behind it, including how long the zone has been timed.
+
+**A zone needs 200 timed gathers before it uses its own pace**, which is a
+fatigue cap's worth — a proper shift in that zone rather than a handful of
+swings. Until then it borrows your overall pace, which does move as you gather
+elsewhere. The hover says which of the two you are reading.
+
+**Nothing you gathered before this version is timed**, so every zone starts on
+the borrowed pace however long you have been playing — there is no *when* in
+the old data to recover one from. `PER GATHER` is measured from the start and
+is the figure to compare zones with until each has timed 200 of its own.
+
+**A zone with nothing priced shows neither**, since a missing price only means
+nobody has checked one yet. Prices are set with **Edit Prices** on the Spoils
+tab.
 
 ### Drops
 

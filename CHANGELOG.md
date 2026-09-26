@@ -5,19 +5,70 @@ All notable changes to HELMdiel are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Where this stands
+## Read this before you trust the Gil/hr inside a zone's foldout
 
-I generally consider this feature complete at this point. I have most of the
-logic in for the things I personally wanted out of this addon. What I really
-need now is just a lot of data, specifically what items drop in what zones,
-what items are locked behind skill levels. This project will remain in pre 1.0
-until I gather most of this data. Most releases going forward will be minor in
-scope including any bugs I find.
+> [!WARNING]
+> **This is about the new `GIL/HR` inside each zone's foldout on an activity
+> tab — not the Gil/hr tile on Spoils, which is unchanged and still correct.**
+> If you were already using HELMdiel, every *zone's* `GIL/HR` is wrong on the
+> day you update, and it stays wrong until you work that zone again. Nothing
+> is broken: the figure needs a clock that did not exist until this release,
+> and no amount of past data can supply it.
 
-If you notice any items being listed twice but spelt differently then type
-`/helmdiel names` and you can send me a screenshot of that in Discord.
+**Which number this is about.** Open an activity tab, open a zone, and the new
+line under its skills reads `GIL/HR` and `PER GATHER`. Spoils' own Gil/hr tile
+answers a different question — what this *session* has paid an hour, across
+every zone — and it has had a working clock since 0.11.0. Nothing below applies
+to it.
+
+**Your drop history has no timing in it.** HELMdiel has always recorded *what*
+you gathered and *where*, never *when*, so there is nothing to reconstruct a
+per-zone rate from. A zone with ten thousand recorded gathers starts with zero
+recorded seconds, the same as a zone you have never set foot in.
+
+**So a zone borrows your overall pace until it has timed 200 of its own
+gathers**, a full fatigue cap's worth. A borrowed rate moves when you gather
+*anywhere* — cut logs in Yhoator and the number sitting on Attohwa Chasm will
+shift, because it is being read at a pace those logs just changed. That is the
+reading being borrowed, not a bug.
+
+**Hover the figure to see which of the three readings you are on:**
+
+| The hover says | What it means |
+|---|---|
+| `timed in <zone>` | Measured there, over the span it names. Trust it. |
+| `your pace everywhere` | Borrowed. It will move as you gather elsewhere. |
+| `Nothing timed yet` | No clock at all; the rate shows `-`. |
+
+**`PER GATHER` is right immediately and `GIL/HR` is not.** The gil half is
+measured from the day you install — your log, your prices, your broken tools.
+Only the conversion into an hour ever needed a clock. If you want one number to
+compare zones with today, that is the one.
+
+**Both figures are only as good as the prices you have entered**, under
+`Edit Prices` on the Spoils tab. A zone with nothing priced shows neither
+figure rather than showing zero, because a missing price only means nobody has
+checked one yet.
+
+**Do not reset anything to fix this.** `Reset All Data` would clear the drop
+history that makes the figure worth having, to correct something that corrects
+itself once you have put a proper shift into each zone.
 
 ## [Unreleased]
+
+## [0.23.0] - 2026-09-25
+
+### Added
+
+- **What a zone earns, inside its foldout on an activity tab.** `PER GATHER`
+  is its whole drop history at today's prices, less the tools that broke
+  there; `GIL/HR` is that figure at the pace you gather it.
+- **Each zone now times itself**, so its hourly figure stops moving when you
+  gather somewhere else. The clock counts the gap between two gathers in the
+  same zone, pauses when you leave and past fifteen minutes idle, and a zone
+  falls back to your overall pace until 200 of its gathers are timed. The
+  hover says which reading you are looking at.
+- **Turtle Shell in Korroloka Tunnel.**
 
 ## [0.22.0] - 2026-09-20
 
@@ -802,7 +853,8 @@ Initial public release.
 - The rule that a gather decays *all* other zones for that activity was
   inferred from a two-zone observation.
 
-[Unreleased]: https://github.com/KisamMeow/HELMdiel/compare/v0.22.0...HEAD
+[Unreleased]: https://github.com/KisamMeow/HELMdiel/compare/v0.23.0...HEAD
+[0.23.0]: https://github.com/KisamMeow/HELMdiel/compare/v0.22.0...v0.23.0
 [0.22.0]: https://github.com/KisamMeow/HELMdiel/compare/v0.21.0...v0.22.0
 [0.21.0]: https://github.com/KisamMeow/HELMdiel/compare/v0.20.0...v0.21.0
 [0.20.0]: https://github.com/KisamMeow/HELMdiel/compare/v0.19.0...v0.20.0

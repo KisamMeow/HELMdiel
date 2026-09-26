@@ -519,9 +519,22 @@ function store.register_item_gather(activity, zoneId, itemName, repeated)
     local now  = os.time();
     local last = char.session_last;
     if (last ~= nil and (now - last) <= data.SESSION_IDLE_CUTOFF) then
-        char.session_active = (char.session_active or 0) + (now - last);
+        local gap = now - last;
+        char.session_active = (char.session_active or 0) + gap;
+
+        if (char.session_zone == key and char.session_activity == activity) then
+            local time = char.zone_time[activity] or T{};
+            char.zone_time[activity] = time;
+            time[key] = (time[key] or 0) + gap;
+
+            local timed = char.zone_timed[activity] or T{};
+            char.zone_timed[activity] = timed;
+            timed[key] = (timed[key] or 0) + 1;
+        end
     end
-    char.session_last = now;
+    char.session_last     = now;
+    char.session_zone     = key;
+    char.session_activity = activity;
 end
 
 function store.get_repeats(charname, zoneId)
@@ -563,6 +576,40 @@ function store.session_span(charname)
     local char = helm_settings.characters[charname];
     if (char == nil) then return 0; end
     return math.max(0, char.session_active or 0);
+end
+
+function store.zone_gil(charname, activity, zoneId)
+    local gross = 0;
+    for itemName, count in pairs(store.get_item_log(charname, activity, zoneId)) do
+        gross = gross + count * store.price_of(itemName);
+    end
+
+    local broke = store.get_breaks(charname, activity, zoneId);
+    return gross, broke * store.tool_price(activity);
+end
+
+function store.zone_pace(charname, activity, zoneId)
+    local seconds = read_zone(charname, 'zone_time',  activity, zoneId, 0);
+    local timed   = read_zone(charname, 'zone_timed', activity, zoneId, 0);
+    if (seconds <= 0 or timed < data.ZONE_PACE_MIN) then return nil; end
+
+    return timed * data.SECONDS_PER_HOUR / seconds, seconds;
+end
+
+function store.gather_pace(charname)
+    local char = helm_settings.characters[charname];
+    if (char == nil or char.spoils == nil) then return nil; end
+
+    local span = char.session_active or 0;
+    if (span <= 0) then return nil; end
+
+    local picked = 0;
+    for _, count in pairs(char.spoils) do
+        picked = picked + count;
+    end
+    if (picked == 0) then return nil; end
+
+    return picked * data.SECONDS_PER_HOUR / span;
 end
 
 -- Forget where the clock was, so the next gather opens a fresh interval and

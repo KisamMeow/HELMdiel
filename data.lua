@@ -391,6 +391,7 @@ data.ZONE_ITEMS = T{
             { name = 'Seashell' },
             { name = 'Shall Shell' },
             { name = 'Shell Bug' },
+            { name = 'Turtle Shell' },
         },
         [198] = T{
             { name = 'Bat Fang' },
@@ -792,13 +793,14 @@ data.CHARACTER_KEYS = T{ 'fatigue', 'fatigued', 'item_log', 'skill',
                          'skillups', 'attempts', 'successes', 'spoils',
                          'since_skillup', 'procs', 'breaks', 'goldrush',
                          'session_goldrush', 'tool_breaks', 'lifetime',
-                         'session_log' };
+                         'session_log', 'zone_time', 'zone_timed' };
 data.SESSION_KEYS   = T{ 'skillups', 'attempts', 'successes', 'spoils',
                          'since_skillup', 'tool_breaks', 'session_log',
                          'session_goldrush' };
 data.SPOILS_KEYS    = T{ 'spoils', 'tool_breaks', 'session_log',
                          'session_goldrush' };
-data.SESSION_CLOCK  = T{ 'session_start', 'session_last', 'session_active' };
+data.SESSION_CLOCK  = T{ 'session_start', 'session_last', 'session_active',
+                         'session_zone', 'session_activity' };
 
 data.SECONDS_PER_HOUR = 3600;
 
@@ -807,6 +809,11 @@ data.SECONDS_PER_HOUR = 3600;
 -- twenty, so a shorter cutoff throws away real gathering time, and a longer one
 -- starts counting being away from the keyboard.
 data.SESSION_IDLE_CUTOFF = 900;
+
+-- Timed gathers a zone needs before its own pace is trusted over the
+-- character's. One interval is a single gap and can say anything; a full
+-- fatigue cap's worth is a shift in that zone rather than a sample of one.
+data.ZONE_PACE_MIN = 200;
 
 data.PROC_GAP        = 18.0;
 -- Within this many skill of a zone's cap and the chip goes green.

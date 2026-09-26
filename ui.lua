@@ -1559,8 +1559,44 @@ local function render_spoils(charname)
     imgui.Spacing();
 end
 
+-- Both live down here rather than beside items_tip, because they call gil()
+-- and locals resolve in file order.
+-- Three readings, and the hover is the only place that can tell them apart: a
+-- pace timed in this zone, the character's pace standing in until there is
+-- one, and no clock at all.
+local function gil_hour_tip(each, pace, span, zoneName)
+    if (pace == nil) then
+        return ('Nothing timed yet, so %s has no hourly rate.\n'
+             .. 'The clock runs between gathers and stops when you leave.')
+            :fmt(zoneName);
+    end
+
+    if (span == nil) then
+        return ('%s Gil a gather at %.0f gathers an hour, your pace everywhere.\n'
+             .. 'Too little timed in %s yet to use its own, so this moves when '
+             .. 'you gather elsewhere.')
+            :fmt(gil(each), pace, zoneName);
+    end
+
+    return ('%s Gil a gather at %.0f gathers an hour, timed in %s.\n'
+         .. 'Over %s of gathering there.')
+        :fmt(gil(each), pace, zoneName, span_label(span));
+end
+
+local function gil_each_tip(gross, cost, total, zoneName)
+    return ('%s Gil from %d gather%s in %s, minus %s for broken tools.\n'
+         .. "Priced at today's prices, so it moves when you change one.")
+        :fmt(gil(gross), total, total == 1 and '' or 's', zoneName, gil(cost));
+end
+
 local function render_activity_tab(charname, activity)
     local zones = data.TRACKED_ZONES[activity];
+
+    -- The pace is character-wide, so it is the same answer for every zone on
+    -- the tab. Asked for at most once a frame, and only once a zone has
+    -- something to spend it on; false records that it was asked and there is
+    -- none, the same sentinel resources uses for a name with no item id.
+    local pace;
 
     render_skill_head(charname, activity);
     imgui.Spacing();
@@ -1658,6 +1694,29 @@ local function render_activity_tab(charname, activity)
             end
 
             render_procs(charname, activity, zone.id, total, proc_tip);
+
+            -- A zone nothing is priced in says nothing rather than zero: a
+            -- missing price only means nobody has checked one yet.
+            local gross, cost = store.zone_gil(charname, activity, zone.id);
+            if (gross > 0) then
+                local each = (gross - cost) / total;
+
+                -- The zone's own clock wins whenever it has one. The
+                -- character's is what a zone nobody has timed yet borrows,
+                -- and it is the reason such a zone's figure moves while you
+                -- gather somewhere else entirely.
+                local rate, span = store.zone_pace(charname, activity, zone.id);
+                if (rate == nil) then
+                    if (pace == nil) then pace = store.gather_pace(charname) or false; end
+                    rate = pace or nil;
+                end
+
+                stat('GIL/HR', rate and gil(each * rate) or '-',
+                     gil_hour_tip, each, rate, span, zone.name);
+                imgui.SameLine(0, px(data.STAT_GAP));
+                stat('PER GATHER', gil(each), gil_each_tip,
+                     gross, cost, total, zone.name);
+            end
 
             -- A rule between the figures and the grid, so the strip reads as
             -- belonging to the zone rather than to the items under it. Drawn
