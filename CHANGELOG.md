@@ -8,12 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Read this before you trust the Gil/hr inside a zone's foldout
 
 > [!WARNING]
-> **This is about the new `GIL/HR` inside each zone's foldout on an activity
-> tab — not the Gil/hr tile on Spoils, which is unchanged and still correct.**
-> If you were already using HELMdiel, every *zone's* `GIL/HR` is wrong on the
-> day you update, and it stays wrong until you work that zone again. Nothing
-> is broken: the figure needs a clock that did not exist until this release,
-> and no amount of past data can supply it.
+> **This is about the `GIL/HR` inside each zone's foldout on an activity tab
+> — not the Gil/hr tile on Spoils, which is unchanged and still correct.**
+> If you were already using HELMdiel, every *zone's* `GIL/HR` reads `-` when
+> you update, and keeps reading `-` until you have put 200 gathers into that
+> zone. Nothing is broken: the figure needs a clock that did not exist before
+> 0.23.0, and no amount of past data can supply it.
 
 **Which number this is about.** Open an activity tab, open a zone, and the new
 line under its skills reads `GIL/HR` and `PER GATHER`. Spoils' own Gil/hr tile
@@ -26,24 +26,23 @@ you gathered and *where*, never *when*, so there is nothing to reconstruct a
 per-zone rate from. A zone with ten thousand recorded gathers starts with zero
 recorded seconds, the same as a zone you have never set foot in.
 
-**So a zone borrows your overall pace until it has timed 200 of its own
-gathers**, a full fatigue cap's worth. A borrowed rate moves when you gather
-*anywhere* — cut logs in Yhoator and the number sitting on Attohwa Chasm will
-shift, because it is being read at a pace those logs just changed. That is the
-reading being borrowed, not a bug.
+**So every zone shows `-` until it has timed 200 gathers of its own**, a full
+fatigue cap's worth. Nothing is borrowed from how fast you gather elsewhere
+to fill the gap: a borrowed figure moves when you gather *anywhere* — cut logs
+in Yhoator and the number sitting on Attohwa Chasm shifts — which is the fault
+the whole per-zone clock exists to remove.
 
-**Hover the figure to see which of the three readings you are on:**
+**Hover the figure to see which of the two readings you are on:**
 
 | The hover says | What it means |
 |---|---|
 | `timed in <zone>` | Measured there, over the span it names. Trust it. |
-| `your pace everywhere` | Borrowed. It will move as you gather elsewhere. |
-| `Nothing timed yet` | No clock at all; the rate shows `-`. |
+| `has timed N of the 200 gathers it needs` | Still filling; the rate shows `-`. |
 
-**`PER GATHER` is right immediately and `GIL/HR` is not.** The gil half is
-measured from the day you install — your log, your prices, your broken tools.
-Only the conversion into an hour ever needed a clock. If you want one number to
-compare zones with today, that is the one.
+**`PER GATHER` is right immediately and `GIL/HR` is not there yet.** The gil
+half is measured from the day you install — your log, your prices, your broken
+tools. Only the conversion into an hour ever needed a clock. If you want one
+number to compare zones with today, that is the one.
 
 **Both figures are only as good as the prices you have entered**, under
 `Edit Prices` on the Spoils tab. A zone with nothing priced shows neither
@@ -56,6 +55,32 @@ itself once you have put a proper shift into each zone.
 
 ## [Unreleased]
 
+## [0.23.1] - 2026-09-26
+
+### Added
+
+- **Rotting Timber's hover says where it stops.** It is reported to stop
+  firing within 5 skill of a zone's cap, so the tooltip names that level for
+  the zone you are in, or says you are already past it. Reported from play
+  rather than confirmed, so nothing else acts on it.
+
+### Changed
+
+- **The idle cutoff is twelve minutes, down from fifteen.** A gap longer than
+  that between two gathers still counts as time away rather than time
+  gathering, so both Spoils' Gil/hr and every zone's own figure rise a little.
+- **A zone's `GIL/HR` comes from that zone's clock or from nothing.** It no
+  longer falls back to how fast you gather elsewhere, so it reads `-` until
+  the zone has timed 200 gathers of its own and the hover counts you in
+  towards them. A borrowed figure moved when you gathered in another zone,
+  which is the fault the per-zone clock exists to fix.
+
+### Fixed
+
+- **`GIL/HR` no longer quotes a rate built from two gathers after a reset.**
+  The fallback had no minimum at all: two gathers four seconds apart read as
+  1,800 an hour, and every zone on the tab was multiplied by it.
+
 ## [0.23.0] - 2026-09-25
 
 ### Added
@@ -65,7 +90,7 @@ itself once you have put a proper shift into each zone.
   there; `GIL/HR` is that figure at the pace you gather it.
 - **Each zone now times itself**, so its hourly figure stops moving when you
   gather somewhere else. The clock counts the gap between two gathers in the
-  same zone, pauses when you leave and past fifteen minutes idle, and a zone
+  same zone, pauses when you leave and past twelve minutes idle, and a zone
   falls back to your overall pace until 200 of its gathers are timed. The
   hover says which reading you are looking at.
 - **Turtle Shell in Korroloka Tunnel.**
@@ -853,7 +878,8 @@ Initial public release.
 - The rule that a gather decays *all* other zones for that activity was
   inferred from a two-zone observation.
 
-[Unreleased]: https://github.com/KisamMeow/HELMdiel/compare/v0.23.0...HEAD
+[Unreleased]: https://github.com/KisamMeow/HELMdiel/compare/v0.23.1...HEAD
+[0.23.1]: https://github.com/KisamMeow/HELMdiel/compare/v0.23.0...v0.23.1
 [0.23.0]: https://github.com/KisamMeow/HELMdiel/compare/v0.22.0...v0.23.0
 [0.22.0]: https://github.com/KisamMeow/HELMdiel/compare/v0.21.0...v0.22.0
 [0.21.0]: https://github.com/KisamMeow/HELMdiel/compare/v0.20.0...v0.21.0

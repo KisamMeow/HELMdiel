@@ -591,25 +591,9 @@ end
 function store.zone_pace(charname, activity, zoneId)
     local seconds = read_zone(charname, 'zone_time',  activity, zoneId, 0);
     local timed   = read_zone(charname, 'zone_timed', activity, zoneId, 0);
-    if (seconds <= 0 or timed < data.ZONE_PACE_MIN) then return nil; end
+    if (seconds <= 0 or timed < data.PACE_MIN) then return nil, seconds, timed; end
 
-    return timed * data.SECONDS_PER_HOUR / seconds, seconds;
-end
-
-function store.gather_pace(charname)
-    local char = helm_settings.characters[charname];
-    if (char == nil or char.spoils == nil) then return nil; end
-
-    local span = char.session_active or 0;
-    if (span <= 0) then return nil; end
-
-    local picked = 0;
-    for _, count in pairs(char.spoils) do
-        picked = picked + count;
-    end
-    if (picked == 0) then return nil; end
-
-    return picked * data.SECONDS_PER_HOUR / span;
+    return timed * data.SECONDS_PER_HOUR / seconds, seconds, timed;
 end
 
 -- Forget where the clock was, so the next gather opens a fresh interval and

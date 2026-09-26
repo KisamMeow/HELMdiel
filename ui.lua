@@ -1070,6 +1070,28 @@ local function zone_cap_label(charname, activity, zoneId)
 end
 
 
+-- Reported from play rather than confirmed, which is why the wording hedges
+-- and why nothing but this sentence acts on it: the line stops firing once
+-- your skill is within stops_near of the zone's own cap.
+local function stop_note(ability, charname, zoneId)
+    local caps = data.SKILL_CAPS[ability.activity];
+    local cap  = caps and caps[zoneId];
+    if (cap == nil) then
+        return ('Reported to stop once you are within %d of a zone\'s skill cap.')
+            :fmt(ability.stops_near);
+    end
+
+    local at    = cap - ability.stops_near;
+    local skill = store.get_skill(charname, ability.activity);
+    if (skill ~= nil and skill >= at) then
+        return ('Reported to stop within %d of a zone\'s cap, so it should '
+             .. 'already have stopped here at %d.'):fmt(ability.stops_near, at);
+    end
+
+    return ('Reported to stop within %d of a zone\'s cap, which is %d here.')
+        :fmt(ability.stops_near, at);
+end
+
 local function proc_tip(ability, fired, outof, charname, zoneId)
     local head;
     if (outof <= 0) then
@@ -1087,6 +1109,10 @@ local function proc_tip(ability, fired, outof, charname, zoneId)
         head = ('%s\n%s'):fmt(head, ability.node == 'lode'
             and ('Upgrades the node to %s.'):fmt(ore)
             or  ('The node repeats %s.'):fmt(ore));
+    end
+
+    if (ability.stops_near ~= nil) then
+        head = ('%s\n%s'):fmt(head, stop_note(ability, charname, zoneId));
     end
 
     if (not ability.repeats) then return head; end
@@ -1561,21 +1587,14 @@ end
 
 -- Both live down here rather than beside items_tip, because they call gil()
 -- and locals resolve in file order.
--- Three readings, and the hover is the only place that can tell them apart: a
--- pace timed in this zone, the character's pace standing in until there is
--- one, and no clock at all.
-local function gil_hour_tip(each, pace, span, zoneName)
+-- A zone's hourly figure comes from that zone's own clock or from nothing at
+-- all. While it is waiting, the hover counts it in rather than saying no:
+-- the number it is short of is the useful half.
+local function gil_hour_tip(each, pace, span, timed, zoneName)
     if (pace == nil) then
-        return ('Nothing timed yet, so %s has no hourly rate.\n'
-             .. 'The clock runs between gathers and stops when you leave.')
-            :fmt(zoneName);
-    end
-
-    if (span == nil) then
-        return ('%s Gil a gather at %.0f gathers an hour, your pace everywhere.\n'
-             .. 'Too little timed in %s yet to use its own, so this moves when '
-             .. 'you gather elsewhere.')
-            :fmt(gil(each), pace, zoneName);
+        return ('%s has timed %d of the %d gathers it needs for an hourly '
+             .. 'rate.\nThe clock runs between gathers here and stops when '
+             .. 'you leave.'):fmt(zoneName, timed, data.PACE_MIN);
     end
 
     return ('%s Gil a gather at %.0f gathers an hour, timed in %s.\n'
@@ -1591,12 +1610,6 @@ end
 
 local function render_activity_tab(charname, activity)
     local zones = data.TRACKED_ZONES[activity];
-
-    -- The pace is character-wide, so it is the same answer for every zone on
-    -- the tab. Asked for at most once a frame, and only once a zone has
-    -- something to spend it on; false records that it was asked and there is
-    -- none, the same sentinel resources uses for a name with no item id.
-    local pace;
 
     render_skill_head(charname, activity);
     imgui.Spacing();
@@ -1701,18 +1714,13 @@ local function render_activity_tab(charname, activity)
             if (gross > 0) then
                 local each = (gross - cost) / total;
 
-                -- The zone's own clock wins whenever it has one. The
-                -- character's is what a zone nobody has timed yet borrows,
-                -- and it is the reason such a zone's figure moves while you
-                -- gather somewhere else entirely.
-                local rate, span = store.zone_pace(charname, activity, zone.id);
-                if (rate == nil) then
-                    if (pace == nil) then pace = store.gather_pace(charname) or false; end
-                    rate = pace or nil;
-                end
+                -- A zone's own clock or nothing. There is deliberately no
+                -- fallback to a character-wide pace: borrowing one is what
+                -- made a zone's figure move while you gathered somewhere else.
+                local rate, span, timed = store.zone_pace(charname, activity, zone.id);
 
                 stat('GIL/HR', rate and gil(each * rate) or '-',
-                     gil_hour_tip, each, rate, span, zone.name);
+                     gil_hour_tip, each, rate, span, timed, zone.name);
                 imgui.SameLine(0, px(data.STAT_GAP));
                 stat('PER GATHER', gil(each), gil_each_tip,
                      gross, cost, total, zone.name);

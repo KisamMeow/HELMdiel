@@ -740,7 +740,7 @@ data.PROC_ABILITIES = T{
     Logging    = T{
         { name = 'Rotting Timber', short = 'ROTTING',
           pattern = 'Rotting timber splinters', basis = 'successes',
-          barren = true },
+          barren = true, stops_near = 5 },
     },
     Mining     = T{
         { name = 'Gold Rush',  short = 'GOLD RUSH',
@@ -805,15 +805,18 @@ data.SESSION_CLOCK  = T{ 'session_start', 'session_last', 'session_active',
 data.SECONDS_PER_HOUR = 3600;
 
 -- Longer than this between two gathers and the gap is not counted as time
--- spent gathering. Fifteen minutes: hunting for a node can genuinely take
--- twenty, so a shorter cutoff throws away real gathering time, and a longer one
--- starts counting being away from the keyboard.
-data.SESSION_IDLE_CUTOFF = 900;
+-- spent gathering. Twelve minutes, down from fifteen: the error runs in
+-- opposite directions either side of the line, so a shorter cutoff throws away
+-- real hunting time and flatters the rate, while a longer one counts being
+-- away from the keyboard and drags it down.
+data.SESSION_IDLE_CUTOFF = 720;
 
--- Timed gathers a zone needs before its own pace is trusted over the
--- character's. One interval is a single gap and can say anything; a full
--- fatigue cap's worth is a shift in that zone rather than a sample of one.
-data.ZONE_PACE_MIN = 200;
+-- Gathers a pace needs behind it before it is a rate rather than an anecdote,
+-- and it guards both clocks: a zone's own, and the character-wide one a zone
+-- borrows until it has one. Two gathers four seconds apart read as 1,800 an
+-- hour, and every zone was being multiplied by that after a reset. A full
+-- fatigue cap's worth is a shift rather than a sample of one.
+data.PACE_MIN = 200;
 
 data.PROC_GAP        = 18.0;
 -- Within this many skill of a zone's cap and the chip goes green.

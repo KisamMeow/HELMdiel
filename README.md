@@ -6,7 +6,7 @@ Per-zone fatigue counters, skill levels read from your own skill-up messages,
 drop logging with icons and rarity tiers, a session tally with gil, and CSV
 export.
 
-Ashita v4.30+ addon. Version 0.23.0. Released under GPL-3.0. Coded with help
+Ashita v4.30+ addon. Version 0.23.1. Released under GPL-3.0. Coded with help
 from Claude Opus 5.
 
 ## Screenshots
@@ -141,6 +141,12 @@ the rotten share. The grid draws no cell for it; the export carries it as a
 `Rotting Timber` row and a `Rotting Rate` column, and Spoils lists how many
 were lost, at no gil.
 
+**It is reported to stop once you are within 5 skill of the zone's cap**, so
+in a zone capping Logging at 20 it should stop at 15. Hover the tile and it
+names that level for the zone you are in, or tells you that you are already
+past it. This came from play rather than from anything confirmed, so nothing
+acts on it beyond that sentence — the tile and the rate carry on either way.
+
 These rates divide into your whole drop history rather than this session, since
 a session is far too small a sample to measure an ability that fires a few
 percent of the time. They start from 0.9.6, so **if you gathered before then,
@@ -179,14 +185,20 @@ at the pace you gather it.
 **Each zone times itself.** The clock counts the gap between two gathers in the
 same zone, so a zone's hourly figure is measured where you earned it and does
 not move while you gather anywhere else. It stops when you leave, when you
-change tools, and after fifteen minutes idle, and the run between two zones is
+change tools, and after twelve minutes idle, and the run between two zones is
 charged to neither — nothing records when you arrived. **Hover either figure**
 for the numbers behind it, including how long the zone has been timed.
 
-**A zone needs 200 timed gathers before it uses its own pace**, which is a
-fatigue cap's worth — a proper shift in that zone rather than a handful of
-swings. Until then it borrows your overall pace, which does move as you gather
-elsewhere. The hover says which of the two you are reading.
+**A zone needs 200 timed gathers before it shows an hourly figure**, which is
+a fatigue cap's worth — a proper shift there rather than a handful of swings.
+Until then `GIL/HR` reads `-`, and the hover counts you in: *Yhoator Jungle
+has timed 12 of the 200 gathers it needs for an hourly rate.*
+
+**Nothing fills that gap in the meantime**, and that is deliberate. A figure
+borrowed from how fast you gather elsewhere moves when you gather elsewhere,
+which is the whole fault this was built to fix. `PER GATHER` is measured from
+your very first gather, so that is the figure to compare zones with while the
+hourly one fills.
 
 **Nothing you gathered before this version is timed**, so every zone starts on
 the borrowed pace however long you have been playing — there is no *when* in
