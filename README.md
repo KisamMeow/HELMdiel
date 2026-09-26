@@ -6,7 +6,7 @@ Per-zone fatigue counters, skill levels read from your own skill-up messages,
 drop logging with icons and rarity tiers, a session tally with gil, and CSV
 export.
 
-Ashita v4.30+ addon. Version 0.23.1. Released under GPL-3.0. Coded with help
+Ashita v4.30+ addon. Version 0.23.2. Released under GPL-3.0. Coded with help
 from Claude Opus 5.
 
 ## Screenshots
@@ -184,15 +184,26 @@ at the pace you gather it.
 
 **Each zone times itself.** The clock counts the gap between two gathers in the
 same zone, so a zone's hourly figure is measured where you earned it and does
-not move while you gather anywhere else. It stops when you leave, when you
-change tools, and after twelve minutes idle, and the run between two zones is
-charged to neither — nothing records when you arrived. **Hover either figure**
-for the numbers behind it, including how long the zone has been timed.
+not move while you gather anywhere else. It stops when you leave and after
+twelve minutes idle, and the run between two zones is charged to neither —
+nothing records when you arrived. **Hover either figure** for the numbers
+behind it, including how long the zone has been timed.
 
-**A zone needs 200 timed gathers before it shows an hourly figure**, which is
-a fatigue cap's worth — a proper shift there rather than a handful of swings.
-Until then `GIL/HR` reads `-`, and the hover counts you in: *Yhoator Jungle
-has timed 12 of the 200 gathers it needs for an hourly rate.*
+**Working two activities at once in one zone is fine.** Yhoator and Yuhtunga
+are both Harvesting and Logging, and if you rotate between them each gap goes
+to whichever tool ended it. The two clocks split the time between them without
+losing any of it, so each tab still tells you what *that* tool pays per hour
+of working it.
+
+**A zone needs 190 timed gathers before it shows an hourly figure**, which is
+one fatigue cap with room to spare. Until then `GIL/HR` reads `-`, and the
+hover counts you in: *Yhoator Jungle has timed 12 of the 190 gathers it needs
+for an hourly rate.*
+
+**190 rather than 200 because the first gather of every visit times nothing.**
+It opens an interval; the next one closes it. So a full 200-gather run gives
+at most 199 timed, and each time you leave and come back costs another — at
+200 a zone could never qualify on one fatigue run.
 
 **Nothing fills that gap in the meantime**, and that is deliberate. A figure
 borrowed from how fast you gather elsewhere moves when you gather elsewhere,
@@ -200,10 +211,9 @@ which is the whole fault this was built to fix. `PER GATHER` is measured from
 your very first gather, so that is the figure to compare zones with while the
 hourly one fills.
 
-**Nothing you gathered before this version is timed**, so every zone starts on
-the borrowed pace however long you have been playing — there is no *when* in
-the old data to recover one from. `PER GATHER` is measured from the start and
-is the figure to compare zones with until each has timed 200 of its own.
+**Nothing you gathered before 0.23.0 is timed**, so every zone starts from
+nothing however long you have been playing — there is no *when* in the old
+data to recover a rate from.
 
 **A zone with nothing priced shows neither**, since a missing price only means
 nobody has checked one yet. Prices are set with **Edit Prices** on the Spoils

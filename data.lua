@@ -800,7 +800,7 @@ data.SESSION_KEYS   = T{ 'skillups', 'attempts', 'successes', 'spoils',
 data.SPOILS_KEYS    = T{ 'spoils', 'tool_breaks', 'session_log',
                          'session_goldrush' };
 data.SESSION_CLOCK  = T{ 'session_start', 'session_last', 'session_active',
-                         'session_zone', 'session_activity' };
+                         'session_zone' };
 
 data.SECONDS_PER_HOUR = 3600;
 
@@ -811,12 +811,13 @@ data.SECONDS_PER_HOUR = 3600;
 -- away from the keyboard and drags it down.
 data.SESSION_IDLE_CUTOFF = 720;
 
--- Gathers a pace needs behind it before it is a rate rather than an anecdote,
--- and it guards both clocks: a zone's own, and the character-wide one a zone
--- borrows until it has one. Two gathers four seconds apart read as 1,800 an
--- hour, and every zone was being multiplied by that after a reset. A full
--- fatigue cap's worth is a shift rather than a sample of one.
-data.PACE_MIN = 200;
+-- Timed gathers a zone needs before its pace is a rate rather than an
+-- anecdote. Ten short of a fatigue cap, and the ten is the point: the first
+-- gather of every visit opens an interval and times nothing, so a full 200
+-- run yields at most 199 and every re-entry costs another. At 200 a zone
+-- could never qualify on one fatigue run, which is the unit the whole addon
+-- is built around.
+data.PACE_MIN = 190;
 
 data.PROC_GAP        = 18.0;
 -- Within this many skill of a zone's cap and the chip goes green.

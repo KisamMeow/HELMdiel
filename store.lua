@@ -522,7 +522,7 @@ function store.register_item_gather(activity, zoneId, itemName, repeated)
         local gap = now - last;
         char.session_active = (char.session_active or 0) + gap;
 
-        if (char.session_zone == key and char.session_activity == activity) then
+        if (char.session_zone == key) then
             local time = char.zone_time[activity] or T{};
             char.zone_time[activity] = time;
             time[key] = (time[key] or 0) + gap;
@@ -532,9 +532,8 @@ function store.register_item_gather(activity, zoneId, itemName, repeated)
             timed[key] = (timed[key] or 0) + 1;
         end
     end
-    char.session_last     = now;
-    char.session_zone     = key;
-    char.session_activity = activity;
+    char.session_last = now;
+    char.session_zone = key;
 end
 
 function store.get_repeats(charname, zoneId)
