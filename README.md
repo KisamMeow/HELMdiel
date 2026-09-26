@@ -221,8 +221,7 @@ tab.
 **Time spent hunting for the next point counts against the rate**, because it
 is part of the hour. A zone where half your gathers come seconds apart but the
 gaps between clusters run minutes is worth less than one you work steadily, and
-the rate says so. Where that happens the hover adds the shape: *Half come
-within 20s. Long gaps take 64% of the time.*
+the rate says so.
 
 **Untick `Vendor` beside a price** where the number you entered is what the
 auction house pays rather than what a vendor does. Every item starts ticked.

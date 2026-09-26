@@ -290,6 +290,20 @@ local TEXT_POS = { 0, 0 };
 -- order and render_settings is well above the nav scratch tables.
 local ONE      = { 0 };
 
+-- The binding hands tooltip text to ImGui as a printf FORMAT string, so a
+-- literal percent followed by anything a conversion can start with is read as
+-- one: "1.9% - every session" printed a garbage double and ate the "e", and
+-- "64% of the time" printed a garbage octal and ate the "o". Every tooltip goes
+-- through here rather than each builder escaping its own, so a name with a
+-- percent in it is covered too. Text, TextColored and TextDisabled are
+-- documented as unformatted and need none of this.
+local function tooltip(text)
+    if (text:find('%', 1, true) ~= nil) then
+        text = text:gsub('%%', '%%%%');
+    end
+    imgui.SetTooltip(text);
+end
+
 local function clip_text(list, x0, x1, y0, y1, col, text)
     CLIP_MIN[1] = x0;
     CLIP_MIN[2] = y0;
@@ -376,7 +390,7 @@ local function paint_tiles(count, x, y, w, base, drop)
             and mx >= left and mx < left + width
             and my >= top and my < top + tall) then
             local said = slot.tip(slot.a, slot.b, slot.c, slot.d, slot.e);
-            if (said ~= nil) then imgui.SetTooltip(said); end
+            if (said ~= nil) then tooltip(said); end
         end
 
         TILE_MIN[1] = left;
@@ -587,7 +601,7 @@ end
 
 -- Hover help.
 local function hint(text)
-    if (imgui.IsItemHovered()) then imgui.SetTooltip(text); end
+    if (imgui.IsItemHovered()) then tooltip(text); end
 end
 
 -- One caption-and-value pair, the same idiom as a stat tile, with the numbers
@@ -602,7 +616,7 @@ local function stat(caption, value, tip, ...)
     imgui.SameLine(0, px(data.CELL_GUTTER) * 0.5);
     imgui.TextColored(data.COLOR_SKILLUP, value);
     if (tip ~= nil and (hot or imgui.IsItemHovered())) then
-        imgui.SetTooltip(tip(...));
+        tooltip(tip(...));
     end
 end
 
@@ -1602,19 +1616,8 @@ end
 -- The coverage line is the one that stops the era gap being silent: the gil
 -- half divides every gather ever made here, the pace covers only what the
 -- clock saw, and those are the same window today and drift apart later.
--- The rate is a mean, which cannot say whether a zone is steady or comes in
--- bursts. Only drawn where the slower gaps hold most of the time, which is
--- exactly when the mean stops matching what the gathering felt like.
-local function spread_note(charname, activity, zoneId)
-    local typical, slow = store.zone_spread(charname, activity, zoneId);
-    if (typical == nil or slow < data.SPREAD_SHARE_MIN) then return nil; end
-
-    return ('Half come within %ds. Long gaps take %.0f%% of the time.')
-        :fmt(typical, slow * 100);
-end
-
 local function gil_hour_tip(each, floor, pace, span, timed, total,
-                            charname, activity, zoneId)
+                            charname, zoneId)
     if (pace == nil) then
         return ('%d of %d gathers timed here.\nThe clock runs between gathers '
              .. 'and stops when you leave.'):fmt(timed, data.PACE_MIN);
@@ -1630,9 +1633,6 @@ local function gil_hour_tip(each, floor, pace, span, timed, total,
     if (floor < each) then
         head = ('%s\nVendor floor %s an hour.'):fmt(head, gil(floor * pace));
     end
-
-    local spread = spread_note(charname, activity, zoneId);
-    if (spread ~= nil) then head = ('%s\n%s'):fmt(head, spread); end
 
     local caveat = repeat_caveat(charname, zoneId);
     if (caveat == nil) then return head; end
@@ -1767,7 +1767,7 @@ local function render_activity_tab(charname, activity)
 
                 stat('GIL/HR', rate and gil(each * rate) or '-',
                      gil_hour_tip, each, floor, rate, span, timed, total,
-                     charname, activity, zone.id);
+                     charname, zone.id);
                 imgui.SameLine(0, px(data.STAT_GAP));
                 stat('PER GATHER', gil(each), gil_each_tip,
                      gross, cost, total, charname, activity, zone.id);

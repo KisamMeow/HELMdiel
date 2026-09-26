@@ -76,10 +76,6 @@ itself once you have put a proper shift into each zone.
 - **Every hover is shorter.** Same facts, fewer words — the worst of them was
   five lines and is now four. `GIL/HR` leads with the rate rather than the
   per-gather figure, since that is what the label promises.
-- **The hover shows how bursty a zone is** where most of the time goes on the
-  gaps between clusters, rather than on gathering: *Half come within 20s. Long
-  gaps take 64% of the time.* The rate itself still counts that time, because
-  it is part of the hour.
 - **The rate warns when node repeats are left out of your drop counts**, which
   makes it run a little high. Only on Mining zones where a node has actually
   repeated, and only while the box is unticked.

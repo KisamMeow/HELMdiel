@@ -826,11 +826,6 @@ data.PACE_MIN = 190;
 -- reachable. The last edge is SESSION_IDLE_CUTOFF: nothing longer is timed.
 data.PACE_BUCKETS = T{ 10, 20, 40, 90, 180, 360, 720 };
 
--- Below this share of the elapsed time in the slower gaps, a zone is steady
--- enough that the rate speaks for itself and the spread line is noise. Half is
--- the point where the mean stops describing what the gathering felt like.
-data.SPREAD_SHARE_MIN = 0.5;
-
 data.PROC_GAP        = 18.0;
 -- Within this many skill of a zone's cap and the chip goes green.
 data.CAP_NEAR        = 20;
