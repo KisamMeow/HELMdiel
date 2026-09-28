@@ -38,8 +38,8 @@ the whole per-zone clock exists to remove.
 
 | The hover says | What it means |
 |---|---|
-| `timed in <zone>` | Measured there, over the span it names. Trust it. |
-| `has timed N of the 190 gathers it needs` | Still filling; the rate shows `-`. |
+| `N an hour, … timed here` | Measured in this zone, over the span it names. Trust it. |
+| `N of 190 gathers timed here` | Still filling; the rate shows `-`. |
 
 **`PER GATHER` is right immediately and `GIL/HR` is not there yet.** The gil
 half is measured from the day you install — your log, your prices, your broken
@@ -56,6 +56,29 @@ history that makes the figure worth having, to correct something that corrects
 itself once you have put a proper shift into each zone.
 
 ## [Unreleased]
+
+## [0.25.0] - 2026-09-27
+
+### Added
+
+- **Khroma Ore in Mount Zhayolm and Luminium Ore in Halvung**, both from
+  skill 50.
+- **Thirteen drops in Aydeewa Subterrane**, which listed only Phil. Stone
+  before.
+- **The best-earning zone on each activity tab is named in gold**, with its
+  gil an hour on the hover. It needs at least two zones with a timed rate to
+  compare.
+
+### Changed
+
+- **The vendor floor shows beside `GIL/HR` in brackets**, as
+  `19,179 (16,728)`, rather than in the hover, so zones can be compared by it
+  at a glance.
+
+### Removed
+
+- **Mine Gravel and Wyvern Egg from the price list.** Both were listed on the
+  wiki as HELM drops but are not.
 
 ## [0.24.0] - 2026-09-26
 
@@ -924,7 +947,8 @@ Initial public release.
 - The rule that a gather decays *all* other zones for that activity was
   inferred from a two-zone observation.
 
-[Unreleased]: https://github.com/KisamMeow/HELMdiel/compare/v0.24.0...HEAD
+[Unreleased]: https://github.com/KisamMeow/HELMdiel/compare/v0.25.0...HEAD
+[0.25.0]: https://github.com/KisamMeow/HELMdiel/compare/v0.24.0...v0.25.0
 [0.24.0]: https://github.com/KisamMeow/HELMdiel/compare/v0.23.2...v0.24.0
 [0.23.2]: https://github.com/KisamMeow/HELMdiel/compare/v0.23.1...v0.23.2
 [0.23.1]: https://github.com/KisamMeow/HELMdiel/compare/v0.23.0...v0.23.1

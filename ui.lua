@@ -1616,8 +1616,13 @@ end
 -- The coverage line is the one that stops the era gap being silent: the gil
 -- half divides every gather ever made here, the pace covers only what the
 -- clock saw, and those are the same window today and drift apart later.
-local function gil_hour_tip(each, floor, pace, span, timed, total,
-                            charname, zoneId)
+-- What the best-zone pass priced, kept for the foldouts below it in the same
+-- frame so an open zone with a rate is not priced twice. Keyed by zone id and
+-- cleared per zone at the top of each pass: Yuhtunga and Yhoator are on two
+-- tabs, so a value left from the other tab would otherwise be read here.
+local PRE_GROSS, PRE_COST, PRE_VENDOR = {}, {}, {};
+
+local function gil_hour_tip(each, pace, span, timed, total, charname, zoneId)
     if (pace == nil) then
         return ('%d of %d gathers timed here.\nThe clock runs between gathers '
              .. 'and stops when you leave.'):fmt(timed, data.PACE_MIN);
@@ -1627,12 +1632,6 @@ local function gil_hour_tip(each, floor, pace, span, timed, total,
     local head = ('%.0f an hour, %s a gather, timed here.\n'
                .. '%d of %d gathers timed, over %s.')
         :fmt(pace, gil(each), timed, total, span_label(span));
-
-    -- Only when some of the value is priced at the auction house. A zone
-    -- priced entirely off vendors has one figure and should show one.
-    if (floor < each) then
-        head = ('%s\nVendor floor %s an hour.'):fmt(head, gil(floor * pace));
-    end
 
     local caveat = repeat_caveat(charname, zoneId);
     if (caveat == nil) then return head; end
@@ -1680,6 +1679,28 @@ local function render_activity_tab(charname, activity)
     local caps  = data.SKILL_CAPS[activity];
     local skill = store.get_skill(charname, activity) or 0;
 
+    -- The zone that earns most an hour, over every zone on the tab whether
+    -- its foldout is open or not. zone_pace is two reads and gates the rest:
+    -- only a zone with a timed rate is priced at all, which on a real tab is
+    -- a handful, so collapsed zones cost almost nothing. "Best" needs a
+    -- second zone to be better than, so a lone timed zone is not crowned.
+    local best_id, best, rated = nil, 0, 0;
+    for _, zone in ipairs(zones) do
+        PRE_GROSS[zone.id] = nil;
+        local rate = store.zone_pace(charname, activity, zone.id);
+        if (rate ~= nil) then
+            local total = count_gathers(store.get_item_log(charname, activity, zone.id));
+            local gross, cost, vendor = store.zone_gil(charname, activity, zone.id);
+            PRE_GROSS[zone.id], PRE_COST[zone.id], PRE_VENDOR[zone.id] = gross, cost, vendor;
+            if (total > 0 and gross > 0) then
+                rated = rated + 1;
+                local hour = (gross - cost) / total * rate;
+                if (hour > best) then best, best_id = hour, zone.id; end
+            end
+        end
+    end
+    if (rated < 2) then best_id = nil; end
+
     for _, zone in ipairs(zones) do
         local log   = store.get_item_log(charname, activity, zone.id);
         local total = count_gathers(log);
@@ -1720,9 +1741,17 @@ local function render_activity_tab(charname, activity)
         -- CollapsingHeader, and ImGuiCol_Text is otherwise never touched -- so
         -- the push has to be balanced on the same frame it is made.
         local bare = total == 0;
-        if (bare) then imgui.PushStyleColor(ImGuiCol_Text, data.COLOR_CAPTION); end
+        local top  = zone.id == best_id;
+        local tint = (bare and data.COLOR_CAPTION) or (top and data.COLOR_GOLD) or nil;
+        if (tint) then imgui.PushStyleColor(ImGuiCol_Text, tint); end
         local open = imgui.CollapsingHeader(('%s###hh%s%d'):fmt(label, activity, zone.id));
-        if (bare) then imgui.PopStyleColor(1); end
+        if (tint) then imgui.PopStyleColor(1); end
+
+        -- Straight after the header, while it is still the last item, and
+        -- only built when hovered.
+        if (top and imgui.IsItemHovered()) then
+            tooltip(('Best gil an hour of %d timed zones: %s.'):fmt(rated, gil(best)));
+        end
 
         if (head_fill ~= false and capText ~= nil) then
             local name_w = measure(zone.name);
@@ -1755,7 +1784,12 @@ local function render_activity_tab(charname, activity)
 
             -- A zone nothing is priced in says nothing rather than zero: a
             -- missing price only means nobody has checked one yet.
-            local gross, cost, vendor = store.zone_gil(charname, activity, zone.id);
+            local gross, cost, vendor;
+            if (PRE_GROSS[zone.id] ~= nil) then
+                gross, cost, vendor = PRE_GROSS[zone.id], PRE_COST[zone.id], PRE_VENDOR[zone.id];
+            else
+                gross, cost, vendor = store.zone_gil(charname, activity, zone.id);
+            end
             if (gross > 0) then
                 local each  = (gross - cost) / total;
                 local floor = (vendor - cost) / total;
@@ -1765,9 +1799,20 @@ local function render_activity_tab(charname, activity)
                 -- made a zone's figure move while you gathered somewhere else.
                 local rate, span, timed = store.zone_pace(charname, activity, zone.id);
 
-                stat('GIL/HR', rate and gil(each * rate) or '-',
-                     gil_hour_tip, each, floor, rate, span, timed, total,
-                     charname, zone.id);
+                -- The vendor floor rides beside the rate in brackets, and
+                -- only when something here is priced at the auction house: a
+                -- zone priced entirely off vendors has one figure and shows
+                -- one.
+                local shown = '-';
+                if (rate ~= nil) then
+                    shown = gil(each * rate);
+                    if (floor < each) then
+                        shown = ('%s (%s)'):fmt(shown, gil(floor * rate));
+                    end
+                end
+
+                stat('GIL/HR', shown, gil_hour_tip, each, rate, span, timed,
+                     total, charname, zone.id);
                 imgui.SameLine(0, px(data.STAT_GAP));
                 stat('PER GATHER', gil(each), gil_each_tip,
                      gross, cost, total, charname, activity, zone.id);
