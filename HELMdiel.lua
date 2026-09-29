@@ -1,6 +1,6 @@
 addon.name    = 'HELMdiel';
 addon.author  = 'Masuru';
-addon.version = '0.25.0';
+addon.version = '0.25.1';
 addon.desc    = 'Tracks HELM (Harvesting/Excavation/Logging/Mining) regional gathering fatigue on HorizonXI.';
 addon.link    = 'https://github.com/KisamMeow/HELMdiel';
 
@@ -87,9 +87,6 @@ local function clear_run()
     state.repeat_node_index = nil;
 end
 
--- The packet describes one swing. Reading it later would let a swing the
--- hook missed inherit the node before it, which is the silent misread this
--- whole change exists to remove.
 local function node_now(now)
     if ((now - state.node_time) >= data.NODE_WINDOW_SECONDS) then return nil; end
     return state.node_id;
@@ -387,9 +384,6 @@ ui.set_title(addon.version);
 ashita.events.register('d3d_present', 'helmdiel_present', function()
     local name, zoneId = store.player();
 
-    -- Logging out reports the name as 'unknown', so a change of name is the
-    -- signal. Pausing here rather than waiting for the idle cutoff means a log
-    -- out is immediate no matter how quickly you come back.
     if (name ~= state.player) then
         if (state.player ~= nil) then store.pause_session(state.player); end
         state.player = name;
@@ -476,7 +470,8 @@ ashita.events.register('command', 'helmdiel_command', function(e)
         else
             store.set_fatigue(charname, activity, zoneId, value);
             store.save();
-            msg(('%s fatigue in %s set to %d.'):fmt(activity, resources.zone_name(zoneId), value));
+            msg(('%s fatigue in %s set to %d.'):fmt(activity, resources.zone_name(zoneId),
+                store.get_fatigue(charname, activity, zoneId)));
         end
 
     elseif (sub == 'skill') then
@@ -497,10 +492,6 @@ ashita.events.register('command', 'helmdiel_command', function(e)
 end);
 
 ashita.events.register('load', 'helmdiel_load', function()
-    -- Whatever happened last time -- a clean exit, a crash, a disconnect, or
-    -- the client being killed -- nobody was gathering while the addon was not
-    -- running. Nothing else can distinguish those, so the clock always opens a
-    -- fresh interval here.
     store.pause_all_sessions();
 
     if (not ui.load_font()) then
@@ -510,10 +501,6 @@ ashita.events.register('load', 'helmdiel_load', function()
 end);
 
 ashita.events.register('unload', 'helmdiel_unload', function()
-    -- /shutdown closes the game outright, so there may be no frame between
-    -- logging out and the addon going away for d3d_present to notice the name
-    -- change. Pausing here covers that, and /addon unload with it. The save
-    -- after is what makes this one stick, unlike the pause in the render loop.
     store.pause_session(store.char_name());
     store.save();
 end);

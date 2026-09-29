@@ -156,7 +156,6 @@ function resources.item_id(name)
     return id;
 end
 
--- The price key: either name form resolves to the same item id
 function resources.price_key(name)
     local id = resources.item_id(name);
     if (id == nil) then return nil; end

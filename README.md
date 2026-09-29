@@ -6,7 +6,7 @@ Per-zone fatigue counters, skill levels read from your own skill-up messages,
 drop logging with icons and rarity tiers, a session tally with gil, and CSV
 export.
 
-Ashita v4.30+ addon. Version 0.25.0. Released under GPL-3.0. Coded with help
+Ashita v4.30+ addon. Version 0.25.1. Released under GPL-3.0. Coded with help
 from Claude Opus 5.
 
 ## Screenshots
@@ -225,13 +225,13 @@ the rate says so.
 
 **Untick `Vendor` beside a price** where the number you entered is what the
 auction house pays rather than what a vendor does. Every item starts ticked.
-The rate still counts everything, and the **vendor floor** then shows beside
-it in brackets — `GIL/HR 19,179 (16,728)` — which is what the same hour is
-worth if you sell only to NPCs and wait for nothing.
+The rate still counts everything, and a second figure shows beside it in
+brackets — `GIL/HR 19,179 (16,728)` — which is what the same hour is worth if
+you sold every drop to an NPC, the unticked ones at their NPC price.
 
-**The zone earning most an hour on each activity tab has its name in gold.**
-Hover the name for the figure. It only compares zones with a timed rate, and
-needs at least two of them, since a lone zone has nothing to beat.
+**The zone earning most an hour on each activity tab has its name in gold, and
+the next one down in light blue.** Hover either name for the figure. Only zones
+with a timed rate are compared, and it takes at least two of them.
 
 **That box also decides what `Hide Vendor Items` hides**, so on a fresh file
 it hides everything. Untick the few items you sell yourself and the filter

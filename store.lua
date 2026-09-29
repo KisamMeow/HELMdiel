@@ -123,9 +123,6 @@ function store.toggle_auto_popup()
     settings.save();
 end
 
-
-
-
 function store.count_repeats()
     return helm_settings.window.count_repeats ~= false;
 end
@@ -237,8 +234,6 @@ end
 function store.font_name()
     return choice('font', data.FONT_NAMES, data.FONT_DEFAULT);
 end
--- The name is stored, never the menu position, so reordering the list
--- cannot silently change what someone is looking at.
 function store.font_index()
     return choice_index('font', data.FONT_NAMES, data.FONT_DEFAULT);
 end
@@ -429,7 +424,7 @@ end
 function store.set_fatigue(charname, activity, zoneId, value)
     local group, key = ensure_zone(charname, 'fatigue', activity, zoneId);
     local cap = store.fatigue_cap(charname, activity, zoneId);
-    group[key] = math.max(0, math.min(cap, value));
+    group[key] = math.max(0, math.min(cap, math.floor(value)));
 
     if (group[key] < cap) then
         local flags, flagKey = ensure_zone(charname, 'fatigued', activity, zoneId);
@@ -530,24 +525,6 @@ function store.register_item_gather(activity, zoneId, itemName, repeated)
             local timed = char.zone_timed[activity] or T{};
             char.zone_timed[activity] = timed;
             timed[key] = (timed[key] or 0) + 1;
-
-            local buckets = char.zone_bucket[activity] or T{};
-            char.zone_bucket[activity] = buckets;
-            local tally = buckets[key] or T{};
-            buckets[key] = tally;
-
-            local spents = char.zone_bucket_time[activity] or T{};
-            char.zone_bucket_time[activity] = spents;
-            local spent = spents[key] or T{};
-            spents[key] = spent;
-
-            for index, edge in ipairs(data.PACE_BUCKETS) do
-                if (gap <= edge) then
-                    tally[index] = (tally[index] or 0) + 1;
-                    spent[index] = (spent[index] or 0) + gap;
-                    break;
-                end
-            end
         end
     end
     char.session_last = now;
@@ -595,29 +572,27 @@ function store.session_span(charname)
     return math.max(0, char.session_active or 0);
 end
 
--- The third return is the part of the gross you could carry to an NPC today:
--- everything not marked AH. An item priced at what the auction house might
--- eventually pay is not the same kind of gil as one priced at what a vendor
--- hands over now, and a figure that sums the two without saying so is not a
--- number anyone can act on.
 function store.zone_gil(charname, activity, zoneId)
-    local gross, floor = 0, 0;
+    local gross, sold, unknown = 0, 0, 0;
     for itemName, count in pairs(store.get_item_log(charname, activity, zoneId)) do
         local worth = count * store.price_of(itemName);
         gross = gross + worth;
-        if (store.is_vendor(itemName)) then floor = floor + worth; end
+        if (store.is_vendor(itemName)) then
+            sold = sold + worth;
+        else
+            local npc = store.npc_price(itemName);
+            if (npc == nil) then
+                unknown = unknown + 1;
+            else
+                sold = sold + count * npc;
+            end
+        end
     end
 
     local broke = store.get_breaks(charname, activity, zoneId);
-    return gross, broke * store.tool_price(activity), floor;
+    return gross, broke * store.tool_price(activity), sold, unknown;
 end
 
--- Gil an hour is gil over time, so the rate is a mean and has to be. A median
--- was tried and answered the wrong question: in Jugner half the gathers came
--- within ten seconds of the last while seven long hunts held most of the
--- elapsed time, and reading the fast mode gave 602 gathers an hour against a
--- real 119. An hour spent hunting is still an hour, and a zone that makes you
--- hunt is genuinely worse. See docs/dev/ui.md, "Why the rate is a mean".
 function store.zone_pace(charname, activity, zoneId)
     local seconds = read_zone(charname, 'zone_time',  activity, zoneId, 0);
     local timed   = read_zone(charname, 'zone_timed', activity, zoneId, 0);
@@ -626,53 +601,13 @@ function store.zone_pace(charname, activity, zoneId)
     return timed * data.SECONDS_PER_HOUR / seconds, seconds, timed;
 end
 
--- What the mean cannot say: whether a zone is steady, or comes in bursts with
--- long hunts between them. Returns the upper edge of the bucket a typical
--- gather falls in, and the share of the elapsed time spent in slower ones.
-function store.zone_spread(charname, activity, zoneId)
-    local tally = read_zone(charname, 'zone_bucket',      activity, zoneId, nil);
-    local spent = read_zone(charname, 'zone_bucket_time', activity, zoneId, nil);
-    if (tally == nil or spent == nil) then return nil; end
 
-    local count, seconds = 0, 0;
-    for index = 1, #data.PACE_BUCKETS do
-        count   = count   + (tally[index] or 0);
-        seconds = seconds + (spent[index] or 0);
-    end
-    if (count == 0 or seconds == 0) then return nil; end
-
-    local below, middle = 0, nil;
-    for index = 1, #data.PACE_BUCKETS do
-        local here = tally[index] or 0;
-        if (here > 0 and below + here >= count / 2) then middle = index; break; end
-        below = below + here;
-    end
-    if (middle == nil) then return nil; end
-
-    local slow = 0;
-    for index = middle + 1, #data.PACE_BUCKETS do
-        slow = slow + (spent[index] or 0);
-    end
-
-    return data.PACE_BUCKETS[middle], slow / seconds;
-end
-
--- Forget where the clock was, so the next gather opens a fresh interval and
--- the time away is not counted however short it is. Deliberately does not
--- create a character record, and deliberately does not save: the only thing
--- that reads it is the next gather, which saves anyway, and a gap that
--- outlives a crash is caught by SESSION_IDLE_CUTOFF regardless.
 function store.pause_session(charname)
     local char = helm_settings.characters[charname];
     if (char == nil) then return; end
     char.session_last = nil;
 end
 
--- A crash, a client kill or a dropped connection never reaches the unload
--- handler, so session_last survives them and the downtime would be counted if
--- you were back inside the cutoff. The addon not running is proof nobody was
--- gathering, so a load pauses every character rather than guessing which one
--- was live -- at client start no character is known yet anyway.
 function store.pause_all_sessions()
     for _, char in pairs(helm_settings.characters) do
         char.session_last = nil;
@@ -734,7 +669,6 @@ function store.reset_spoils()
     settings.save();
 end
 
-
 ----------------------------------------
 -- Known zone drops
 ----------------------------------------
@@ -745,26 +679,14 @@ function store.zone_items(activity, zoneId)
     return group[zoneId] or EMPTY_LOG;
 end
 
-function store.item_skill(activity, zoneId, itemName)
-    for _, entry in ipairs(store.zone_items(activity, zoneId)) do
-        if (entry.name == itemName) then return entry.skill; end
-    end
-    return nil;
-end
 
-function store.item_locked(charname, activity, zoneId, itemName)
-    local needs = store.item_skill(activity, zoneId, itemName);
-    if (needs == nil) then return nil; end
-
-    local skill = store.get_skill(charname, activity);
-    if (skill ~= nil and skill >= needs) then return nil; end
-    return needs;
-end
 ----------------------------------------
 -- Item prices
 ----------------------------------------
 
 function store.get_price(activity, itemName)
+    if (activity ~= data.TOOL_KEY) then return store.price_of(itemName); end
+
     local key = resources.price_key(itemName);
     if (key == nil) then return 0; end
 
@@ -779,17 +701,21 @@ function store.set_price(activity, itemName, value)
 
     value = math.max(0, math.floor(tonumber(value) or 0));
 
+    if (activity ~= data.TOOL_KEY) then
+        for _, other in ipairs(data.ACTIVITIES) do
+            local held = helm_settings.prices[other];
+            if (other ~= activity and held ~= nil) then held[key] = nil; end
+        end
+    end
+
     local group = helm_settings.prices[activity];
-    if (group == nil) then
-        if (value == 0) then return; end
+    if (group == nil and value ~= 0) then
         group = T{};
         helm_settings.prices[activity] = group;
     end
 
-    if (value == 0) then
-        group[key] = nil;
-    else
-        group[key] = value;
+    if (group ~= nil) then
+        group[key] = value ~= 0 and value or nil;
     end
     store.save();
 end
@@ -807,6 +733,34 @@ function store.price_of(itemName)
     return 0;
 end
 
+local NPC_BY_KEY = nil;
+
+local function npc_prices()
+    if (NPC_BY_KEY ~= nil) then return NPC_BY_KEY; end
+    if (not resources.scan_done()) then return nil; end
+
+    local byKey = T{};
+    for name, gil in pairs(data.NPC_PRICES) do
+        local key = resources.price_key(name);
+        if (key ~= nil) then byKey[key] = gil; end
+    end
+    for _, name in ipairs(data.NPC_UNSELLABLE) do
+        local key = resources.price_key(name);
+        if (key ~= nil) then byKey[key] = 0; end
+    end
+    NPC_BY_KEY = byKey;
+    return byKey;
+end
+
+function store.npc_price(itemName)
+    local key = resources.price_key(itemName);
+    if (key == nil) then return nil; end
+
+    local byKey = npc_prices();
+    if (byKey == nil) then return nil; end
+    return byKey[key];
+end
+
 function store.hide_vendor()
     return helm_settings.window.hide_vendor == true;
 end
@@ -815,11 +769,6 @@ function store.toggle_hide_vendor()
     store.save();
 end
 
--- Vendor is the default and the exception is what gets stored, so `market`
--- holds the unticked items: the ones you sell on the auction house rather
--- than to an NPC. Inverting the storage rather than the flag keeps the
--- settings file small in the usual case, the same reason `fatigued` stores
--- true or nothing.
 function store.is_vendor(itemName)
     local key = resources.price_key(itemName);
     if (key == nil) then return true; end
@@ -867,11 +816,6 @@ function store.reset_all()
     settings.save();
 end
 
--- The flags go with the counters. Clearing one and not the other left a zone
--- reading FATIGUED on a counter of 0, since the label is driven by the flag and
--- never by comparing the value to the cap. The per-zone form of this command
--- routes through set_fatigue, which has always cleared the flag; only the
--- whole-activity form did not.
 function store.reset_activity(charname, activity)
     local char = ensure_char(charname);
     char.fatigue[activity]  = T{};

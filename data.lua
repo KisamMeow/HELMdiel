@@ -12,22 +12,19 @@ data.DEDUP_QUIET_SECONDS  = 0.10;
 
 data.ACTIVITIES = T{ 'Harvesting', 'Excavation', 'Logging', 'Mining' };
 
--- Chat modes HELM messages have been captured on. Anything on any other mode
--- is somebody talking, never the game reporting a gather.
+-- Chat modes
 data.CHAT_MODE_MASK = 256;
 
 data.HELM_CHAT_MODES = T{
-    [121] = true,   -- skill ups, the fatigue cap, procs, rotting timber
-    [151] = true,   -- gathers, failures and tool breaks, the original line
-    [190] = true,   -- the same three, re-emitted with a timestamp
+    [121] = true,
+    [151] = true,
+    [190] = true,
 };
 
 -- Nav order
 data.NAV_LEADING  = T{ 'Home' };
 data.NAV_TRAILING = T{ 'Spoils', 'Settings' };
 
--- Display only. The tab's identity stays the activity name, so nothing that
--- compares against ACTIVITIES has to know these exist.
 data.NAV_SHORT    = T{
     Harvesting = 'Harv',
     Excavation = 'Exca',
@@ -38,10 +35,6 @@ data.NAV_SHORT    = T{
 -- Pixel sizes
 data.SKILL_INPUT_WIDTH  = 70;
 data.COMBO_WIDTH        = 120;
--- The opacity slider is a drag, not a number box, so it wants room: it shared
--- SKILL_INPUT_WIDTH's 70px and gave a hundredth of opacity per pixel, four
--- pixels for a 0.05 step. Wider than the combos and still inside the width the
--- skill row already sets, so Settings does not grow.
 data.SLIDER_WIDTH       = 200;
 data.CHECK_INSET        = 4.0;
 data.CHECK_GAP          = 8.0;
@@ -75,7 +68,6 @@ data.OPACITY_MAX    = 1.00;
 
 -- Surface elevation
 data.SURFACE_BASE   = { 0.13, 0.13, 0.17, 1.00 };
-data.SURFACE_TITLE  = { 0.19, 0.19, 0.23, 1.00 };
 data.SURFACE_RAISED = { 0.22, 0.22, 0.26, 0.90 };
 data.SURFACE_PLATE  = { 0.28, 0.28, 0.32, 0.90 };
 data.SURFACE_INSET  = { 0.07, 0.07, 0.10, 0.50 };
@@ -86,7 +78,7 @@ data.SHEEN_HEIGHT   = 90.0;
 data.COLOR_SHEEN    = { 1.00, 1.00, 1.00, 0.055 };
 data.COLOR_SHEEN_END = { 1.00, 1.00, 1.00, 0.00 };
 
--- Gold accent, drawn only as the resize grip
+-- Gold accent
 data.COLOR_GOLD        = { 1.00, 0.84, 0.20, 1.00 };
 data.COLOR_LABEL       = { 0.62, 0.62, 0.67, 1.00 };
 data.COLOR_VALUE       = { 0.93, 0.93, 0.96, 1.00 };
@@ -112,7 +104,6 @@ data.COLOR_HEADER_HOVER  = { 0.32, 0.32, 0.36, 0.85 };
 data.COLOR_HEADER_ACTIVE = { 0.38, 0.38, 0.42, 0.95 };
 
 -- Inputs, scrollbars, separators, popups
-
 data.COLOR_INPUT         = data.SURFACE_PLATE;
 data.COLOR_INPUT_HOVER   = { 0.34, 0.34, 0.38, 0.95 };
 data.COLOR_INPUT_ACTIVE  = { 0.38, 0.38, 0.43, 1.00 };
@@ -137,12 +128,6 @@ data.COLOR_SUCCESS_HOVER  = { 0.22, 0.56, 0.26, 0.95 };
 data.COLOR_SUCCESS_ACTIVE = { 0.28, 0.68, 0.32, 1.00 };
 
 -- CSV export columns
--- Three of these reset with Reset Gather/Skill Ups while the rest do not, so
--- the window is named in the column. Zone Gathers is the all-time count and
--- Successes is the same quantity since the last reset; before a reset they are
--- identical, which is exactly why they needed telling apart. One rate column
--- per special skill is appended to both headers where PROC_ABILITIES is
--- derived, further down.
 data.EXPORT_HEADER = T{ 'Character', 'Activity', 'Zone', 'Item', 'Count',
                         'Zone Gathers', 'Drop Rate', 'Attempts (Session)',
                         'Successes (Session)', 'Skill Ups (Session)', 'Skill' };
@@ -150,10 +135,6 @@ data.EXPORT_HEADER = T{ 'Character', 'Activity', 'Zone', 'Item', 'Count',
 data.EXPORT_HEADER_MIN = T{ 'Activity', 'Zone', 'Item', 'Count',
                             'Zone Gathers', 'Drop Rate', 'Skill' };
 
--- The Spoils export covers exactly what Reset Session clears: the tally, and
--- the tools it cost. Tool rows carry no zone, because tool_breaks is keyed by
--- activity alone, and their gil is negative for the same reason the tab draws
--- it in red.
 data.EXPORT_SPOILS = T{ 'Character', 'Activity', 'Zone', 'Item', 'Count',
                         'Gil Each', 'Gil Total' };
 
@@ -162,16 +143,9 @@ data.EXPORT_SPOILS_MIN = T{ 'Activity', 'Zone', 'Item', 'Count',
 
 data.COLOR_SKILLUP  = { 0.40, 0.75, 1.00, 1.00 };
 
--- The near-cap chip: the zones worth gathering in for skill right now. It is
--- COLOR_SKILLUP because that is what the chip is about -- every skill up rate
--- in the addon is already drawn in it -- and because green on a green plate
--- measured 1.55:1 against the gold state's 3.24:1 and was hard to read. This
--- pairing measures 3.24:1, the same as gold.
---
--- Defined here, below COLOR_SKILLUP, and not beside the other chip colours:
--- table fields resolve in file order, and a forward reference is silently nil.
 data.COLOR_CHIP_NEAR     = { 0.11, 0.19, 0.28, 0.90 };
 data.COLOR_CHIP_NEAR_INK = data.COLOR_SKILLUP;
+data.COLOR_RUNNER_UP     = data.COLOR_SKILLUP;
 data.COLOR_LOCKED   = { 0.45, 0.45, 0.48, 1.00 };
 
 -- Spoils column headings
@@ -218,7 +192,7 @@ data.HOME_MODES        = T{ 'Full', 'Normal', 'Compact' };
 data.HOME_MODE_DEFAULT = 'Full';
 data.HOME_MODE_COMBO   = combo_string(data.HOME_MODES);
 
--- Chat forms the resource manager does not index, keyed normalised
+-- Unindexed chat forms
 data.ITEM_ALIASES = T{
     ['suit of moblin armor'] = 'Moblin Armor',
     ['suit of moblin mail']  = 'Moblin Mail',
@@ -240,7 +214,7 @@ for _, entry in ipairs(data.FONTS) do table.insert(FONT_NAMES, entry.name); end
 data.FONT_NAMES = FONT_NAMES;
 data.FONT_COMBO = combo_string(FONT_NAMES);
 
--- Items each zone is known to drop, and the skill a gated one needs
+-- Known zone drops
 data.ZONE_ITEMS = T{
     Harvesting = T{
         [51] = T{
@@ -740,9 +714,7 @@ data.BARREN_PATTERNS = T{
     Mining     = T{},
 };
 
--- Special skills, counted when they fire. Logging's are not known yet;
--- Rotting Timber is not one, but it is tracked as one and also counted as
--- a lost item in the drop list, since it is the swing that took the item.
+-- Special skills
 data.PROC_ABILITIES = T{
     Harvesting = T{
         { name = "Gatherer's Discipline", short = 'DISCIPLINE',
@@ -767,7 +739,7 @@ data.PROC_ABILITIES = T{
     },
 };
 
--- What a node repeats after Gold Rush, and what Motherlode upgrades that to.
+-- Gold Rush repeats
 data.GOLD_RUSH_ITEMS = T{
     Mining = T{
         [11]  = { rush = 'Gold Ore',      lode = 'Platinum Ore' },
@@ -782,8 +754,7 @@ data.GOLD_RUSH_ITEMS = T{
     },
 };
 
--- Counted alongside whatever else the line is. Matches both shapes: the
--- standalone break and the one folded into a successful gather.
+-- Tool breaks
 data.BREAK_PATTERNS = T{
     Harvesting = T{ 'sickle breaks' },
     Excavation = T{ 'pickaxe breaks' },
@@ -808,8 +779,7 @@ data.CHARACTER_KEYS = T{ 'fatigue', 'fatigued', 'item_log', 'skill',
                          'skillups', 'attempts', 'successes', 'spoils',
                          'since_skillup', 'procs', 'breaks', 'goldrush',
                          'session_goldrush', 'tool_breaks', 'lifetime',
-                         'session_log', 'zone_time', 'zone_timed',
-                         'zone_bucket', 'zone_bucket_time' };
+                         'session_log', 'zone_time', 'zone_timed' };
 data.SESSION_KEYS   = T{ 'skillups', 'attempts', 'successes', 'spoils',
                          'since_skillup', 'tool_breaks', 'session_log',
                          'session_goldrush' };
@@ -819,37 +789,18 @@ data.SESSION_CLOCK  = T{ 'session_last', 'session_active', 'session_zone' };
 
 data.SECONDS_PER_HOUR = 3600;
 
--- Longer than this between two gathers and the gap is not counted as time
--- spent gathering. Twelve minutes, down from fifteen: the error runs in
--- opposite directions either side of the line, so a shorter cutoff throws away
--- real hunting time and flatters the rate, while a longer one counts being
--- away from the keyboard and drags it down.
+-- Gathering clock
 data.SESSION_IDLE_CUTOFF = 720;
 
--- Timed gathers a zone needs before its pace is a rate rather than an
--- anecdote. Ten short of a fatigue cap, and the ten is the point: the first
--- gather of every visit opens an interval and times nothing, so a full 200
--- run yields at most 199 and every re-entry costs another. At 200 a zone
--- could never qualify on one fatigue run, which is the unit the whole addon
--- is built around.
 data.PACE_MIN = 190;
 
--- Upper edges, in seconds, of the buckets a timed interval is counted into.
--- A mean over a bare sum cannot tell a steady rhythm from a fast one broken by
--- a few long node hunts, and the two say very different things about a zone.
--- Counting into buckets costs seven integers a zone and makes the median
--- reachable. The last edge is SESSION_IDLE_CUTOFF: nothing longer is timed.
-data.PACE_BUCKETS = T{ 10, 20, 40, 90, 180, 360, 720 };
-
-data.PROC_GAP        = 18.0;
--- Within this many skill of a zone's cap and the chip goes green.
 data.CAP_NEAR        = 20;
 
 data.CHIP_PAD        = 6.0;
 data.CHIP_INSET      = 2.0;
 data.STAT_GAP        = 20.0;
 
--- Nav row furniture, in place of the title bar
+-- Nav row
 data.NAV_EDGE_PAD     = 7.0;
 data.NAV_TRACK_PAD    = 3.0;
 data.NAV_BTN_PAD_X    = 8.0;
@@ -860,10 +811,9 @@ data.NAV_DOT_GAP      = 2.0;
 data.NAV_CLOSE_SIZE   = 7.0;
 data.NAV_CLOSE_WEIGHT = 1.5;
 
--- HELM interaction, and the render bit that clears when an entity despawns
+-- Node identity
 data.HELM_PACKET    = 0x36;
 data.RENDER_VISIBLE = 0x200;
--- A node id describes the swing that just happened, never the next one
 data.NODE_WINDOW_SECONDS = 3.0;
 data.REPEAT_WINDOW_SECONDS = 30.0;
 
@@ -876,11 +826,7 @@ data.ZONE_ACTIVITIES  = T{};
 data.SKILL_PATTERNS   = T{};
 data.ZONE_LABELS      = T{};
 
--- Legacy: listed as HELM drops on the HorizonXI wiki but never seen by this
--- addon, and not in the spreadsheet. They exist here only so a price can be set
--- for them. Delete a name once the game confirms it is not a real item; the
--- price editor draws (?) beside anything the resource manager cannot resolve,
--- which is how that gets confirmed. Harvesting is deliberately absent.
+-- Wiki-only drops
 data.LEGACY_ITEMS = T{
     Harvesting = T{},
     Excavation = T{
@@ -900,16 +846,7 @@ data.LEGACY_ITEMS = T{
     },
 };
 
--- What an NPC pays for one of an item, read off the sell menu in game. One
--- flat table, since the price belongs to the item; the labels only group the
--- source by which activity drops it, with anything two or more share at the
--- top. Alphabetical within each block. Nothing reads this yet.
---
--- Every price here was read at a Jeuno vendor at max fame, and a new one has
--- to be read the same way. Sell prices rise with fame in the city you sell in,
--- so these are the most a vendor will pay; a price taken at lower fame, or in
--- another city, would mix two bases in one table with nothing to tell them
--- apart.
+-- NPC sell prices
 data.NPC_PRICES = T{
     -- Shared
     ['Beehive Chip']     = 11,
@@ -1059,20 +996,14 @@ data.NPC_PRICES = T{
     ['Zinc Ore']         = 27,
 };
 
--- Drops the sell menu greys out. Kept apart from a price of 0, which would
--- read as "an NPC pays nothing" rather than "no NPC buys it", and apart from
--- an absent entry, which only says nobody has checked. Alphabetical.
--- What a tool costs to replace, from the merchants that sell them. The mirror
--- of NPC_PRICES and deliberately its own table: that one is what an NPC pays
--- you, this is what you pay, and one table holding both directions would be
--- read the wrong way round the first time anything consumed it. Keyed by the
--- ACTIVITY_TOOLS name.
+-- Tool costs
 data.TOOL_COSTS = T{
     ['Hatchet'] = 450,
     ['Pickaxe'] = 180,
     ['Sickle']  = 400,
 };
 
+-- Unsellable drops
 data.NPC_UNSELLABLE = T{
     'Antican Pauldron',
     'Antican Robe',
@@ -1127,11 +1058,6 @@ for _, activity in ipairs(data.ACTIVITIES) do
     end
     data.PROC_PATTERNS[activity] = procs;
 
-    -- Display order: the zone whose cap you will reach first, first. Ties go
-    -- alphabetical, and a zone whose cap is not yet known sorts to the bottom
-    -- rather than to the top, where an absent cap would read as zero. Sorted
-    -- once here rather than in the render path, which walks this list every
-    -- frame and must not sort it.
     table.sort(data.TRACKED_ZONES[activity], function(a, b)
         local ca, cb = a.skill_cap, b.skill_cap;
         if (ca ~= cb) then

@@ -16,10 +16,8 @@ ui.armed_at = 0;
 
 local actions = T{};
 
-local WINDOW_BG = { data.SURFACE_BASE[1],  data.SURFACE_BASE[2],
-                    data.SURFACE_BASE[3],  1 };
-local TITLE_BG  = { data.SURFACE_TITLE[1], data.SURFACE_TITLE[2],
-                    data.SURFACE_TITLE[3], 1 };
+local WINDOW_BG = { data.SURFACE_BASE[1], data.SURFACE_BASE[2],
+                    data.SURFACE_BASE[3], 1 };
 
 local scale = 1.0;
 
@@ -27,24 +25,7 @@ local function px(value)
     return value * scale;
 end
 
--- Text widths, cached per size.
---
--- ImGui measures a string by walking it glyph by glyph through the font atlas,
--- and the item grid asks for two widths per item -- 720 of the 885 calls an
--- activity tab makes in one frame with every foldout open. Caching removes
--- almost all of them.
---
--- **Keyed by the size text is drawn at, not one flat table.** Two sizes are
--- live inside a single frame: the item grid pushes a smaller font for the
--- small-icon style, and the same string is a different width under it. A flat
--- cache hands the big size's width to the small one and the grid misaligns.
---
--- The UI scale needs no separate handling because it multiplies the size, so a
--- rescale lands in a different bucket on its own. A change of face does not,
--- so that throws the whole thing away.
---
--- The cap is for a long session rather than a frame: percentages are bounded
--- at about a thousand distinct strings, but gil tallies on Spoils are not.
+-- Text widths
 local WIDTH_CAP = 4096;
 
 local width_sizes = {};
@@ -69,9 +50,6 @@ local function measure(text)
     if (w == nil) then
         w = imgui.CalcTextSize(text);
         if (width_n >= WIDTH_CAP) then
-            -- Emptied in place rather than replaced, so width_at stays valid.
-            -- Rebuilding costs one frame of measuring, which is what every
-            -- frame cost before the cache existed.
             for _, bucket in pairs(width_sizes) do
                 for key in pairs(bucket) do bucket[key] = nil; end
             end
@@ -99,7 +77,7 @@ local function pooled(pool, index)
 end
 
 local function by_count_then_name(a, b)
-    if (a.tier.rank ~= b.tier.rank) then return a.tier.rank < b.tier.rank; end
+    if (a.rank ~= b.rank) then return a.rank < b.rank; end
     if (a.count ~= b.count) then return a.count > b.count; end
     if (a.needs ~= b.needs) then return (a.needs or 0) < (b.needs or 0); end
     return a.name < b.name;
@@ -164,9 +142,6 @@ local function window_style()
 
     STYLE_COLORS = T{
         { ImGuiCol_WindowBg,         WINDOW_BG },
-        { ImGuiCol_TitleBg,          TITLE_BG },
-        { ImGuiCol_TitleBgActive,    TITLE_BG },
-        { ImGuiCol_TitleBgCollapsed, TITLE_BG },
         { ImGuiCol_TextDisabled,     data.COLOR_LABEL },
         { ImGuiCol_Border,           data.COLOR_EDGE },
         { ImGuiCol_PopupBg,          data.COLOR_POPUP },
@@ -285,18 +260,8 @@ end
 local CLIP_MIN = { 0, 0 };
 local CLIP_MAX = { 0, 0 };
 local TEXT_POS = { 0, 0 };
--- One reused cell for every single-value control: ImGui reads it immediately
--- and keeps no reference. Declared up here because locals resolve in file
--- order and render_settings is well above the nav scratch tables.
 local ONE      = { 0 };
 
--- The binding hands tooltip text to ImGui as a printf FORMAT string, so a
--- literal percent followed by anything a conversion can start with is read as
--- one: "1.9% - every session" printed a garbage double and ate the "e", and
--- "64% of the time" printed a garbage octal and ate the "o". Every tooltip goes
--- through here rather than each builder escaping its own, so a name with a
--- percent in it is covered too. Text, TextColored and TextDisabled are
--- documented as unformatted and need none of this.
 local function tooltip(text)
     if (text:find('%', 1, true) ~= nil) then
         text = text:gsub('%%', '%%%%');
@@ -345,13 +310,11 @@ local TILE_MIN  = { 0, 0 };
 local TILE_MAX  = { 0, 0 };
 local tile_fill = nil;
 
--- Wraps past three.
 local function tiles_per_row(count)
     if (count > data.TILES_PER_ROW) then return math.ceil(count / 2); end
     return count;
 end
 
--- A row is a line taller when any tile on it carries a note.
 local function tile_row_height(count, per, row, base, drop)
     local first = (row - 1) * per + 1;
     for index = first, math.min(count, first + per - 1) do
@@ -371,7 +334,6 @@ local function paint_tiles(count, x, y, w, base, drop)
     local cap   = imgui.GetColorU32(data.COLOR_CAPTION);
     local gold  = imgui.GetColorU32(data.COLOR_GOLD);
 
-    -- Hover, by hand.
     local mx, my = imgui.GetMousePos();
     local over   = imgui.IsWindowHovered();
 
@@ -479,8 +441,6 @@ local function render_tiles(count)
     imgui.Dummy(TILE_SIZE);
 end
 
-
-
 local function skill_text(charname, activity)
     local skill = store.get_skill(charname, activity);
     return skill == nil and 'unknown' or ('%.1f'):fmt(skill);
@@ -541,8 +501,6 @@ local function fill_bar(fraction, color)
     imgui.Dummy(BAR_SIZE);
 end
 
--- A box that fills rather than ticks. ImGui's own draws a checkmark glyph and
--- no style var changes that, so the box is drawn here.
 local BOX_XY   = { 0, 0 };
 local BOX_MIN  = { 0, 0 };
 local BOX_MAX  = { 0, 0 };
@@ -566,14 +524,28 @@ local function paint_check(x, y, side, on, hot)
     end
 end
 
+local CHECK_IDS = {};
+
+local function check_id(label, suffix)
+    local group = CHECK_IDS[label];
+    if (group == nil) then group = {}; CHECK_IDS[label] = group; end
+
+    local tail = suffix or '';
+    local id   = group[tail];
+    if (id == nil) then
+        id = ('##hhchk%s%s'):fmt(label, tail);
+        group[tail] = id;
+    end
+    return id;
+end
+
 local function checkbox(label, on, suffix)
     local side = imgui.GetFrameHeight();
     local x, y = imgui.GetCursorScreenPos();
     local top  = imgui.GetCursorPosY();
 
     BOX_XY[1], BOX_XY[2] = side, side;
-    local hit = imgui.InvisibleButton(
-        ('##hhchk%s%s'):fmt(label, suffix or ''), BOX_XY);
+    local hit = imgui.InvisibleButton(check_id(label, suffix), BOX_XY);
     local hot = imgui.IsItemHovered();
 
     if (box_fill ~= false) then
@@ -587,29 +559,20 @@ local function checkbox(label, on, suffix)
     return hit;
 end
 
--- Names a block of settings.
 local function caption(text)
     imgui.Spacing();
     imgui.TextColored(data.COLOR_CAPTION, text);
     imgui.Spacing();
 end
 
--- Nothing to show yet.
 local function empty(text)
     imgui.TextColored(data.COLOR_CAPTION, text);
 end
 
--- Hover help.
 local function hint(text)
     if (imgui.IsItemHovered()) then tooltip(text); end
 end
 
--- One caption-and-value pair, the same idiom as a stat tile, with the numbers
--- behind it on the hover.
--- The tip is a builder and its arguments, called only when something is
--- actually hovered. Passing hint(tip(...)) instead would build every tooltip on
--- the tab every frame, which is the allocation the stat tiles were already
--- fixed for once.
 local function stat(caption, value, tip, ...)
     imgui.TextColored(data.COLOR_CAPTION, caption);
     local hot = imgui.IsItemHovered();
@@ -704,17 +667,6 @@ end
 local CHIP_MIN, CHIP_MAX = { 0, 0 }, { 0, 0 };
 local head_fill = nil;
 
--- Painted into the header's own rect, so neither the chip nor the count is a
--- laid-out item and neither can reach ContentSize. Both are right-aligned
--- together, which means only the rect's RIGHT edge is needed -- where the
--- header's text begins depends on the arrow and the frame padding, and reading
--- that back would be the fragile half.
--- state: 0 far below the cap, 1 within CAP_NEAR of it, 2 past it.
--- The cap chip, and nothing else. The item count used to sit to the right of
--- it, which put the chip at a different x on every row: flush right where a
--- zone had no drops, further left the longer its count ran. Four chips, three
--- positions. The count lives on the zone's own stat line now and a zone with
--- nothing in it says so by dimming its name.
 local function head_meta(capText, state, nameWidth)
     local list   = imgui.GetWindowDrawList();
     local ax, ay = imgui.GetItemRectMin();
@@ -725,9 +677,6 @@ local function head_meta(capText, state, nameWidth)
     local mid  = ay + (by - ay - imgui.GetTextLineHeight()) * 0.5;
     local capw = measure(capText);
 
-    -- What the chip needs, against what the name has left. Too narrow and
-    -- nothing is painted: the zone's own name is never the thing that gets
-    -- covered up.
     local group = capw + pad * 2 + gap;
     if ((bx - ax) - imgui.GetFrameHeight() - nameWidth - gap < group) then return; end
 
@@ -758,7 +707,7 @@ local function render_fatigue(charname, activity, zoneId, zoneName)
     local color = get_fatigue_color(value, cap);
     local count = ('%d / %d'):fmt(value, cap);
 
-    local fraction = value / cap;
+    local fraction = math.min(1, value / cap);
 
     local avail = imgui.GetContentRegionAvail();
     local x, y  = imgui.GetCursorScreenPos();
@@ -813,8 +762,6 @@ local function tinted_button(label, base, hover, active)
     return pressed;
 end
 
-
--- Red: throws data away. Takes two clicks.
 local DANGER_SIZE = { 0, 0 };
 
 local function danger_button(label)
@@ -851,15 +798,11 @@ local function danger_button(label)
     return false;
 end
 
--- Green: produces something.
 local function success_button(label)
     return tinted_button(label, data.COLOR_SUCCESS,
         data.COLOR_SUCCESS_HOVER, data.COLOR_SUCCESS_ACTIVE);
 end
 
--- BOX_SIZE, ART_SIZE and LINE_GAP are filled once per list by the caller
--- rather than per item: the icon size and the line gap are the same for every
--- item in a frame, and this runs 360 times in one under the stress dataset.
 local pip_fill = nil;
 local PIP_A, PIP_B, PIP_C = { 0, 0 }, { 0, 0 }, { 0, 0 };
 
@@ -971,10 +914,6 @@ local function render_item_list(log, total, charname, activity, zoneId, proven)
 
             local label = ('%.1f%%'):fmt(pct);
 
-            -- Each width into its own local first. Passing the calls straight to
-            -- math.max lets the second one expand to (width, height) and the line
-            -- height joins the comparison, which is a silently wrong column width
-            -- the moment a name and a label are both narrower than one line.
             local name_w  = measure(name);
             local label_w = measure(label);
             local text_width = math.max(name_w, label_w);
@@ -988,6 +927,7 @@ local function render_item_list(log, total, charname, activity, zoneId, proven)
             slot.label  = label;
             slot.text_w = text_width;
             slot.tier   = get_rarity_tier(pct);
+            slot.rank   = slot.tier.rank;
             slot.needs  = nil;
             slot.muted  = false;
             slot.node   = node_half(pair, name);
@@ -997,11 +937,14 @@ local function render_item_list(log, total, charname, activity, zoneId, proven)
         end
     end
 
+    local skill = store.get_skill(charname, activity);
     for _, entry in ipairs(known) do
         local shown = resources.item_name(entry.name);
         if (not seen[shown]) then
-            local locked = store.item_locked(charname, activity, zoneId, entry.name);
-            if (got[shown]) then locked = nil; end
+            local locked = entry.skill;
+            if (got[shown] or (locked ~= nil and skill ~= nil and skill >= locked)) then
+                locked = nil;
+            end
             local label  = locked and ('Locked (%d)'):fmt(locked) or 'Not seen';
 
             local shown_w = measure(shown);
@@ -1016,6 +959,7 @@ local function render_item_list(log, total, charname, activity, zoneId, proven)
             slot.label  = label;
             slot.text_w = text_width;
             slot.tier   = locked and data.TIER_LOCKED or data.TIER_UNSEEN;
+            slot.rank   = slot.tier.rank;
             slot.needs  = locked;
             slot.muted  = true;
             slot.node   = node_half(pair, shown);
@@ -1031,9 +975,6 @@ local function render_item_list(log, total, charname, activity, zoneId, proven)
     local art     = px(store.icon_size());
     local per_row = store.items_per_row();
 
-    -- Every item in the list shares these. The line height is measured here
-    -- rather than at load because it has to be read under whatever font is
-    -- current, and the small-icon style has pushed a smaller one by now.
     local gap    = px(data.ITEM_LINE_GAP);
     local text_h = imgui.GetTextLineHeight() * 2 + gap;
 
@@ -1045,7 +986,7 @@ local function render_item_list(log, total, charname, activity, zoneId, proven)
     local last_rank = nil;
     local column    = 0;
     for index, item in ipairs(items) do
-        local rank = item.tier.rank;
+        local rank = item.rank;
         if (last_rank == nil or (grouped and rank ~= last_rank)) then
             imgui.Spacing();
             imgui.Spacing();
@@ -1076,17 +1017,12 @@ local function divider()
     imgui.Spacing();
 end
 
-
 local function zone_cap_label(charname, activity, zoneId)
     local cap = store.skill_capped(charname, activity, zoneId);
     if (cap == nil) then return nil; end
     return ('Cap (%d)'):fmt(cap);
 end
 
-
--- Reported from play rather than confirmed, which is why the wording hedges
--- and why nothing but this sentence acts on it: the line stops firing once
--- your skill is within stops_near of the zone's own cap.
 local function stop_note(ability, charname, zoneId)
     local caps = data.SKILL_CAPS[ability.activity];
     local cap  = caps and caps[zoneId];
@@ -1132,14 +1068,12 @@ local function proc_tip(ability, fired, outof, charname, zoneId)
     return ('%s\n\n%s'):fmt(head, repeat_note(charname, zoneId));
 end
 
--- The count is the denominator every drop rate under it is worked out from,
--- which is the thing the bare number on the header never said.
-local function items_tip(total, zoneName)
+local function items_tip(total)
     return ('%d item%s here. Every rate below divides this.')
         :fmt(total, total == 1 and '' or 's');
 end
 
-local function skillup_tip(ups, swings, cap_at, zoneName)
+local function skillup_tip(ups, swings, cap_at)
     if (cap_at ~= nil) then
         return ('Caps at %d. Swings here are not counted.'):fmt(cap_at);
     end
@@ -1178,7 +1112,7 @@ local function render_activity(charname, activity, curZoneId, zoneName)
     tile(1, 'COLLECTED', ('%d'):fmt(total));
     tile(2, 'LAST SKILL', capped or ('%d'):fmt(since), data.COLOR_SKILLUP,
          skillup_tip, ups, swings,
-         store.skill_capped(charname, activity, curZoneId), zoneName);
+         store.skill_capped(charname, activity, curZoneId));
 
     local abilities = data.PROC_ABILITIES[activity];
     for index, ability in ipairs(abilities) do
@@ -1257,6 +1191,8 @@ local function gil(value)
 end
 
 local PRICE_BUFFER = {};
+local VENDOR_HINT  = 'On: a vendor price. Off: an auction house one.\n'
+                  .. 'Zone rates show every drop sold to an NPC in brackets.';
 
 local function price_rows()
     local scanned = resources.scan_done();
@@ -1341,8 +1277,7 @@ local function render_price_editor()
                 if (checkbox('Vendor', store.is_vendor(item.key), item.id)) then
                     store.toggle_vendor(item.key);
                 end
-                hint('On: a vendor price. Off: an auction house one.\n'
-                  .. 'Zone rates name the vendor floor under them.');
+                hint(VENDOR_HINT);
             end
         end
     end
@@ -1470,7 +1405,7 @@ local function render_spoils(charname)
         imgui.Spacing();
         tile(1, 'GIL/HR', rate and gil(rate) or '-', data.COLOR_SKILLUP,
              rate_tip, net, spent, span);
-        tile(2, 'LIFETIME', gil(lifetime), data.COLOR_SKILLUP, lifetime_tip, lifetime, ever);
+        tile(2, 'LIFETIME', gil(lifetime), data.COLOR_SKILLUP, lifetime_tip);
         render_tiles(2);
         imgui.Spacing();
     end
@@ -1582,8 +1517,6 @@ local function render_spoils(charname)
         ui.editing_prices = true;
     end
     imgui.SameLine(0, px(data.NAV_GAP));
-    -- Between the two on purpose: it writes exactly what the button beside it
-    -- would throw away.
     if (success_button('Export Session')) then
         actions.export_spoils();
     end
@@ -1597,50 +1530,34 @@ local function render_spoils(charname)
     imgui.Spacing();
 end
 
--- Both live down here rather than beside items_tip, because they call gil()
--- and locals resolve in file order.
--- A zone's hourly figure comes from that zone's own clock or from nothing at
--- all. While it is waiting, the hover counts it in rather than saying no:
--- the number it is short of is the useful half.
--- A repeat ticks the clock whatever the box says, but only reaches the drop
--- log when it is ticked, so with it off the pace counts gathers the gil half
--- does not. This reads the setting to explain itself, never to reinterpret a
--- log -- the double-subtraction the migration forbids is arithmetic, not
--- wording.
 local function repeat_caveat(charname, zoneId)
     if (store.count_repeats()) then return nil; end
     if (next(store.get_repeats(charname, zoneId)) == nil) then return nil; end
     return 'Repeats not counted, so this reads high.';
 end
 
--- The coverage line is the one that stops the era gap being silent: the gil
--- half divides every gather ever made here, the pace covers only what the
--- clock saw, and those are the same window today and drift apart later.
--- What the best-zone pass priced, kept for the foldouts below it in the same
--- frame so an open zone with a rate is not priced twice. Keyed by zone id and
--- cleared per zone at the top of each pass: Yuhtunga and Yhoator are on two
--- tabs, so a value left from the other tab would otherwise be read here.
-local PRE_GROSS, PRE_COST, PRE_VENDOR = {}, {}, {};
+local PRE_GROSS, PRE_COST, PRE_VENDOR, PRE_UNKNOWN = {}, {}, {}, {};
 
-local function gil_hour_tip(each, pace, span, timed, total, charname, zoneId)
+local function gil_hour_tip(each, pace, span, timed, total, charname, zoneId, unknown)
     if (pace == nil) then
         return ('%d of %d gathers timed here.\nThe clock runs between gathers '
              .. 'and stops when you leave.'):fmt(timed, data.PACE_MIN);
     end
 
-    -- The rate leads, because the rate is what the label promises.
     local head = ('%.0f an hour, %s a gather, timed here.\n'
                .. '%d of %d gathers timed, over %s.')
         :fmt(pace, gil(each), timed, total, span_label(span));
+
+    if (unknown ~= nil and unknown > 0) then
+        head = ('%s\nNo NPC price for %d drop%s here, so brackets read low.')
+            :fmt(head, unknown, unknown == 1 and '' or 's');
+    end
 
     local caveat = repeat_caveat(charname, zoneId);
     if (caveat == nil) then return head; end
     return ('%s\n%s'):fmt(head, caveat);
 end
 
--- The last line answers what an hourly rate cannot: a zone closes at its
--- fatigue ceiling, so what one full run there is worth is the figure a
--- session is actually planned around. It needs no clock.
 local function gil_each_tip(gross, cost, total, charname, activity, zoneId)
     local each = (gross - cost) / total;
     local run  = store.fatigue_cap(charname, activity, zoneId);
@@ -1679,27 +1596,29 @@ local function render_activity_tab(charname, activity)
     local caps  = data.SKILL_CAPS[activity];
     local skill = store.get_skill(charname, activity) or 0;
 
-    -- The zone that earns most an hour, over every zone on the tab whether
-    -- its foldout is open or not. zone_pace is two reads and gates the rest:
-    -- only a zone with a timed rate is priced at all, which on a real tab is
-    -- a handful, so collapsed zones cost almost nothing. "Best" needs a
-    -- second zone to be better than, so a lone timed zone is not crowned.
     local best_id, best, rated = nil, 0, 0;
+    local next_id, next_best   = nil, 0;
     for _, zone in ipairs(zones) do
         PRE_GROSS[zone.id] = nil;
         local rate = store.zone_pace(charname, activity, zone.id);
         if (rate ~= nil) then
             local total = count_gathers(store.get_item_log(charname, activity, zone.id));
-            local gross, cost, vendor = store.zone_gil(charname, activity, zone.id);
-            PRE_GROSS[zone.id], PRE_COST[zone.id], PRE_VENDOR[zone.id] = gross, cost, vendor;
+            local gross, cost, vendor, unknown = store.zone_gil(charname, activity, zone.id);
+            PRE_GROSS[zone.id], PRE_COST[zone.id] = gross, cost;
+            PRE_VENDOR[zone.id], PRE_UNKNOWN[zone.id] = vendor, unknown;
             if (total > 0 and gross > 0) then
                 rated = rated + 1;
                 local hour = (gross - cost) / total * rate;
-                if (hour > best) then best, best_id = hour, zone.id; end
+                if (hour > best) then
+                    next_best, next_id = best, best_id;
+                    best, best_id = hour, zone.id;
+                elseif (hour > next_best) then
+                    next_best, next_id = hour, zone.id;
+                end
             end
         end
     end
-    if (rated < 2) then best_id = nil; end
+    if (rated < 2) then best_id, next_id = nil, nil; end
 
     for _, zone in ipairs(zones) do
         local log   = store.get_item_log(charname, activity, zone.id);
@@ -1707,16 +1626,6 @@ local function render_activity_tab(charname, activity)
         local capAt = store.skill_capped(charname, activity, zone.id);
         local cap   = caps and caps[zone.id];
 
-        -- Past the cap is gold, within CAP_NEAR of it lit, anything further
-        -- off plain.
-        --
-        -- An unknown skill counts as 0 here, and the asymmetry is deliberate:
-        -- it can light a zone UP but never mark one finished. skill_capped
-        -- still requires a known skill, so an activity you have never touched
-        -- highlights its starter zones -- which is exactly when the guidance is
-        -- worth most -- and can never wrongly call a zone done. Settings
-        -- already shows an unrecorded skill as 0.0, so this is the reading the
-        -- UI was giving anyway.
         local state = 0;
         if (capAt ~= nil) then
             state = 2;
@@ -1726,31 +1635,25 @@ local function render_activity_tab(charname, activity)
 
         local capText = cap ~= nil and ('CAP %d'):fmt(cap) or nil;
 
-        -- The cap rides in the label only when it cannot be painted, so a
-        -- client with no draw list still sees it. The count is not added back
-        -- here: it has a place inside the zone now, and the fallback should
-        -- show the same information as the paint rather than more.
         local label = zone.name;
         if (head_fill == false and capText ~= nil) then
             label = ('%s - %s'):fmt(label, capText);
         end
 
-        -- A zone holding nothing dims its own name, which is what replaced the
-        -- count as the at-a-glance answer to "is there anything in here". It is
-        -- a style push rather than a paint because the label belongs to the
-        -- CollapsingHeader, and ImGuiCol_Text is otherwise never touched -- so
-        -- the push has to be balanced on the same frame it is made.
         local bare = total == 0;
         local top  = zone.id == best_id;
-        local tint = (bare and data.COLOR_CAPTION) or (top and data.COLOR_GOLD) or nil;
+        local near = zone.id == next_id;
+        local tint = (bare and data.COLOR_CAPTION) or (top and data.COLOR_GOLD)
+                  or (near and data.COLOR_RUNNER_UP) or nil;
         if (tint) then imgui.PushStyleColor(ImGuiCol_Text, tint); end
         local open = imgui.CollapsingHeader(('%s###hh%s%d'):fmt(label, activity, zone.id));
         if (tint) then imgui.PopStyleColor(1); end
 
-        -- Straight after the header, while it is still the last item, and
-        -- only built when hovered.
         if (top and imgui.IsItemHovered()) then
             tooltip(('Best gil an hour of %d timed zones: %s.'):fmt(rated, gil(best)));
+        elseif (near and imgui.IsItemHovered()) then
+            tooltip(('Second best gil an hour of %d timed zones: %s.')
+                :fmt(rated, gil(next_best)));
         end
 
         if (head_fill ~= false and capText ~= nil) then
@@ -1762,66 +1665,49 @@ local function render_activity_tab(charname, activity)
             local ups    = store.get_skillups(charname, activity, zone.id);
             local swings = store.get_attempts(charname, activity, zone.id);
 
-            -- A zone you have outskilled drops the figure entirely rather than
-            -- showing a rate that can never move again. The gold chip above is
-            -- what says why it is missing.
-            -- Leads the line, because it is the denominator every rate after
-            -- it is drawn from. Only when there is something to count: a zone
-            -- with nothing in it has already said so in its name.
             local first = true;
             if (total > 0) then
-                stat('ITEMS', ('%d'):fmt(total), items_tip, total, zone.name);
+                stat('ITEMS', ('%d'):fmt(total), items_tip, total);
                 first = false;
             end
 
             if (capAt == nil and swings > 0) then
                 if (not first) then imgui.SameLine(0, px(data.STAT_GAP)); end
                 stat('SKILL UPS', ('%.1f%%'):fmt(ups / swings * 100),
-                     skillup_tip, ups, swings, nil, zone.name);
+                     skillup_tip, ups, swings, nil);
             end
 
             render_procs(charname, activity, zone.id, total, proc_tip);
 
-            -- A zone nothing is priced in says nothing rather than zero: a
-            -- missing price only means nobody has checked one yet.
-            local gross, cost, vendor;
+            local gross, cost, vendor, unknown;
             if (PRE_GROSS[zone.id] ~= nil) then
-                gross, cost, vendor = PRE_GROSS[zone.id], PRE_COST[zone.id], PRE_VENDOR[zone.id];
+                gross, cost = PRE_GROSS[zone.id], PRE_COST[zone.id];
+                vendor, unknown = PRE_VENDOR[zone.id], PRE_UNKNOWN[zone.id];
             else
-                gross, cost, vendor = store.zone_gil(charname, activity, zone.id);
+                gross, cost, vendor, unknown = store.zone_gil(charname, activity, zone.id);
             end
             if (gross > 0) then
-                local each  = (gross - cost) / total;
-                local floor = (vendor - cost) / total;
+                local each = (gross - cost) / total;
+                local sold = (vendor - cost) / total;
 
-                -- A zone's own clock or nothing. There is deliberately no
-                -- fallback to a character-wide pace: borrowing one is what
-                -- made a zone's figure move while you gathered somewhere else.
                 local rate, span, timed = store.zone_pace(charname, activity, zone.id);
 
-                -- The vendor floor rides beside the rate in brackets, and
-                -- only when something here is priced at the auction house: a
-                -- zone priced entirely off vendors has one figure and shows
-                -- one.
                 local shown = '-';
                 if (rate ~= nil) then
                     shown = gil(each * rate);
-                    if (floor < each) then
-                        shown = ('%s (%s)'):fmt(shown, gil(floor * rate));
+                    local vendored = gil(sold * rate);
+                    if (vendored ~= shown) then
+                        shown = ('%s (%s)'):fmt(shown, vendored);
                     end
                 end
 
                 stat('GIL/HR', shown, gil_hour_tip, each, rate, span, timed,
-                     total, charname, zone.id);
+                     total, charname, zone.id, unknown);
                 imgui.SameLine(0, px(data.STAT_GAP));
                 stat('PER GATHER', gil(each), gil_each_tip,
                      gross, cost, total, charname, activity, zone.id);
             end
 
-            -- A rule between the figures and the grid, so the strip reads as
-            -- belonging to the zone rather than to the items under it. Drawn
-            -- whether or not the strip had anything to say, so every open zone
-            -- has the same shape.
             imgui.Spacing();
             imgui.Separator();
             imgui.Spacing();
@@ -2008,7 +1894,6 @@ local function render_settings(charname)
     imgui.Spacing();
 end
 
-
 local function visible_tabs()
     local n = 0;
     for _, name in ipairs(data.NAV_LEADING) do
@@ -2130,10 +2015,6 @@ local function render_nav(tabs)
     end
     if (not showing) then ui.active_tab = tabs[1]; end
 
-    -- The buttons are shorter than the track and inset into it, so the track
-    -- reads as one segmented control rather than as a backing plate the
-    -- buttons happen to cover. Both pads are reserved with zero-width items,
-    -- which is the only way to claim the height without claiming the width.
     NAV_BTN_PAD[1] = px(data.NAV_BTN_PAD_X);
     NAV_BTN_PAD[2] = px(data.NAV_BTN_PAD_Y);
     imgui.PushStyleVar(ImGuiStyleVar_FramePadding, NAV_BTN_PAD);
@@ -2180,8 +2061,6 @@ local function render_nav(tabs)
 
     imgui.PopStyleColor(2);
 
-    -- Reserve the close glyph's corner, or the last button would be drawn over
-    -- it once the nav row is the widest thing in the window.
     if (nav_fill) then
         imgui.SameLine(0, px(data.NAV_GAP));
         NAV_ROOM[1] = nav_close_width();
@@ -2204,12 +2083,7 @@ function ui.render(charname, curZoneId)
     window_style();
     cell_id      = 0;
     scale        = store.ui_scale();
-    WINDOW_BG[1], WINDOW_BG[2], WINDOW_BG[3] =
-        data.SURFACE_BASE[1], data.SURFACE_BASE[2], data.SURFACE_BASE[3];
-    TITLE_BG[1], TITLE_BG[2], TITLE_BG[3] =
-        data.SURFACE_TITLE[1], data.SURFACE_TITLE[2], data.SURFACE_TITLE[3];
     WINDOW_BG[4] = store.window_opacity();
-    TITLE_BG[4]  = store.window_opacity();
     MIN_SIZE[1]  = px(data.WINDOW_MIN_WIDTH);
 
     for _, entry in ipairs(STYLE_COLORS) do
@@ -2258,7 +2132,6 @@ function ui.render(charname, curZoneId)
 
     imgui.PopStyleVar(#STYLE_VARS);
     imgui.PopStyleColor(#STYLE_COLORS);
-
 end
 
 return ui;

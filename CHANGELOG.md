@@ -57,6 +57,32 @@ itself once you have put a proper shift into each zone.
 
 ## [Unreleased]
 
+## [0.25.1] - 2026-09-29
+
+### Added
+
+- **The second-best zone on each activity tab is named in light blue**, beside
+  the gold of the best.
+
+### Changed
+
+- **The bracketed zone `GIL/HR` is every drop sold to an NPC**, counting
+  auction house items at their NPC price, rather than only the items ticked
+  Vendor.
+- **Optimization pass.** Edit Prices in particular does far less work each
+  frame; nothing looks different.
+
+### Fixed
+
+- **Exported CSVs end each line once.** Every line carried a stray extra
+  carriage return.
+- **An item two activities drop has one price.** Its second box in Edit Prices
+  was saved but never used; both boxes now show and set the same price.
+- **A fatigue bar stops at its end** when a lowered skill level leaves a zone
+  above its cap.
+- **`/hd set` stores a whole number and reports what it stored**, after the
+  cap, rather than what was typed.
+
 ## [0.25.0] - 2026-09-27
 
 ### Added
@@ -947,7 +973,8 @@ Initial public release.
 - The rule that a gather decays *all* other zones for that activity was
   inferred from a two-zone observation.
 
-[Unreleased]: https://github.com/KisamMeow/HELMdiel/compare/v0.25.0...HEAD
+[Unreleased]: https://github.com/KisamMeow/HELMdiel/compare/v0.25.1...HEAD
+[0.25.1]: https://github.com/KisamMeow/HELMdiel/compare/v0.25.0...v0.25.1
 [0.25.0]: https://github.com/KisamMeow/HELMdiel/compare/v0.24.0...v0.25.0
 [0.24.0]: https://github.com/KisamMeow/HELMdiel/compare/v0.23.2...v0.24.0
 [0.23.2]: https://github.com/KisamMeow/HELMdiel/compare/v0.23.1...v0.23.2

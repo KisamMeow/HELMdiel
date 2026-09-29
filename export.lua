@@ -111,9 +111,6 @@ function export.build(charname, minimal)
     return table.concat(lines, NEWLINE) .. NEWLINE, #lines - 1;
 end
 
--- Exactly what Reset Session clears: the tally, and the tools it cost. Items
--- come from session_log rather than spoils because it carries the zone as well;
--- the two hold the same gathers and their totals agree.
 function export.build_spoils(charname, minimal)
     local header = minimal and data.EXPORT_SPOILS_MIN or data.EXPORT_SPOILS;
     local lines  = T{ header_row(header) };
@@ -149,9 +146,6 @@ function export.build_spoils(charname, minimal)
         end
     end
 
-    -- Tools last, the way the tab draws them, and negative for the same
-    -- reason: they are what the session cost, not what it earned. No zone,
-    -- because tool_breaks is keyed by activity alone.
     for _, activity in ipairs(data.ACTIVITIES) do
         local broke = store.get_tool_breaks(charname, activity);
         if (broke > 0) then
@@ -174,7 +168,7 @@ local function write_csv(stem, text, rows)
     local path = ('%s%s_%s.csv'):fmt(store.config_path(), stem,
                                      os.date('%Y-%m-%d_%H%M%S'));
 
-    local ok, handle = pcall(io.open, path, 'w');
+    local ok, handle = pcall(io.open, path, 'wb');
     if (not ok or handle == nil) then return false, path, 0; end
 
     handle:write(text);
@@ -192,19 +186,9 @@ end
 
 function export.write(charname)
     local minimal = store.export_minimal();
-    local path    = ('%s%s_export_%s.csv'):fmt(store.config_path(),
-                                               minimal and SHARED_STEM or charname,
-                                               os.date('%Y-%m-%d_%H%M%S'));
-
-    local ok, handle = pcall(io.open, path, 'w');
-    if (not ok or handle == nil) then return false, path, 0; end
-
     local text, rows = export.build(charname, minimal);
-
-    handle:write(text);
-    handle:close();
-
-    return true, path, rows;
+    return write_csv((minimal and SHARED_STEM or charname) .. '_export',
+                     text, rows);
 end
 
 return export;
