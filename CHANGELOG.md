@@ -57,6 +57,30 @@ itself once you have put a proper shift into each zone.
 
 ## [Unreleased]
 
+## [0.27.0] - 2026-09-30
+
+### Added
+
+- **Aluminum Ore in Newton Movalpolos**, from skill 30.
+- **Pigeon's Blood in Aydeewa Subterrane**, from skill 60.
+- **Siren's Hair in Arrapago Reef**, from skill 60.
+- **Jadeite and Avatar Blood in Aydeewa Subterrane**, from skill 30.
+- **Import Starter Prices in Edit Prices**, a starting set of prices and
+  Vendor marks, either replacing yours or filling only the items still at 0.
+
+### Changed
+
+- **Grain Seeds, Vegetable Seeds, Petrified Log, Green Rock and Yellow Rock
+  are no longer greyed in Edit Prices.** Each shows once, under the activity
+  that drops it.
+- **Rotting Timber is reported to stop 4.9 below a zone's cap**, not 5, so in
+  a zone capped at 20 it stops at 15.1 rather than 15.
+
+### Removed
+
+- **Plumbago and Little Worm from the price list.** Both were listed on the
+  wiki as HELM drops but are not.
+
 ## [0.26.0] - 2026-09-29
 
 ### Added
@@ -973,7 +997,8 @@ Initial public release.
 - The rule that a gather decays *all* other zones for that activity was
   inferred from a two-zone observation.
 
-[Unreleased]: https://github.com/KisamMeow/HELMdiel/compare/v0.26.0...HEAD
+[Unreleased]: https://github.com/KisamMeow/HELMdiel/compare/v0.27.0...HEAD
+[0.27.0]: https://github.com/KisamMeow/HELMdiel/compare/v0.26.0...v0.27.0
 [0.26.0]: https://github.com/KisamMeow/HELMdiel/compare/v0.25.0...v0.26.0
 [0.25.0]: https://github.com/KisamMeow/HELMdiel/compare/v0.24.0...v0.25.0
 [0.24.0]: https://github.com/KisamMeow/HELMdiel/compare/v0.23.2...v0.24.0

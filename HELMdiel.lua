@@ -1,6 +1,6 @@
 addon.name    = 'HELMdiel';
 addon.author  = 'Masuru';
-addon.version = '0.26.0';
+addon.version = '0.27.0';
 addon.desc    = 'Tracks HELM (Harvesting/Excavation/Logging/Mining) regional gathering fatigue on HorizonXI.';
 addon.link    = 'https://github.com/KisamMeow/HELMdiel';
 
@@ -377,8 +377,14 @@ local function export_csv()
     end
 end
 
+local function import_prices(only_unpriced)
+    local count = store.import_starter(only_unpriced);
+    msg(('Imported %d price%s.'):fmt(count, count == 1 and '' or 's'));
+end
+
 ui.set_actions(T{ reset_session = reset_session, reset_all = reset_all,
-                  export = export_csv, export_spoils = export_spoils });
+                  export = export_csv, export_spoils = export_spoils,
+                  import_prices = import_prices });
 ui.set_title(addon.version);
 
 ashita.events.register('d3d_present', 'helmdiel_present', function()

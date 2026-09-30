@@ -323,7 +323,7 @@ data.ZONE_ITEMS = T{
             { name = 'Coral Fragment' },
             { name = 'Crab Shell' },
             { name = 'Gold Ingot', skill = 40 },
-            { name = 'High-Quality Crab Shell', skill = 30 },
+            { name = 'H.Q. Crab Shell', skill = 30 },
             { name = 'Lamian Armlet' },
             { name = 'Lapis Lazuli' },
             { name = 'Merrow Scale' },
@@ -332,10 +332,12 @@ data.ZONE_ITEMS = T{
             { name = 'Pebble' },
             { name = 'Rock Salt' },
             { name = 'Shall Shell' },
+            { name = "Siren's Hair", skill = 60 },
             { name = 'Soulflayer Robe', skill = 40 },
             { name = 'Turquoise' },
         },
         [68] = T{
+            { name = 'Avatar Blood', skill = 30 },
             { name = 'Blk. Tiger Fang' },
             { name = 'Colibri Beak' },
             { name = 'Crawler Cocoon' },
@@ -343,11 +345,13 @@ data.ZONE_ITEMS = T{
             { name = 'Firesand' },
             { name = 'Flint Stone' },
             { name = 'H.Q. Pugil Scls.' },
+            { name = 'Jadeite', skill = 30 },
             { name = 'Marid Tusk' },
             { name = 'Pebble' },
             { name = 'Peridot' },
             { name = 'Petrified Log' },
             { name = 'Phil. Stone', skill = 40 },
+            { name = "Pigeon's Blood", skill = 60 },
             { name = 'Wivre Horn' },
             { name = 'Wivre Maul' },
         },
@@ -532,6 +536,7 @@ data.ZONE_ITEMS = T{
             { name = 'Zinc Ore' },
         },
         [12] = T{
+            { name = 'Aluminum Ore', skill = 30 },
             { name = 'Copper Ore' },
             { name = 'Gold Ore' },
             { name = 'Igneous Rock' },
@@ -727,7 +732,7 @@ data.PROC_ABILITIES = T{
     Logging    = T{
         { name = 'Rotting Timber', short = 'ROTTING',
           pattern = 'Rotting timber splinters', basis = 'successes',
-          barren = true, stops_near = 5 },
+          barren = true, stops_near = 4.9 },
     },
     Mining     = T{
         { name = 'Gold Rush',  short = 'GOLD RUSH',
@@ -829,21 +834,11 @@ data.ZONE_LABELS      = T{};
 -- Wiki-only drops
 data.LEGACY_ITEMS = T{
     Harvesting = T{},
-    Excavation = T{
-        'Grain Seeds',
-        'Little Worm',
-        'Vegetable Seeds',
-    },
+    Excavation = T{},
     Logging    = T{
         'Dragon Fruit',
-        'Petrified Log',
     },
-    Mining     = T{
-        'Aluminum Ore',
-        'Green Rock',
-        'Plumbago',
-        'Yellow Rock',
-    },
+    Mining     = T{},
 };
 
 -- NPC sell prices
@@ -852,13 +847,8 @@ data.NPC_PRICES = T{
     ['Beehive Chip']     = 11,
     ['Crawler Cocoon']   = 34,
     ['Flint Stone']      = 5,
-    ['Grain Seeds']      = 77,
-    ['Green Rock']       = 210,
     ['Pebble']           = 1,
-    ['Petrified Log']    = 2203,
     ['Red Rock']         = 205,
-    ['Vegetable Seeds']  = 77,
-    ['Yellow Rock']      = 205,
     -- Harvesting
     ['Cattleya']         = 307,
     ['Coffee Cherries']  = 84,
@@ -870,6 +860,7 @@ data.NPC_PRICES = T{
     ['Flax Flower']      = 55,
     ['Fresh Marjoram']   = 1,
     ['Fresh Mugwort']    = 88,
+    ['Grain Seeds']      = 77,
     ['Herb Seeds']       = 77,
     ['Honey']            = 33,
     ['Im. Tea Leaves']   = 4,
@@ -893,6 +884,7 @@ data.NPC_PRICES = T{
     ['Sleepshroom']      = 27,
     ['Spider Web']       = 676,
     ['Toad Oil']         = 615,
+    ['Vegetable Seeds']  = 77,
     ['Wijnruit']         = 33,
     ['Wild Onion']       = 85,
     ['Win. Tea Leaves']  = 4,
@@ -900,10 +892,12 @@ data.NPC_PRICES = T{
     -- Excavation
     ['Antlion Jaw']      = 2808,
     ['Aquamarine']       = 2509,
+    ['Avatar Blood']     = 3690,
     ['Bat Fang']         = 8,
     ['Beetle Jaw']       = 133,
     ['Beetle Shell']     = 69,
     ['Black Pearl']      = 1203,
+    ['Blk. Tiger Fang']  = 440,
     ['Blue Rock']        = 205,
     ['Bone Chip']        = 20,
     ['Cactus Stems']     = 531,
@@ -912,19 +906,27 @@ data.NPC_PRICES = T{
     ['Coral Fragment']   = 1793,
     ['Crab Shell']       = 392,
     ['Crawler Egg']      = 36,
+    ['Diamond']          = 3895,
+    ['Emerald']          = 3895,
     ['Firesand']         = 328,
     ['Fish Scales']      = 26,
     ['Giant Femur']      = 208,
     ['Gold Ingot']       = 2152,
+    ['Green Rock']       = 210,
+    ['H.Q. Crab Shell']  = 3408,
     ['H.Q. Pugil Scls.'] = 266,
     ['H.Q. Scp. Shell']  = 3505,
     ['Helmet Mole']      = 731,
+    ['Jadeite']          = 2460,
     ['Lapis Lazuli']     = 217,
     ['Lugworm']          = 1,
     ['Marid Tusk']       = 760,
     ['Merrow Scale']     = 256,
     ['Oxblood']          = 13581,
     ['Pearl']            = 1230,
+    ['Peridot']          = 1230,
+    ['Petrified Log']    = 2203,
+    ['Phil. Stone']      = 3997,
     ['Purple Rock']      = 206,
     ['Rock Salt']        = 4,
     ['Scorpion Claw']    = 279,
@@ -933,10 +935,15 @@ data.NPC_PRICES = T{
     ['Shall Shell']      = 307,
     ['Shell Bug']        = 18,
     ['Silica']           = 264,
+    ['Spinel']           = 3895,
+    ['Topaz']            = 3895,
+    ['Translucent Rock'] = 205,
     ['Turquoise']        = 1254,
     ['Turtle Shell']     = 1254,
     ['Wivre Horn']       = 760,
     ['Wivre Maul']       = 871,
+    ['Wyvern Scales']    = 1066,
+    ['Yellow Rock']      = 205,
     -- Logging
     ['Acorn']            = 2,
     ['Almond']           = 38,
@@ -1136,5 +1143,12 @@ for _, activity in ipairs(data.ACTIVITIES) do
     table.insert(data.PRICE_BLOCKS, activity);
 end
 table.insert(data.PRICE_BLOCKS, data.TOOL_KEY);
+
+data.PRICE_HOME = T{};
+for _, block in ipairs(data.PRICE_BLOCKS) do
+    for _, name in ipairs(data.PRICE_ITEMS[block]) do
+        if (data.PRICE_HOME[name] == nil) then data.PRICE_HOME[name] = block; end
+    end
+end
 
 return data;

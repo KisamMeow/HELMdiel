@@ -6,7 +6,7 @@ Per-zone fatigue counters, skill levels read from your own skill-up messages,
 drop logging with icons and rarity tiers, a session tally with gil, and CSV
 export.
 
-Ashita v4.30+ addon. Version 0.26.0. Released under GPL-3.0. Coded with help
+Ashita v4.30+ addon. Version 0.27.0. Released under GPL-3.0. Coded with help
 from Claude Opus 5.
 
 ## Screenshots
@@ -323,12 +323,18 @@ whenever you change a price. That is deliberate: it means pricing an item today
 corrects everything you gathered before you got round to it.
 
 **Prices are yours to set**, since the game does not tell addons what anything
-sells for. **Edit Prices** lists every gatherable item with a box beside it —
-41 harvesting, 41 excavation, 32 logging, 40 mining, plus a **Tools** block for
-the sickle, pickaxe and hatchet. They save as you type, are shared by all your
+sells for. **Edit Prices** lists every gatherable item with a box beside it,
+grouped by activity, plus a **Tools** block for the sickle, pickaxe and
+hatchet. They save as you type, are shared by all your
 characters, and **no reset clears them**; anything unpriced counts as 0. An
 item showing **(?)** instead of a box has a name your game does not
 recognise — tell me which and it is a one-line fix.
+
+**Import Starter Prices**, beside Done, fills the list from a starter set of
+prices and Vendor marks, as a place to start. It asks first: **Import All**
+replaces every price and mark it has one for, and **Unpriced Only** fills just
+the items still at 0. The set ships with the addon and is refreshed from time
+to time.
 
 **Tick Vendor beside an item** to mark it as something you just sell to an NPC.
 Tools have no such box, since you never carry one home.

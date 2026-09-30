@@ -1027,17 +1027,17 @@ local function stop_note(ability, charname, zoneId)
     local caps = data.SKILL_CAPS[ability.activity];
     local cap  = caps and caps[zoneId];
     if (cap == nil) then
-        return ('Reported to stop within %d of a zone\'s skill cap.')
+        return ('Reported to stop within %.1f of a zone\'s skill cap.')
             :fmt(ability.stops_near);
     end
 
     local at    = cap - ability.stops_near;
     local skill = store.get_skill(charname, ability.activity);
     if (skill ~= nil and skill >= at) then
-        return ('Reported to stop at %d; you are past that.'):fmt(at);
+        return ('Reported to stop at %.1f; you are past that.'):fmt(at);
     end
 
-    return ('Reported to stop at %d, within %d of the cap.')
+    return ('Reported to stop at %.1f, within %.1f of the cap.')
         :fmt(at, ability.stops_near);
 end
 
@@ -1217,6 +1217,41 @@ local function price_rows()
     return rows;
 end
 
+local IMPORT_LABEL = "Import Starter Prices";
+local IMPORT_POPUP = '##hhimport';
+local IMPORT_HINT  = 'Starter prices and Vendor marks, as a place to start.';
+
+local function render_import_popup()
+    if (not imgui.BeginPopupModal(IMPORT_POPUP, nil,
+            ImGuiWindowFlags_NoTitleBar + ImGuiWindowFlags_AlwaysAutoResize)) then
+        return;
+    end
+
+    imgui.TextColored(data.COLOR_CAPTION, 'IMPORT PRICES');
+    imgui.Spacing();
+    imgui.TextColored(data.COLOR_VALUE, 'Import the starter prices and Vendor marks?');
+    imgui.TextDisabled('Import All replaces every price and mark on the list.');
+    imgui.TextDisabled('Unpriced Only fills just the items still at 0.');
+    imgui.Spacing();
+
+    if (tinted_button('Import All', data.COLOR_DANGER,
+            data.COLOR_DANGER_HOVER, data.COLOR_DANGER_ACTIVE)) then
+        actions.import_prices(false);
+        imgui.CloseCurrentPopup();
+    end
+    imgui.SameLine(0, px(data.NAV_GAP));
+    if (imgui.Button('Unpriced Only')) then
+        actions.import_prices(true);
+        imgui.CloseCurrentPopup();
+    end
+    imgui.SameLine(0, px(data.NAV_GAP));
+    if (imgui.Button('Cancel')) then
+        imgui.CloseCurrentPopup();
+    end
+
+    imgui.EndPopup();
+end
+
 local function render_price_editor()
     imgui.TextDisabled('Set what each item sells for, and what a tool costs to replace.');
     imgui.Spacing();
@@ -1291,6 +1326,13 @@ local function render_price_editor()
     end
     imgui.SameLine(0, px(data.NAV_GAP));
     hint('Saved as you type.');
+    if (resources.scan_done() and store.starter() ~= nil) then
+        if (imgui.Button(IMPORT_LABEL)) then
+            imgui.OpenPopup(IMPORT_POPUP);
+        end
+        hint(IMPORT_HINT);
+    end
+    render_import_popup();
     imgui.Spacing();
 end
 

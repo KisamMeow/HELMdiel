@@ -695,12 +695,7 @@ function store.get_price(activity, itemName)
     return group[key] or 0;
 end
 
-function store.set_price(activity, itemName, value)
-    local key = resources.price_key(itemName);
-    if (key == nil) then return; end
-
-    value = math.max(0, math.floor(tonumber(value) or 0));
-
+local function put_price(activity, key, value)
     if (activity ~= data.TOOL_KEY) then
         for _, other in ipairs(data.ACTIVITIES) do
             local held = helm_settings.prices[other];
@@ -717,7 +712,52 @@ function store.set_price(activity, itemName, value)
     if (group ~= nil) then
         group[key] = value ~= 0 and value or nil;
     end
+end
+
+function store.set_price(activity, itemName, value)
+    local key = resources.price_key(itemName);
+    if (key == nil) then return; end
+
+    put_price(activity, key, math.max(0, math.floor(tonumber(value) or 0)));
     store.save();
+end
+
+local starter_missing = false;
+
+function store.starter()
+    if (starter_missing) then return nil; end
+
+    local ok, set = pcall(require, 'starter_prices');
+    if (not ok or type(set) ~= 'table' or type(set.prices) ~= 'table') then
+        starter_missing = true;
+        return nil;
+    end
+    return set;
+end
+
+function store.import_starter(only_unpriced)
+    local set = store.starter();
+    if (set == nil) then return 0; end
+
+    local auction = {};
+    for _, name in ipairs(set.auction or {}) do auction[name] = true; end
+
+    local count = 0;
+    for name, gil in pairs(set.prices) do
+        local key  = resources.price_key(name);
+        local home = data.PRICE_HOME[name];
+        if (key ~= nil and home ~= nil and type(gil) == 'number') then
+            if (not only_unpriced or store.get_price(home, name) == 0) then
+                put_price(home, key, math.max(0, math.floor(gil)));
+                if (home ~= data.TOOL_KEY) then
+                    helm_settings.market[key] = auction[name] or nil;
+                end
+                count = count + 1;
+            end
+        end
+    end
+    settings.save();
+    return count;
 end
 
 function store.price_of(itemName)
