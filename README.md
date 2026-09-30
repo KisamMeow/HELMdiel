@@ -7,7 +7,7 @@ drop logging with icons and rarity tiers, a session tally with gil, and CSV
 export.
 
 Ashita v4.30+ addon. Version 0.27.0. Released under GPL-3.0. Coded with help
-from Claude Opus 5.
+from Claude Opus 5.5.
 
 ## Screenshots
 
@@ -434,11 +434,6 @@ the skill levels.
 - **Skill up rates depend on your skill against a zone's cap**, which HELMdiel
   does not model. Rates recorded at different skill levels are not comparable,
   and a zone that looks slow may just be a poor match for your current skill.
-- **The fatigue message is assumed to match for excavation and mining.** If
-  either differs, that activity never shows the red FATIGUED label and its
-  counters will not resync.
-- Zone IDs use standard retail-compatible numbering and have not been checked
-  one by one against HorizonXI's server.
 
 ## Feedback
 
