@@ -61,7 +61,7 @@ itself once you have put a proper shift into each zone.
 
 ### Added
 
-- **Aluminum Ore in Newton Movalpolos**, from skill 30.
+- **Aluminum Ore in Newton Movalpolos**, from skill 40.
 - **Pigeon's Blood in Aydeewa Subterrane**, from skill 60.
 - **Siren's Hair in Arrapago Reef**, from skill 60.
 - **Jadeite and Avatar Blood in Aydeewa Subterrane**, from skill 30.
@@ -75,11 +75,13 @@ itself once you have put a proper shift into each zone.
   that drops it.
 - **Rotting Timber is reported to stop 4.9 below a zone's cap**, not 5, so in
   a zone capped at 20 it stops at 15.1 rather than 15.
+- **Platinum Ore needs skill 40 in Oldton Movalpolos and 30 in Newton
+  Movalpolos.**
 
 ### Removed
 
-- **Plumbago and Little Worm from the price list.** Both were listed on the
-  wiki as HELM drops but are not.
+- **Plumbago, Little Worm and Dragon Fruit from the price list.** All three
+  were listed on the wiki as HELM drops but are not.
 
 ## [0.26.0] - 2026-09-29
 

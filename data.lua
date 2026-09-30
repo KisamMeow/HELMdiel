@@ -530,19 +530,19 @@ data.ZONE_ITEMS = T{
             { name = 'Moblin Helm' },
             { name = 'Moblin Mail' },
             { name = 'Mythril Ore', skill = 10 },
-            { name = 'Platinum Ore' },
+            { name = 'Platinum Ore', skill = 40 },
             { name = 'Silver Ore' },
             { name = 'Tin Ore' },
             { name = 'Zinc Ore' },
         },
         [12] = T{
-            { name = 'Aluminum Ore', skill = 30 },
+            { name = 'Aluminum Ore', skill = 40 },
             { name = 'Copper Ore' },
             { name = 'Gold Ore' },
             { name = 'Igneous Rock' },
             { name = 'Iron Ore' },
             { name = 'Mythril Ore' },
-            { name = 'Platinum Ore' },
+            { name = 'Platinum Ore', skill = 30 },
             { name = 'Red Rock' },
             { name = 'Silver Ore' },
             { name = 'Tin Ore' },
@@ -835,9 +835,7 @@ data.ZONE_LABELS      = T{};
 data.LEGACY_ITEMS = T{
     Harvesting = T{},
     Excavation = T{},
-    Logging    = T{
-        'Dragon Fruit',
-    },
+    Logging    = T{},
     Mining     = T{},
 };
 
