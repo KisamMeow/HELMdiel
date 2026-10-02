@@ -27,8 +27,7 @@ per-zone rate from. A zone with ten thousand recorded gathers starts with zero
 recorded seconds, the same as a zone you have never set foot in.
 
 **So every zone shows `-` until it has timed 190 gathers of its own**, a
-fatigue cap with room to spare — the first gather of every visit opens an
-interval and times nothing, so a full 200 run never yields 200 timed.
+fatigue cap with room to spare for the waits too long to count.
 Nothing is borrowed from how fast you gather elsewhere
 to fill the gap: a borrowed figure moves when you gather *anywhere* — cut logs
 in Yhoator and the number sitting on Attohwa Chasm shifts — which is the fault
@@ -56,6 +55,27 @@ history that makes the figure worth having, to correct something that corrects
 itself once you have put a proper shift into each zone.
 
 ## [Unreleased]
+
+## [0.28.0] - 2026-10-02
+
+### Added
+
+- **Orichalcum Ore in Ifrit's Cauldron**, from skill 40.
+- **Ruby from skill 40 and Dragon Bone from 50 in Tahrongi Canyon.**
+- **Sapphire from skill 40 and Black Pearl from 50 in Korroloka Tunnel.**
+- **King Truffle in Jugner Forest**, from Logging skill 30.
+
+### Changed
+
+- **A zone's clock starts when you zone in**, so the first gather of a visit
+  is timed; zone in and gather nothing for twelve minutes and the wait is
+  thrown away. Spoils' clock starts on arrival too when nothing is running.
+- **Adaman Ore in Ifrit's Cauldron needs skill 30, and Darksteel Ore 20.**
+
+### Removed
+
+- **The gold corner on Gold Rush and Motherlode ores in the drop grid.** The
+  tiles above the grid already name both ores.
 
 ## [0.27.0] - 2026-09-30
 
@@ -999,7 +1019,8 @@ Initial public release.
 - The rule that a gather decays *all* other zones for that activity was
   inferred from a two-zone observation.
 
-[Unreleased]: https://github.com/KisamMeow/HELMdiel/compare/v0.27.0...HEAD
+[Unreleased]: https://github.com/KisamMeow/HELMdiel/compare/v0.28.0...HEAD
+[0.28.0]: https://github.com/KisamMeow/HELMdiel/compare/v0.27.0...v0.28.0
 [0.27.0]: https://github.com/KisamMeow/HELMdiel/compare/v0.26.0...v0.27.0
 [0.26.0]: https://github.com/KisamMeow/HELMdiel/compare/v0.25.0...v0.26.0
 [0.25.0]: https://github.com/KisamMeow/HELMdiel/compare/v0.24.0...v0.25.0

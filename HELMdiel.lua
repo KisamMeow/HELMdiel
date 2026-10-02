@@ -1,6 +1,6 @@
 addon.name    = 'HELMdiel';
 addon.author  = 'Masuru';
-addon.version = '0.27.0';
+addon.version = '0.28.0';
 addon.desc    = 'Tracks HELM (Harvesting/Excavation/Logging/Mining) regional gathering fatigue on HorizonXI.';
 addon.link    = 'https://github.com/KisamMeow/HELMdiel';
 
@@ -393,6 +393,14 @@ ashita.events.register('d3d_present', 'helmdiel_present', function()
     if (name ~= state.player) then
         if (state.player ~= nil) then store.pause_session(state.player); end
         state.player = name;
+        state.zone   = nil;
+    end
+
+    if (zoneId ~= state.zone) then
+        state.zone = zoneId;
+        if (data.ZONE_ACTIVITIES[zoneId] ~= nil) then
+            store.zone_in(name, zoneId);
+        end
     end
 
     ui.render(name, zoneId);

@@ -514,21 +514,37 @@ function store.register_item_gather(activity, zoneId, itemName, repeated)
     local now  = os.time();
     local last = char.session_last;
     if (last ~= nil and (now - last) <= data.SESSION_IDLE_CUTOFF) then
-        local gap = now - last;
-        char.session_active = (char.session_active or 0) + gap;
-
-        if (char.session_zone == key) then
-            local time = char.zone_time[activity] or T{};
-            char.zone_time[activity] = time;
-            time[key] = (time[key] or 0) + gap;
-
-            local timed = char.zone_timed[activity] or T{};
-            char.zone_timed[activity] = timed;
-            timed[key] = (timed[key] or 0) + 1;
-        end
+        char.session_active = (char.session_active or 0) + (now - last);
     end
     char.session_last = now;
+
+    local mark = char.zone_last;
+    if (mark ~= nil and char.session_zone == key
+        and (now - mark) <= data.SESSION_IDLE_CUTOFF) then
+        local time = char.zone_time[activity] or T{};
+        char.zone_time[activity] = time;
+        time[key] = (time[key] or 0) + (now - mark);
+
+        local timed = char.zone_timed[activity] or T{};
+        char.zone_timed[activity] = timed;
+        timed[key] = (timed[key] or 0) + 1;
+    end
+    char.zone_last    = now;
     char.session_zone = key;
+end
+
+function store.zone_in(charname, zoneId)
+    local char = helm_settings.characters[charname];
+    if (char == nil) then return; end
+
+    local now = os.time();
+    char.zone_last    = now;
+    char.session_zone = zone_key(zoneId);
+
+    local last = char.session_last;
+    if (last == nil or (now - last) > data.SESSION_IDLE_CUTOFF) then
+        char.session_last = now;
+    end
 end
 
 function store.get_repeats(charname, zoneId)
@@ -606,11 +622,13 @@ function store.pause_session(charname)
     local char = helm_settings.characters[charname];
     if (char == nil) then return; end
     char.session_last = nil;
+    char.zone_last    = nil;
 end
 
 function store.pause_all_sessions()
     for _, char in pairs(helm_settings.characters) do
         char.session_last = nil;
+        char.zone_last    = nil;
     end
 end
 

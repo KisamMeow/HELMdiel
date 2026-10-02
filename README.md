@@ -6,7 +6,7 @@ Per-zone fatigue counters, skill levels read from your own skill-up messages,
 drop logging with icons and rarity tiers, a session tally with gil, and CSV
 export.
 
-Ashita v4.30+ addon. Version 0.27.0. Released under GPL-3.0. Coded with help
+Ashita v4.30+ addon. Version 0.28.0. Released under GPL-3.0. Coded with help
 from Claude Opus 5.5.
 
 ## Screenshots
@@ -166,11 +166,10 @@ either tile lists exactly which items came from a node here.
 
 **Each Mining zone shows what its nodes give.** The Gold Rush tile names the
 ore the node repeats and the Motherlode tile the ore it upgrades to, in gold;
-on the Mining tab the same two names follow the rates. In the drop grid those
-two ores carry a gold corner on their icon — worth a look when one of them
-reads `Locked`, since Motherlode can hand out ore your skill would not. While
-Count Gold Rush/Motherlode Drops is on, their percentages draw in gold too,
-because node repeats are in the figure.
+on the Mining tab the same two names follow the rates. Motherlode can hand out
+ore your skill would not, so its ore can read `Locked` in the grid and still
+drop. While Count Gold Rush/Motherlode Drops is on, those two ores'
+percentages draw in gold, because node repeats are in the figure.
 
 HELMdiel follows the node itself rather than guessing from the item name, so
 moving to another vein ends the run even if it gives the same ore.
@@ -182,12 +181,13 @@ GATHER` is everything you have ever gathered there at today's prices, less the
 tools that broke in that zone, divided by its gathers. `GIL/HR` is that figure
 at the pace you gather it.
 
-**Each zone times itself.** The clock counts the gap between two gathers in the
-same zone, so a zone's hourly figure is measured where you earned it and does
-not move while you gather anywhere else. It stops when you leave and after
-twelve minutes idle, and the run between two zones is charged to neither —
-nothing records when you arrived. **Hover either figure** for the numbers
-behind it, including how long the zone has been timed.
+**Each zone times itself.** The clock starts when you zone in and counts the
+time to each gather after that, so a zone's hourly figure is measured where you
+earned it and does not move while you gather anywhere else. It stops when you
+leave and after twelve minutes idle — zone in and gather nothing for twelve
+minutes, and that wait is thrown away — and the run between two zones is
+charged to neither. **Hover either figure** for the numbers behind it,
+including how long the zone has been timed.
 
 **Working two activities at once in one zone is fine.** Yhoator and Yuhtunga
 are both Harvesting and Logging, and if you rotate between them each gap goes
@@ -199,10 +199,8 @@ of working it.
 one fatigue cap with room to spare. Until then `GIL/HR` reads `-`, and the
 hover counts you in: *12 of 190 gathers timed here.*
 
-**190 rather than 200 because the first gather of every visit times nothing.**
-It opens an interval; the next one closes it. So a full 200-gather run gives
-at most 199 timed, and each time you leave and come back costs another — at
-200 a zone could never qualify on one fatigue run.
+**190 rather than 200 leaves room for the waits that are thrown away**, so one
+fatigue run in a zone is enough even with a long break in it.
 
 **Nothing fills that gap in the meantime**, and that is deliberate. A figure
 borrowed from how fast you gather elsewhere moves when you gather elsewhere,
@@ -301,10 +299,11 @@ Net 1,850 Gil over 30min of gathering.
 session**, priced from the Tools block in Edit Prices. Leave them unpriced and
 nothing is deducted.
 
-**The clock only counts time you were actually gathering.** It adds up the
-gaps between one gather and the next, and **a gap of more than fifteen
-minutes is not counted at all** — so going for a walk, sitting in town or being away from
-the keyboard does not drag the figure down.
+**The clock only counts time you were actually gathering.** It starts when you
+zone into a gathering zone and adds up the gaps between one gather and the
+next, and **a gap of more than twelve minutes is not counted at all** — so
+going for a walk, sitting in town or being away from the keyboard does not
+drag the figure down.
 
 **It also stops the moment you stop playing.** Logging out to character select,
 `/shutdown`, unloading the addon, a crash or a dropped connection all pause it,

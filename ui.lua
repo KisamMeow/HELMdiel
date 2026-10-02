@@ -803,39 +803,14 @@ local function success_button(label)
         data.COLOR_SUCCESS_HOVER, data.COLOR_SUCCESS_ACTIVE);
 end
 
-local pip_fill = nil;
-local PIP_A, PIP_B, PIP_C = { 0, 0 }, { 0, 0 }, { 0, 0 };
-
-local function paint_pip(x, y, art)
-    local list = imgui.GetWindowDrawList();
-    local legs = art * data.PIP_RATIO;
-    local edge = px(1.5);
-
-    PIP_A[1], PIP_A[2] = x + art - legs - edge, y;
-    PIP_B[1], PIP_B[2] = x + art, y;
-    PIP_C[1], PIP_C[2] = x + art, y + legs + edge;
-    list:AddTriangleFilled(PIP_A, PIP_B, PIP_C,
-        imgui.GetColorU32(data.SURFACE_BASE));
-
-    PIP_A[1] = x + art - legs;
-    PIP_C[2] = y + legs;
-    list:AddTriangleFilled(PIP_A, PIP_B, PIP_C,
-        imgui.GetColorU32(data.COLOR_GOLD));
-end
-
-local function render_item_icon(item, art)
+local function render_item_icon(item)
     if (imgui.BeginChild(next_cell_id(), BOX_SIZE,
                          ImGuiChildFlags_None, ImGuiWindowFlags_NoScrollbar)) then
-        local sx, sy;
-        if (item.node ~= nil and pip_fill ~= false) then
-            sx, sy = imgui.GetCursorScreenPos();
-        end
         if (item.icon ~= nil) then
             imgui.Image(item.icon.handle, ART_SIZE);
         else
             imgui.Dummy(ART_SIZE);
         end
-        if (sx ~= nil) then pip_fill = pcall(paint_pip, sx, sy, art); end
     end
     imgui.EndChild();
 end
@@ -847,7 +822,7 @@ local function render_item(item, show_icons, art, text_h)
         local top = imgui.GetCursorPosY();
 
         imgui.SetCursorPosY(top + math.max(0, (text_h - art) * 0.5));
-        render_item_icon(item, art);
+        render_item_icon(item);
         imgui.SameLine();
         imgui.SetCursorPosY(top + math.max(0, (art - text_h) * 0.5));
     end

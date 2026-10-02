@@ -43,7 +43,7 @@ data.PRICE_EDITOR_HEIGHT = 320.0;
 data.FATIGUE_BAR_HEIGHT = 5.0;
 data.ICON_SIZE         = 32;
 data.SPOILS_ICON_SIZE  = 16;
-data.PIP_RATIO         = 0.45;
+
 data.ITEMS_PER_ROW     = 3;
 data.LIST_ITEMS_PER_ROW = 2;
 data.CELL_GUTTER       = 14;
@@ -360,8 +360,10 @@ data.ZONE_ITEMS = T{
             { name = 'Bone Chip' },
             { name = 'Chicken Bone' },
             { name = 'Diamond', skill = 40 },
+            { name = 'Dragon Bone', skill = 50 },
             { name = 'Giant Femur' },
             { name = 'Red Rock', skill = 10 },
+            { name = 'Ruby', skill = 40 },
             { name = 'Scorpion Claw' },
             { name = 'Scorpion Shell' },
             { name = 'Silica' },
@@ -371,6 +373,7 @@ data.ZONE_ITEMS = T{
         [173] = T{
             { name = 'Antican Pauldron', skill = 20 },
             { name = 'Antican Robe', skill = 20 },
+            { name = 'Black Pearl', skill = 50 },
             { name = 'Blue Rock' },
             { name = 'Coral Fragment', skill = 30 },
             { name = 'Crab Shell' },
@@ -379,6 +382,7 @@ data.ZONE_ITEMS = T{
             { name = 'Lugworm' },
             { name = 'Pearl', skill = 40 },
             { name = 'Rock Salt' },
+            { name = 'Sapphire', skill = 40 },
             { name = 'Seashell' },
             { name = 'Shall Shell' },
             { name = 'Shell Bug' },
@@ -469,6 +473,7 @@ data.ZONE_ITEMS = T{
             { name = 'Ash Log' },
             { name = 'Dryad Root' },
             { name = 'Ebony Log', skill = 20 },
+            { name = 'King Truffle', skill = 30 },
             { name = 'Oak Log', skill = 10 },
             { name = 'Walnut Log' },
             { name = 'Willow Log' },
@@ -627,13 +632,14 @@ data.ZONE_ITEMS = T{
             { name = 'Zinc Ore' },
         },
         [205] = T{
-            { name = 'Adaman Ore' },
+            { name = 'Adaman Ore', skill = 30 },
             { name = 'Bomb Arm' },
             { name = 'Bomb Ash' },
-            { name = 'Darksteel Ore' },
+            { name = 'Darksteel Ore', skill = 20 },
             { name = 'Flint Stone' },
             { name = 'Iron Ore' },
             { name = 'Iron Sand' },
+            { name = 'Orichalcum Ore', skill = 40 },
             { name = 'Orpiment' },
             { name = 'Red Rock' },
             { name = 'Sulfur' },
@@ -790,7 +796,8 @@ data.SESSION_KEYS   = T{ 'skillups', 'attempts', 'successes', 'spoils',
                          'session_goldrush' };
 data.SPOILS_KEYS    = T{ 'spoils', 'tool_breaks', 'session_log',
                          'session_goldrush' };
-data.SESSION_CLOCK  = T{ 'session_last', 'session_active', 'session_zone' };
+data.SESSION_CLOCK  = T{ 'session_last', 'session_active', 'session_zone',
+                         'zone_last' };
 
 data.SECONDS_PER_HOUR = 3600;
 
@@ -845,6 +852,7 @@ data.NPC_PRICES = T{
     ['Beehive Chip']     = 11,
     ['Crawler Cocoon']   = 34,
     ['Flint Stone']      = 5,
+    ['King Truffle']     = 1537,
     ['Pebble']           = 1,
     ['Red Rock']         = 205,
     -- Harvesting
@@ -863,7 +871,6 @@ data.NPC_PRICES = T{
     ['Honey']            = 33,
     ['Im. Tea Leaves']   = 4,
     ['King Locust']      = 210,
-    ['King Truffle']     = 1537,
     ['Malboro Fiber']    = 5125,
     ['Mistletoe']        = 482,
     ['Mohbwa Grass']     = 1,
