@@ -6,7 +6,7 @@ Per-zone fatigue counters, skill levels read from your own skill-up messages,
 drop logging with icons and rarity tiers, a session tally with gil, and CSV
 export.
 
-Ashita v4.30+ addon. Version 0.28.0. Released under GPL-3.0. Coded with help
+Ashita v4.30+ addon. Version 0.28.1. Released under GPL-3.0. Coded with help
 from Claude Opus 5.5.
 
 ## Screenshots
@@ -141,11 +141,11 @@ the rotten share. The grid draws no cell for it; the export carries it as a
 `Rotting Timber` row and a `Rotting Rate` column, and Spoils lists how many
 were lost, at no gil.
 
-**It is reported to stop once you are within 5 skill of the zone's cap**, so
-in a zone capping Logging at 20 it should stop at 15. Hover the tile and it
-names that level for the zone you are in, or tells you that you are already
-past it. This came from play rather than from anything confirmed, so nothing
-acts on it beyond that sentence — the tile and the rate carry on either way.
+**It is reported to stop once you are within 4.9 skill of the zone's cap**, so
+in a zone capping Logging at 20 it should stop at 15.1. Past that the tile reads
+`N/A` rather than a rate that could only shrink, and its hover shows the rate it
+ended at. One that fires anyway is still counted, and the hover says so. With
+none on record, after a reset say, the tile is not shown at all.
 
 These rates divide into your whole drop history rather than this session, since
 a session is far too small a sample to measure an ability that fires a few

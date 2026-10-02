@@ -630,29 +630,38 @@ local function render_procs(charname, activity, zoneId, collected, tip)
     if (#abilities == 0) then return; end
 
     local shown = false;
+    local count = 0;
 
-    for index, ability in ipairs(abilities) do
-        local fired = store.get_proc(charname, ability.name, zoneId);
+    for _, ability in ipairs(abilities) do
+        local fired   = store.get_proc(charname, ability.name, zoneId);
+        local stopped = store.proc_stopped(charname, ability, zoneId);
 
-        local outof = collected;
-        if (ability.basis == 'breaks') then
-            outof = fired + store.get_breaks(charname, activity, zoneId);
+        if (not stopped or fired > 0) then
+            local outof = collected;
+            if (ability.basis == 'breaks') then
+                outof = fired + store.get_breaks(charname, activity, zoneId);
+            end
+
+            if (fired > 0 or outof > 0) then shown = true; end
+
+            count = count + 1;
+            local slot = PROC_PARTS[count];
+            if (slot == nil) then slot = {}; PROC_PARTS[count] = slot; end
+            slot.ability = ability;
+            slot.short   = ability.short;
+            slot.fired   = fired;
+            slot.outof   = outof;
+            if (stopped) then
+                slot.rate = 'N/A';
+            else
+                slot.rate = outof > 0 and ('%.1f%%'):fmt(fired / outof * 100) or '-';
+            end
         end
-
-        if (fired > 0 or outof > 0) then shown = true; end
-
-        local slot = PROC_PARTS[index];
-        if (slot == nil) then slot = {}; PROC_PARTS[index] = slot; end
-        slot.ability = ability;
-        slot.short   = ability.short;
-        slot.fired   = fired;
-        slot.outof   = outof;
-        slot.rate    = outof > 0 and ('%.1f%%'):fmt(fired / outof * 100) or '-';
     end
 
     if (not shown) then return; end
 
-    for index = 1, #abilities do
+    for index = 1, count do
         local slot = PROC_PARTS[index];
         stat(slot.short, slot.rate, tip, slot.ability, slot.fired,
              slot.outof, charname, zoneId);
@@ -999,16 +1008,13 @@ local function zone_cap_label(charname, activity, zoneId)
 end
 
 local function stop_note(ability, charname, zoneId)
-    local caps = data.SKILL_CAPS[ability.activity];
-    local cap  = caps and caps[zoneId];
-    if (cap == nil) then
+    local at = store.proc_stop_at(ability, zoneId);
+    if (at == nil) then
         return ('Reported to stop within %.1f of a zone\'s skill cap.')
             :fmt(ability.stops_near);
     end
 
-    local at    = cap - ability.stops_near;
-    local skill = store.get_skill(charname, ability.activity);
-    if (skill ~= nil and skill >= at) then
+    if (store.proc_stopped(charname, ability, zoneId)) then
         return ('Reported to stop at %.1f; you are past that.'):fmt(at);
     end
 
@@ -1016,9 +1022,31 @@ local function stop_note(ability, charname, zoneId)
         :fmt(at, ability.stops_near);
 end
 
+local function ended_note(ability, fired, outof, charname, zoneId)
+    local at_fired, at_outof = store.get_proc_end(charname, ability, zoneId);
+    if (at_outof == nil) then at_fired, at_outof = fired, outof; end
+
+    local head;
+    if (at_outof <= 0) then
+        head = ('%s\nEnded before anything was gathered here.'):fmt(ability.name);
+    else
+        head = ('%s\nEnded at %.1f%%, %d of %d gathers.')
+            :fmt(ability.name, at_fired / at_outof * 100, at_fired, at_outof);
+    end
+
+    local since = fired - at_fired;
+    if (since > 0) then
+        head = ('%s\n%d more since, past where it is reported to stop.')
+            :fmt(head, since);
+    end
+    return head;
+end
+
 local function proc_tip(ability, fired, outof, charname, zoneId)
     local head;
-    if (outof <= 0) then
+    if (store.proc_stopped(charname, ability, zoneId)) then
+        head = ended_note(ability, fired, outof, charname, zoneId);
+    elseif (outof <= 0) then
         head = ('%s\nNothing has given it a chance to fire yet.')
             :fmt(ability.name);
     else
@@ -1089,19 +1117,24 @@ local function render_activity(charname, activity, curZoneId, zoneName)
          skillup_tip, ups, swings,
          store.skill_capped(charname, activity, curZoneId));
 
-    local abilities = data.PROC_ABILITIES[activity];
-    for index, ability in ipairs(abilities) do
-        local fired = store.get_proc(charname, ability.name, curZoneId);
-        local outof = kept;
-        if (ability.basis == 'breaks') then
-            outof = fired + store.get_breaks(charname, activity, curZoneId);
+    local count = 2;
+    for _, ability in ipairs(data.PROC_ABILITIES[activity]) do
+        local fired   = store.get_proc(charname, ability.name, curZoneId);
+        local stopped = store.proc_stopped(charname, ability, curZoneId);
+        if (not stopped or fired > 0) then
+            local outof = kept;
+            if (ability.basis == 'breaks') then
+                outof = fired + store.get_breaks(charname, activity, curZoneId);
+            end
+            count = count + 1;
+            local slot = tile(count, ability.short,
+                              stopped and 'N/A' or as_rate(fired, outof), nil,
+                              proc_tip, ability, fired, outof, charname, curZoneId);
+            slot.note = node_ore(ability, curZoneId);
         end
-        local slot = tile(2 + index, ability.short, as_rate(fired, outof), nil,
-                          proc_tip, ability, fired, outof, charname, curZoneId);
-        slot.note = node_ore(ability, curZoneId);
     end
 
-    render_tiles(2 + #abilities);
+    render_tiles(count);
 
     if (mode == 'Normal') then imgui.Spacing(); return; end
 

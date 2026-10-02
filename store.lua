@@ -391,6 +391,27 @@ function store.get_skill(charname, activity)
     return char.skill[activity];
 end
 
+function store.proc_stop_at(ability, zoneId)
+    if (ability.stops_near == nil) then return nil; end
+    local caps = data.SKILL_CAPS[ability.activity];
+    local cap  = caps and caps[zoneId];
+    if (cap == nil) then return nil; end
+    return cap - ability.stops_near;
+end
+
+function store.proc_stopped(charname, ability, zoneId)
+    local at = store.proc_stop_at(ability, zoneId);
+    if (at == nil) then return false; end
+    local skill = store.get_skill(charname, ability.activity);
+    return skill ~= nil and skill >= at;
+end
+
+function store.get_proc_end(charname, ability, zoneId)
+    local outof = read_zone(charname, 'stop_outof', ability.name, zoneId, nil);
+    if (outof == nil) then return nil, nil; end
+    return read_zone(charname, 'stop_fired', ability.name, zoneId, 0), outof;
+end
+
 function store.skill_capped(charname, activity, zoneId)
     local caps = data.SKILL_CAPS[activity];
     if (caps == nil) then return nil; end
@@ -435,6 +456,34 @@ end
 ----------------------------------------
 -- Recording events
 ----------------------------------------
+
+local function settle_stops(activity, zoneId)
+    local charname = store.char_name();
+    for _, ability in ipairs(data.PROC_ABILITIES[activity]) do
+        if (ability.stops_near ~= nil) then
+            local name    = ability.name;
+            local held    = read_zone(charname, 'stop_outof', name, zoneId, nil);
+            local stopped = store.proc_stopped(charname, ability, zoneId);
+
+            if (stopped and held == nil) then
+                local outof = 0;
+                for _, count in pairs(store.get_item_log(charname, activity, zoneId)) do
+                    outof = outof + count;
+                end
+                local fired, key = ensure_zone(charname, 'stop_fired', name, zoneId);
+                fired[key] = store.get_proc(charname, name, zoneId);
+                local whole = ensure_zone(charname, 'stop_outof', name, zoneId);
+                whole[key] = outof;
+
+            elseif (not stopped and held ~= nil) then
+                local fired, key = ensure_zone(charname, 'stop_fired', name, zoneId);
+                fired[key] = nil;
+                local whole = ensure_zone(charname, 'stop_outof', name, zoneId);
+                whole[key] = nil;
+            end
+        end
+    end
+end
 
 function store.register_gather(activity, zoneId)
     local charname     = store.char_name();
@@ -486,6 +535,7 @@ end
 
 function store.register_item_gather(activity, zoneId, itemName, repeated)
     if (itemName == nil) then return; end
+    settle_stops(activity, zoneId);
 
     local group, key, char = ensure_zone(store.char_name(), 'item_log',
                                          activity, zoneId, T);
@@ -655,7 +705,11 @@ function store.get_tool_breaks(charname, activity)
     if (char == nil or char.tool_breaks == nil) then return 0; end
     return char.tool_breaks[activity] or 0;
 end
-function store.register_proc(name, zoneId)      bump('procs',  name,     zoneId); end
+function store.register_proc(name, zoneId)
+    local ability = data.PROC_BY_NAME[name];
+    if (ability ~= nil) then settle_stops(ability.activity, zoneId); end
+    bump('procs', name, zoneId);
+end
 
 function store.reset_since_skillup(activity)
     ensure_char(store.char_name()).since_skillup[activity] = 0;

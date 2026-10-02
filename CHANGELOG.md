@@ -56,6 +56,14 @@ itself once you have put a proper shift into each zone.
 
 ## [Unreleased]
 
+## [0.28.1] - 2026-10-02
+
+### Changed
+
+- **Rotting Timber reads N/A once you are within 4.9 of a zone's skill cap**,
+  and its hover shows the rate it ended at. With none on record there, the
+  tile is not shown.
+
 ## [0.28.0] - 2026-10-02
 
 ### Added
@@ -1019,7 +1027,8 @@ Initial public release.
 - The rule that a gather decays *all* other zones for that activity was
   inferred from a two-zone observation.
 
-[Unreleased]: https://github.com/KisamMeow/HELMdiel/compare/v0.28.0...HEAD
+[Unreleased]: https://github.com/KisamMeow/HELMdiel/compare/v0.28.1...HEAD
+[0.28.1]: https://github.com/KisamMeow/HELMdiel/compare/v0.28.0...v0.28.1
 [0.28.0]: https://github.com/KisamMeow/HELMdiel/compare/v0.27.0...v0.28.0
 [0.27.0]: https://github.com/KisamMeow/HELMdiel/compare/v0.26.0...v0.27.0
 [0.26.0]: https://github.com/KisamMeow/HELMdiel/compare/v0.25.0...v0.26.0

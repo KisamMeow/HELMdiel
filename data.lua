@@ -790,7 +790,8 @@ data.CHARACTER_KEYS = T{ 'fatigue', 'fatigued', 'item_log', 'skill',
                          'skillups', 'attempts', 'successes', 'spoils',
                          'since_skillup', 'procs', 'breaks', 'goldrush',
                          'session_goldrush', 'tool_breaks', 'lifetime',
-                         'session_log', 'zone_time', 'zone_timed' };
+                         'session_log', 'zone_time', 'zone_timed',
+                         'stop_fired', 'stop_outof' };
 data.SESSION_KEYS   = T{ 'skillups', 'attempts', 'successes', 'spoils',
                          'since_skillup', 'tool_breaks', 'session_log',
                          'session_goldrush' };
@@ -1035,6 +1036,7 @@ data.PRICE_ITEMS   = T{};
 data.SKILL_CAPS    = T{};
 data.PROC_PATTERNS = T{};
 data.PROC_NAMES    = T{};
+data.PROC_BY_NAME  = T{};
 data.PROC_REPEATS  = T{};
 data.PROC_SWINGS   = T{};
 data.BARREN_ITEM   = T{};
@@ -1047,6 +1049,7 @@ for _, activity in ipairs(data.ACTIVITIES) do
         ability.activity = activity;
         table.insert(procs, ability.pattern);
         data.PROC_NAMES[ability.pattern] = ability.name;
+        data.PROC_BY_NAME[ability.name]  = ability;
         if (ability.repeats) then
             data.PROC_REPEATS[ability.name] = true;
             if (data.REPEAT_ACTIVITIES[#data.REPEAT_ACTIVITIES] ~= activity) then
