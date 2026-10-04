@@ -785,6 +785,7 @@ local SKILL_NAMES = T{
 data.SKILL_MARKER        = 'skill has increased';
 data.SKILL_VALUE_DECIMAL = 'raising it to (%d+%.%d+)';
 data.SKILL_VALUE_INTEGER = 'raising it to (%d+)';
+data.SKILL_MAX           = 60;
 
 data.CHARACTER_KEYS = T{ 'fatigue', 'fatigued', 'item_log', 'skill',
                          'skillups', 'attempts', 'successes', 'spoils',

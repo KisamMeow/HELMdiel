@@ -6,7 +6,7 @@ Per-zone fatigue counters, skill levels read from your own skill-up messages,
 drop logging with icons and rarity tiers, a session tally with gil, and CSV
 export.
 
-Ashita v4.30+ addon. Version 0.28.1. Released under GPL-3.0. Coded with help
+Ashita v4.30+ addon. Version 0.29.0. Released under GPL-3.0. Coded with help
 from Claude Opus 5.5.
 
 ## Screenshots
@@ -120,6 +120,11 @@ count stops meaning anything once your skill cannot move. Every tracked zone
 has a known cap now. **Hover it** for your skill up rate in this zone and the
 numbers behind it.
 
+**Gil/hr in Place of Last Skill**, in Settings, swaps that tile for this
+zone's gil an hour, the same figure as its foldout on the activity tab, with
+every drop sold to an NPC in brackets. An activity at skill 60 shows it anyway,
+since its Last Skill can no longer move.
+
 **Swings in a zone you have outskilled do not count towards that last figure.**
 It answers how long you have been waiting for a skill up, and a finished zone
 was never going to give you one. Everything else about those swings still
@@ -142,10 +147,11 @@ the rotten share. The grid draws no cell for it; the export carries it as a
 were lost, at no gil.
 
 **It is reported to stop once you are within 4.9 skill of the zone's cap**, so
-in a zone capping Logging at 20 it should stop at 15.1. Past that the tile reads
-`N/A` rather than a rate that could only shrink, and its hover shows the rate it
-ended at. One that fires anyway is still counted, and the hover says so. With
-none on record, after a reset say, the tile is not shown at all.
+in a zone capping Logging at 20 it should stop at 15.1. Past that the Home tile
+goes away, and the zone's foldout on the Logging tab reads `N/A` with the rate
+it ended at in its hover. One that fires anyway is still counted, and that
+hover says so. With none on record, after a reset say, the foldout has no line
+for it either.
 
 These rates divide into your whole drop history rather than this session, since
 a session is far too small a sample to measure an ability that fires a few
@@ -351,6 +357,7 @@ Hover any control for a one-line explanation.
 |---|---|
 | Font | Segoe UI, Consolas, Arial, Tahoma or Trebuchet MS |
 | Home Detail | Full, Normal (no item list) or Compact (skill and fatigue only) |
+| Gil/hr in Place of Last Skill | Home's second tile shows this zone's gil an hour, NPC figure in brackets. Always on at skill 60 |
 | Count Gold Rush/Motherlode Drops | On by default. Off keeps a node's Gold Rush and Motherlode repeats out of your drop rates |
 | Item Icons | Item art beside each drop. On by default |
 | Large Item Size | Off gives smaller item art, and smaller item text with it |

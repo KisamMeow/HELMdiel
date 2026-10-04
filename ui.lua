@@ -1090,6 +1090,84 @@ local function skillup_tip(ups, swings, cap_at)
         swings, swings == 1 and '' or 's', ups / swings * 100);
 end
 
+-- Gil an hour
+local function span_label(seconds)
+    local hours = math.floor(seconds / data.SECONDS_PER_HOUR);
+    local mins  = math.floor(seconds % data.SECONDS_PER_HOUR / 60);
+    if (hours > 0 and mins > 0) then return ('%dhr and %dmin'):fmt(hours, mins); end
+    if (hours > 0) then return ('%dhr'):fmt(hours); end
+    if (mins > 0) then return ('%dmin'):fmt(mins); end
+    return ('%dsec'):fmt(seconds);
+end
+
+local function gil(value)
+    value = math.floor(value);
+    if (value < 0) then return '-' .. gil(-value); end
+
+    local text = tostring(value);
+    local head = #text % 3;
+    if (head == 0) then head = 3; end
+
+    local out = text:sub(1, head);
+    for index = head + 1, #text, 3 do
+        out = out .. ',' .. text:sub(index, index + 2);
+    end
+    return out;
+end
+
+local function repeat_caveat(charname, zoneId)
+    if (store.count_repeats()) then return nil; end
+    if (next(store.get_repeats(charname, zoneId)) == nil) then return nil; end
+    return 'Repeats not counted, so this reads high.';
+end
+
+local function gil_hour_tip(each, pace, span, timed, total, charname, zoneId, unknown)
+    if (pace == nil) then
+        return ('%d of %d gathers timed here.\nThe clock runs between gathers '
+             .. 'and stops when you leave.'):fmt(timed, data.PACE_MIN);
+    end
+
+    local head = ('%.0f an hour, %s a gather, timed here.\n'
+               .. '%d of %d gathers timed, over %s.')
+        :fmt(pace, gil(each), timed, total, span_label(span));
+
+    if (unknown ~= nil and unknown > 0) then
+        head = ('%s\nNo NPC price for %d drop%s here, so brackets read low.')
+            :fmt(head, unknown, unknown == 1 and '' or 's');
+    end
+
+    local caveat = repeat_caveat(charname, zoneId);
+    if (caveat == nil) then return head; end
+    return ('%s\n%s'):fmt(head, caveat);
+end
+
+local function rate_text(each, sold, rate)
+    if (rate == nil) then return '-'; end
+    local shown    = gil(each * rate);
+    local vendored = gil(sold * rate);
+    if (vendored == shown) then return shown; end
+    return ('%s (%s)'):fmt(shown, vendored);
+end
+
+local function home_gil(charname, activity, zoneId, total)
+    if (total <= 0) then return '-'; end
+    local gross, cost, vendor = store.zone_gil(charname, activity, zoneId);
+    if (gross <= 0) then return '-'; end
+    return rate_text((gross - cost) / total, (vendor - cost) / total,
+                     (store.zone_pace(charname, activity, zoneId)));
+end
+
+local function home_gil_tip(charname, activity, zoneId, total)
+    if (total <= 0) then return 'Nothing gathered here yet.'; end
+    local gross, cost, _, unknown = store.zone_gil(charname, activity, zoneId);
+    if (gross <= 0) then
+        return 'Nothing here has a price yet.\nSet them under Edit Prices on Spoils.';
+    end
+    local rate, span, timed = store.zone_pace(charname, activity, zoneId);
+    return gil_hour_tip((gross - cost) / total, rate, span, timed, total,
+                        charname, zoneId, unknown);
+end
+
 local function render_activity(charname, activity, curZoneId, zoneName)
     local log   = store.get_session_log(charname, activity, curZoneId);
     local total = count_gathers(log);
@@ -1113,22 +1191,26 @@ local function render_activity(charname, activity, curZoneId, zoneName)
     local since  = store.get_since_skillup(charname, activity);
 
     tile(1, 'COLLECTED', ('%d'):fmt(total));
-    tile(2, 'LAST SKILL', capped or ('%d'):fmt(since), data.COLOR_SKILLUP,
-         skillup_tip, ups, swings,
-         store.skill_capped(charname, activity, curZoneId));
+    local maxed = (store.get_skill(charname, activity) or 0) >= data.SKILL_MAX;
+    if (maxed or store.home_gil()) then
+        tile(2, 'GIL/HR', home_gil(charname, activity, curZoneId, kept),
+             data.COLOR_SKILLUP, home_gil_tip, charname, activity, curZoneId, kept);
+    else
+        tile(2, 'LAST SKILL', capped or ('%d'):fmt(since), data.COLOR_SKILLUP,
+             skillup_tip, ups, swings,
+             store.skill_capped(charname, activity, curZoneId));
+    end
 
     local count = 2;
     for _, ability in ipairs(data.PROC_ABILITIES[activity]) do
-        local fired   = store.get_proc(charname, ability.name, curZoneId);
-        local stopped = store.proc_stopped(charname, ability, curZoneId);
-        if (not stopped or fired > 0) then
+        if (not store.proc_stopped(charname, ability, curZoneId)) then
+            local fired = store.get_proc(charname, ability.name, curZoneId);
             local outof = kept;
             if (ability.basis == 'breaks') then
                 outof = fired + store.get_breaks(charname, activity, curZoneId);
             end
             count = count + 1;
-            local slot = tile(count, ability.short,
-                              stopped and 'N/A' or as_rate(fired, outof), nil,
+            local slot = tile(count, ability.short, as_rate(fired, outof), nil,
                               proc_tip, ability, fired, outof, charname, curZoneId);
             slot.note = node_ore(ability, curZoneId);
         end
@@ -1172,30 +1254,6 @@ local function render_home(charname, curZoneId)
         imgui.TextDisabled('All activities here are hidden.');
         imgui.Spacing();
     end
-end
-
-local function span_label(seconds)
-    local hours = math.floor(seconds / data.SECONDS_PER_HOUR);
-    local mins  = math.floor(seconds % data.SECONDS_PER_HOUR / 60);
-    if (hours > 0 and mins > 0) then return ('%dhr and %dmin'):fmt(hours, mins); end
-    if (hours > 0) then return ('%dhr'):fmt(hours); end
-    if (mins > 0) then return ('%dmin'):fmt(mins); end
-    return ('%dsec'):fmt(seconds);
-end
-
-local function gil(value)
-    value = math.floor(value);
-    if (value < 0) then return '-' .. gil(-value); end
-
-    local text = tostring(value);
-    local head = #text % 3;
-    if (head == 0) then head = 3; end
-
-    local out = text:sub(1, head);
-    for index = head + 1, #text, 3 do
-        out = out .. ',' .. text:sub(index, index + 2);
-    end
-    return out;
 end
 
 local PRICE_BUFFER = {};
@@ -1580,33 +1638,7 @@ local function render_spoils(charname)
     imgui.Spacing();
 end
 
-local function repeat_caveat(charname, zoneId)
-    if (store.count_repeats()) then return nil; end
-    if (next(store.get_repeats(charname, zoneId)) == nil) then return nil; end
-    return 'Repeats not counted, so this reads high.';
-end
-
 local PRE_GROSS, PRE_COST, PRE_VENDOR, PRE_UNKNOWN = {}, {}, {}, {};
-
-local function gil_hour_tip(each, pace, span, timed, total, charname, zoneId, unknown)
-    if (pace == nil) then
-        return ('%d of %d gathers timed here.\nThe clock runs between gathers '
-             .. 'and stops when you leave.'):fmt(timed, data.PACE_MIN);
-    end
-
-    local head = ('%.0f an hour, %s a gather, timed here.\n'
-               .. '%d of %d gathers timed, over %s.')
-        :fmt(pace, gil(each), timed, total, span_label(span));
-
-    if (unknown ~= nil and unknown > 0) then
-        head = ('%s\nNo NPC price for %d drop%s here, so brackets read low.')
-            :fmt(head, unknown, unknown == 1 and '' or 's');
-    end
-
-    local caveat = repeat_caveat(charname, zoneId);
-    if (caveat == nil) then return head; end
-    return ('%s\n%s'):fmt(head, caveat);
-end
 
 local function gil_each_tip(gross, cost, total, charname, activity, zoneId)
     local each = (gross - cost) / total;
@@ -1742,16 +1774,7 @@ local function render_activity_tab(charname, activity)
 
                 local rate, span, timed = store.zone_pace(charname, activity, zone.id);
 
-                local shown = '-';
-                if (rate ~= nil) then
-                    shown = gil(each * rate);
-                    local vendored = gil(sold * rate);
-                    if (vendored ~= shown) then
-                        shown = ('%s (%s)'):fmt(shown, vendored);
-                    end
-                end
-
-                stat('GIL/HR', shown, gil_hour_tip, each, rate, span, timed,
+                stat('GIL/HR', rate_text(each, sold, rate), gil_hour_tip, each, rate, span, timed,
                      total, charname, zone.id, unknown);
                 imgui.SameLine(0, px(data.STAT_GAP));
                 stat('PER GATHER', gil(each), gil_each_tip,
@@ -1803,6 +1826,13 @@ local function render_settings(charname)
     imgui.PopItemWidth();
     hint('Full: everything. Normal: no item list.\n'
          .. 'Compact: skill and fatigue only.');
+
+    imgui.Spacing();
+
+    if (checkbox('Gil/hr in Place of Last Skill', store.home_gil())) then
+        store.toggle_home_gil();
+    end
+    hint('Home shows this zone\'s gil an hour,\nwith every drop sold to an NPC in brackets.\nAlways on for an activity at skill 60.');
 
     imgui.Spacing();
 

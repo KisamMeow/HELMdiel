@@ -178,6 +178,15 @@ function store.toggle_rarity_groups()
     settings.save();
 end
 
+function store.home_gil()
+    return helm_settings.window.home_gil == true;
+end
+
+function store.toggle_home_gil()
+    helm_settings.window.home_gil = not store.home_gil();
+    settings.save();
+end
+
 function store.auto_resize()
     return helm_settings.window.auto_resize ~= false;
 end

@@ -56,6 +56,19 @@ itself once you have put a proper shift into each zone.
 
 ## [Unreleased]
 
+## [0.29.0] - 2026-10-04
+
+### Added
+
+- **Gil/hr in Place of Last Skill**, a setting that turns Home's Last Skill
+  tile into this zone's gil an hour, NPC figure in brackets. An activity at
+  skill 60 shows it without the setting.
+
+### Changed
+
+- **Rotting Timber's Home tile goes away once you are within 4.9 of the zone's
+  skill cap.** The zone's foldout still shows the rate it ended at.
+
 ## [0.28.1] - 2026-10-02
 
 ### Changed
@@ -1027,7 +1040,8 @@ Initial public release.
 - The rule that a gather decays *all* other zones for that activity was
   inferred from a two-zone observation.
 
-[Unreleased]: https://github.com/KisamMeow/HELMdiel/compare/v0.28.1...HEAD
+[Unreleased]: https://github.com/KisamMeow/HELMdiel/compare/v0.29.0...HEAD
+[0.29.0]: https://github.com/KisamMeow/HELMdiel/compare/v0.28.1...v0.29.0
 [0.28.1]: https://github.com/KisamMeow/HELMdiel/compare/v0.28.0...v0.28.1
 [0.28.0]: https://github.com/KisamMeow/HELMdiel/compare/v0.27.0...v0.28.0
 [0.27.0]: https://github.com/KisamMeow/HELMdiel/compare/v0.26.0...v0.27.0
