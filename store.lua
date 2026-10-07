@@ -760,6 +760,46 @@ function store.zone_items(activity, zoneId)
     return group[zoneId] or EMPTY_LOG;
 end
 
+----------------------------------------
+-- Findings
+----------------------------------------
+
+function store.note_gate(activity, zoneId, itemName)
+    local charname = store.char_name();
+    local skill    = store.get_skill(charname, activity);
+    if (skill == nil) then return nil; end
+
+    local shown = resources.item_name(itemName);
+    for _, entry in ipairs(store.zone_items(activity, zoneId)) do
+        if (entry.skill ~= nil and skill < entry.skill
+            and resources.item_name(entry.name) == shown) then
+            local group, key = ensure_zone(charname, 'findings', activity, zoneId, T);
+            local held = group[key][shown];
+            if (held ~= nil and held.gate == entry.skill) then return nil; end
+
+            local found = T{ skill = skill, gate = entry.skill, date = os.date('%Y-%m-%d') };
+            group[key][shown] = found;
+            return shown, found;
+        end
+    end
+    return nil;
+end
+
+function store.get_findings(charname, activity, zoneId)
+    return read_zone(charname, 'findings', activity, zoneId, EMPTY_LOG);
+end
+
+function store.clear_findings(charname)
+    local char = helm_settings.characters[charname];
+    if (char == nil or char.findings == nil) then return; end
+    for _, zones in pairs(char.findings) do
+        for _, items in pairs(zones) do
+            for _, found in pairs(items) do found.cleared = true; end
+        end
+    end
+    settings.save();
+end
+
 
 ----------------------------------------
 -- Item prices

@@ -56,6 +56,19 @@ itself once you have put a proper shift into each zone.
 
 ## [Unreleased]
 
+## [0.30.0] - 2026-10-07
+
+### Added
+
+- **Findings**: a drop below its listed skill level is flagged once in chat and
+  kept under Settings, with Copy Report for sending to Masuru on the HorizonXI
+  Discord.
+
+### Changed
+
+- **Gil/hr reads in thousands to one decimal**, such as `19.2K (16.7K)`,
+  everywhere it appears.
+
 ## [0.29.0] - 2026-10-04
 
 ### Added
@@ -1040,7 +1053,8 @@ Initial public release.
 - The rule that a gather decays *all* other zones for that activity was
   inferred from a two-zone observation.
 
-[Unreleased]: https://github.com/KisamMeow/HELMdiel/compare/v0.29.0...HEAD
+[Unreleased]: https://github.com/KisamMeow/HELMdiel/compare/v0.30.0...HEAD
+[0.30.0]: https://github.com/KisamMeow/HELMdiel/compare/v0.29.0...v0.30.0
 [0.29.0]: https://github.com/KisamMeow/HELMdiel/compare/v0.28.1...v0.29.0
 [0.28.1]: https://github.com/KisamMeow/HELMdiel/compare/v0.28.0...v0.28.1
 [0.28.0]: https://github.com/KisamMeow/HELMdiel/compare/v0.27.0...v0.28.0

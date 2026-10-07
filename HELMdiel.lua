@@ -1,6 +1,6 @@
 addon.name    = 'HELMdiel';
 addon.author  = 'Masuru';
-addon.version = '0.29.0';
+addon.version = '0.30.0';
 addon.desc    = 'Tracks HELM (Harvesting/Excavation/Logging/Mining) regional gathering fatigue on HorizonXI.';
 addon.link    = 'https://github.com/KisamMeow/HELMdiel';
 
@@ -64,6 +64,19 @@ end
 
 local function err(text)
     print(chat.header(addon.name):append(chat.error(text)));
+end
+
+local function warn(text)
+    print(chat.header(addon.name):append(chat.warning(text)));
+end
+
+local function report_gate(activity, zoneId, item)
+    local name, found = store.note_gate(activity, zoneId, item);
+    if (name == nil) then return; end
+    warn(('%s dropped at %s %.1f in %s, below its listed gate of %d.')
+        :fmt(name, activity, found.skill, resources.zone_name(zoneId), found.gate));
+    warn(('Worth reporting to %s. Settings, under Findings, can copy it.')
+        :fmt(data.REPORT_TO));
 end
 
 
@@ -285,6 +298,7 @@ ashita.events.register('text_in', 'helmdiel_text_in', function(e)
 
             if (data.TRACKED_ZONE_SET[activity][zoneId]) then
                 store.register_item_gather(activity, zoneId, item, repeated);
+                if (not repeated) then report_gate(activity, zoneId, item); end
 
                 if (store.auto_show() and store.reveal_activity(activity)) then
                     msg(('%s was hidden and is showing again.'):fmt(activity));
@@ -382,9 +396,13 @@ local function import_prices(only_unpriced)
     msg(('Imported %d price%s.'):fmt(count, count == 1 and '' or 's'));
 end
 
+local function copied_findings()
+    msg(('Findings copied. Paste them to %s.'):fmt(data.REPORT_TO));
+end
+
 ui.set_actions(T{ reset_session = reset_session, reset_all = reset_all,
                   export = export_csv, export_spoils = export_spoils,
-                  import_prices = import_prices });
+                  import_prices = import_prices, copied_findings = copied_findings });
 ui.set_title(addon.version);
 
 ashita.events.register('d3d_present', 'helmdiel_present', function()

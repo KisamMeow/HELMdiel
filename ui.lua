@@ -1115,6 +1115,13 @@ local function gil(value)
     return out;
 end
 
+local function gil_k(value)
+    local tenths = math.floor(value / 100 + 0.5);
+    local sign   = '';
+    if (tenths < 0) then sign, tenths = '-', -tenths; end
+    return ('%s%s.%dK'):fmt(sign, gil(math.floor(tenths / 10)), tenths % 10);
+end
+
 local function repeat_caveat(charname, zoneId)
     if (store.count_repeats()) then return nil; end
     if (next(store.get_repeats(charname, zoneId)) == nil) then return nil; end
@@ -1143,8 +1150,8 @@ end
 
 local function rate_text(each, sold, rate)
     if (rate == nil) then return '-'; end
-    local shown    = gil(each * rate);
-    local vendored = gil(sold * rate);
+    local shown    = gil_k(each * rate);
+    local vendored = gil_k(sold * rate);
     if (vendored == shown) then return shown; end
     return ('%s (%s)'):fmt(shown, vendored);
 end
@@ -1511,7 +1518,7 @@ local function render_spoils(charname)
         local rate  = span > 0 and net * data.SECONDS_PER_HOUR / span or nil;
 
         imgui.Spacing();
-        tile(1, 'GIL/HR', rate and gil(rate) or '-', data.COLOR_SKILLUP,
+        tile(1, 'GIL/HR', rate and gil_k(rate) or '-', data.COLOR_SKILLUP,
              rate_tip, net, spent, span);
         tile(2, 'LIFETIME', gil(lifetime), data.COLOR_SKILLUP, lifetime_tip);
         render_tiles(2);
@@ -1732,10 +1739,10 @@ local function render_activity_tab(charname, activity)
         if (tint) then imgui.PopStyleColor(1); end
 
         if (top and imgui.IsItemHovered()) then
-            tooltip(('Best gil an hour of %d timed zones: %s.'):fmt(rated, gil(best)));
+            tooltip(('Best gil an hour of %d timed zones: %s.'):fmt(rated, gil_k(best)));
         elseif (near and imgui.IsItemHovered()) then
             tooltip(('Second best gil an hour of %d timed zones: %s.')
-                :fmt(rated, gil(next_best)));
+                :fmt(rated, gil_k(next_best)));
         end
 
         if (head_fill ~= false and capText ~= nil) then
@@ -1801,8 +1808,73 @@ local function activity_pairs()
     return widest;
 end
 
+-- Findings
+local FINDINGS, FINDING_SLOTS = {}, {};
+
+local function by_order_then_item(a, b)
+    if (a.order ~= b.order) then return a.order < b.order; end
+    return a.item < b.item;
+end
+
+local function collect_findings(charname)
+    local n = 0;
+    for a, activity in ipairs(data.ACTIVITIES) do
+        for z, zone in ipairs(data.TRACKED_ZONES[activity]) do
+            for item, found in pairs(store.get_findings(charname, activity, zone.id)) do
+                if (not found.cleared) then
+                    n = n + 1;
+                    local slot = pooled(FINDING_SLOTS, n);
+                    slot.order, slot.item = a * 100 + z, item;
+                    slot.activity, slot.zone = activity, zone.name;
+                    slot.skill, slot.gate, slot.date = found.skill, found.gate, found.date;
+                    FINDINGS[n] = slot;
+                end
+            end
+        end
+    end
+    for index = n + 1, #FINDINGS do FINDINGS[index] = nil; end
+    table.sort(FINDINGS, by_order_then_item);
+    return n;
+end
+
+local function findings_report(charname, count)
+    local lines = { ('HELMdiel %s findings for %s'):fmt(title_version or '?', charname) };
+    for index = 1, count do
+        local f = FINDINGS[index];
+        lines[#lines + 1] = ('%s - %s (%s) - gathered at %.1f, listed from %d - %s')
+            :fmt(f.item, f.zone, f.activity, f.skill, f.gate, f.date or '?');
+    end
+    return table.concat(lines, '\n');
+end
+
+local function render_findings(charname)
+    local count = collect_findings(charname);
+    if (count == 0) then return; end
+
+    caption('FINDINGS');
+    for index = 1, count do
+        local f = FINDINGS[index];
+        imgui.Text(('%s, %s'):fmt(f.item, f.zone));
+        imgui.TextDisabled(('%s %.1f, listed from %d'):fmt(f.activity, f.skill, f.gate));
+    end
+    imgui.Spacing();
+
+    if (imgui.Button('Copy Report')) then
+        imgui.SetClipboardText(findings_report(charname, count));
+        actions.copied_findings();
+    end
+    hint('Copies these for Masuru on the HorizonXI Discord.');
+    imgui.SameLine(0, px(data.NAV_GAP));
+    if (imgui.Button('Clear##findings')) then
+        store.clear_findings(charname);
+    end
+    hint('Empties the list. None of these alert again.');
+end
+
 local function render_settings(charname)
     local widest = activity_pairs();
+
+    render_findings(charname);
 
     caption('DISPLAY');
 

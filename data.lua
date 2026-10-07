@@ -786,13 +786,14 @@ data.SKILL_MARKER        = 'skill has increased';
 data.SKILL_VALUE_DECIMAL = 'raising it to (%d+%.%d+)';
 data.SKILL_VALUE_INTEGER = 'raising it to (%d+)';
 data.SKILL_MAX           = 60;
+data.REPORT_TO           = 'Masuru on the HorizonXI Discord';
 
 data.CHARACTER_KEYS = T{ 'fatigue', 'fatigued', 'item_log', 'skill',
                          'skillups', 'attempts', 'successes', 'spoils',
                          'since_skillup', 'procs', 'breaks', 'goldrush',
                          'session_goldrush', 'tool_breaks', 'lifetime',
                          'session_log', 'zone_time', 'zone_timed',
-                         'stop_fired', 'stop_outof' };
+                         'stop_fired', 'stop_outof', 'findings' };
 data.SESSION_KEYS   = T{ 'skillups', 'attempts', 'successes', 'spoils',
                          'since_skillup', 'tool_breaks', 'session_log',
                          'session_goldrush' };

@@ -6,7 +6,7 @@ Per-zone fatigue counters, skill levels read from your own skill-up messages,
 drop logging with icons and rarity tiers, a session tally with gil, and CSV
 export.
 
-Ashita v4.30+ addon. Version 0.29.0. Released under GPL-3.0. Coded with help
+Ashita v4.30+ addon. Version 0.30.0. Released under GPL-3.0. Coded with help
 from Claude Opus 5.5.
 
 ## Screenshots
@@ -230,8 +230,9 @@ the rate says so.
 **Untick `Vendor` beside a price** where the number you entered is what the
 auction house pays rather than what a vendor does. Every item starts ticked.
 The rate still counts everything, and a second figure shows beside it in
-brackets — `GIL/HR 19,179 (16,728)` — which is what the same hour is worth if
-you sold every drop to an NPC, the unticked ones at their NPC price.
+brackets — `GIL/HR 19.2K (16.7K)` — which is what the same hour is worth if
+you sold every drop to an NPC, the unticked ones at their NPC price. Every gil
+an hour in the addon reads in thousands to one decimal like this.
 
 **The zone earning most an hour on each activity tab has its name in gold, and
 the next one down in light blue.** Hover either name for the figure. Only zones
@@ -268,6 +269,13 @@ means it drops here and you have not got one — this session on Home, ever on a
 activity tab — and **Locked (10)** means it needs that skill level first.
 Anything you have ever gathered here never reads as locked, whatever your skill
 says, because gathering it is proof you can.
+
+**A drop below its listed level means the list is wrong**, and HELMdiel says so
+once in chat, then keeps it under **Findings** at the top of Settings. **Copy
+Report** copies the list to send to Masuru on the HorizonXI Discord, and
+**Clear** empties it. Gold Rush and Motherlode drops never count, since a node
+can hand over an ore below its level. It needs your skill set, in Settings or
+from a skill up.
 
 Every tracked zone has a drop list. **A list is what is known so far, not a
 guarantee it is complete** — several were built by a character below skill
