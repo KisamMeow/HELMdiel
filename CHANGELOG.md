@@ -56,6 +56,14 @@ itself once you have put a proper shift into each zone.
 
 ## [Unreleased]
 
+## [0.30.1] - 2026-10-08
+
+### Added
+
+- **Lacquer Tree Log in Yuhtunga Jungle and Petrified Log in Carpenters' Landing**,
+  from Logging skill 40.
+- **Petrified Log in Lufaise Meadows and Misareaux Coast**, from Logging skill 50.
+
 ## [0.30.0] - 2026-10-07
 
 ### Added
@@ -1053,7 +1061,8 @@ Initial public release.
 - The rule that a gather decays *all* other zones for that activity was
   inferred from a two-zone observation.
 
-[Unreleased]: https://github.com/KisamMeow/HELMdiel/compare/v0.30.0...HEAD
+[Unreleased]: https://github.com/KisamMeow/HELMdiel/compare/v0.30.1...HEAD
+[0.30.1]: https://github.com/KisamMeow/HELMdiel/compare/v0.30.0...v0.30.1
 [0.30.0]: https://github.com/KisamMeow/HELMdiel/compare/v0.29.0...v0.30.0
 [0.29.0]: https://github.com/KisamMeow/HELMdiel/compare/v0.28.1...v0.29.0
 [0.28.1]: https://github.com/KisamMeow/HELMdiel/compare/v0.28.0...v0.28.1

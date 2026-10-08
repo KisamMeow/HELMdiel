@@ -409,6 +409,7 @@ data.ZONE_ITEMS = T{
             { name = 'Ash Log' },
             { name = 'Dryad Root' },
             { name = 'Oak Log', skill = 10 },
+            { name = 'Petrified Log', skill = 40 },
             { name = 'Tree Cuttings' },
             { name = 'Walnut Log' },
             { name = 'Willow Log' },
@@ -421,6 +422,7 @@ data.ZONE_ITEMS = T{
             { name = 'Faerie Apple' },
             { name = 'Maple Log' },
             { name = 'Oak Log', skill = 10 },
+            { name = 'Petrified Log', skill = 50 },
             { name = 'Walnut Log' },
         },
         [25] = T{
@@ -430,6 +432,7 @@ data.ZONE_ITEMS = T{
             { name = 'Faerie Apple' },
             { name = 'Maple Log' },
             { name = 'Oak Log', skill = 10 },
+            { name = 'Petrified Log', skill = 50 },
             { name = 'Tree Cuttings' },
             { name = 'Walnut Log' },
         },
@@ -494,6 +497,7 @@ data.ZONE_ITEMS = T{
         [123] = T{
             { name = 'Beehive Chip' },
             { name = 'Holly Log' },
+            { name = 'Lacquer Tree Log', skill = 40 },
             { name = 'Lauan Log' },
             { name = 'Lqr. Tree Sap' },
             { name = 'Persikos' },
@@ -857,6 +861,7 @@ data.NPC_PRICES = T{
     ['Flint Stone']      = 5,
     ['King Truffle']     = 1537,
     ['Pebble']           = 1,
+    ['Petrified Log']    = 2203,
     ['Red Rock']         = 205,
     -- Harvesting
     ['Cattleya']         = 307,
@@ -933,7 +938,6 @@ data.NPC_PRICES = T{
     ['Oxblood']          = 13581,
     ['Pearl']            = 1230,
     ['Peridot']          = 1230,
-    ['Petrified Log']    = 2203,
     ['Phil. Stone']      = 3997,
     ['Purple Rock']      = 206,
     ['Rock Salt']        = 4,
