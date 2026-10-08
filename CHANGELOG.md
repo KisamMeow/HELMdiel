@@ -5,55 +5,6 @@ All notable changes to HELMdiel are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Read this before you trust the Gil/hr inside a zone's foldout
-
-> [!WARNING]
-> **This is about the `GIL/HR` inside each zone's foldout on an activity tab
-> — not the Gil/hr tile on Spoils, which is unchanged and still correct.**
-> If you were already using HELMdiel, every *zone's* `GIL/HR` reads `-` when
-> you update, and keeps reading `-` until you have put 190 timed gathers into
-> that zone. Nothing is broken: the figure needs a clock that did not exist before
-> 0.23.0, and no amount of past data can supply it.
-
-**Which number this is about.** Open an activity tab, open a zone, and the new
-line under its skills reads `GIL/HR` and `PER GATHER`. Spoils' own Gil/hr tile
-answers a different question — what this *session* has paid an hour, across
-every zone — and it has had a working clock since 0.11.0. Nothing below applies
-to it.
-
-**Your drop history has no timing in it.** HELMdiel has always recorded *what*
-you gathered and *where*, never *when*, so there is nothing to reconstruct a
-per-zone rate from. A zone with ten thousand recorded gathers starts with zero
-recorded seconds, the same as a zone you have never set foot in.
-
-**So every zone shows `-` until it has timed 190 gathers of its own**, a
-fatigue cap with room to spare for the waits too long to count.
-Nothing is borrowed from how fast you gather elsewhere
-to fill the gap: a borrowed figure moves when you gather *anywhere* — cut logs
-in Yhoator and the number sitting on Attohwa Chasm shifts — which is the fault
-the whole per-zone clock exists to remove.
-
-**Hover the figure to see which of the two readings you are on:**
-
-| The hover says | What it means |
-|---|---|
-| `N an hour, … timed here` | Measured in this zone, over the span it names. Trust it. |
-| `N of 190 gathers timed here` | Still filling; the rate shows `-`. |
-
-**`PER GATHER` is right immediately and `GIL/HR` is not there yet.** The gil
-half is measured from the day you install — your log, your prices, your broken
-tools. Only the conversion into an hour ever needed a clock. If you want one
-number to compare zones with today, that is the one.
-
-**Both figures are only as good as the prices you have entered**, under
-`Edit Prices` on the Spoils tab. A zone with nothing priced shows neither
-figure rather than showing zero, because a missing price only means nobody has
-checked one yet.
-
-**Do not reset anything to fix this.** `Reset All Data` would clear the drop
-history that makes the figure worth having, to correct something that corrects
-itself once you have put a proper shift into each zone.
-
 ## [Unreleased]
 
 ## [0.30.1] - 2026-10-08
