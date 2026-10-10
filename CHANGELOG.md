@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.30.2] - 2026-10-10
+
+### Changed
+
+- **The ore from the swing a Gold Rush or Motherlode fires on counts as one of
+  its drops**, so Count Gold Rush/Motherlode Drops leaves it out with the rest.
+- **Data gathered before this version undercounts Gold Rush and Motherlode
+  drops** by one per past proc, so their share reads a little lower than it is.
+  With Count Gold Rush/Motherlode Drops unticked, those ores' drop rates read a
+  little high for the same reason.
+- **A swing at another node ends a Gold Rush or Motherlode run at once**, even if
+  it gives nothing, since the game drops the buff there.
+- **Petrified Log in Carpenters' Landing needs Logging skill 20**, not 40.
+
 ## [0.30.1] - 2026-10-08
 
 ### Added
@@ -1012,7 +1026,8 @@ Initial public release.
 - The rule that a gather decays *all* other zones for that activity was
   inferred from a two-zone observation.
 
-[Unreleased]: https://github.com/KisamMeow/HELMdiel/compare/v0.30.1...HEAD
+[Unreleased]: https://github.com/KisamMeow/HELMdiel/compare/v0.30.2...HEAD
+[0.30.2]: https://github.com/KisamMeow/HELMdiel/compare/v0.30.1...v0.30.2
 [0.30.1]: https://github.com/KisamMeow/HELMdiel/compare/v0.30.0...v0.30.1
 [0.30.0]: https://github.com/KisamMeow/HELMdiel/compare/v0.29.0...v0.30.0
 [0.29.0]: https://github.com/KisamMeow/HELMdiel/compare/v0.28.1...v0.29.0

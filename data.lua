@@ -409,7 +409,7 @@ data.ZONE_ITEMS = T{
             { name = 'Ash Log' },
             { name = 'Dryad Root' },
             { name = 'Oak Log', skill = 10 },
-            { name = 'Petrified Log', skill = 40 },
+            { name = 'Petrified Log', skill = 20 },
             { name = 'Tree Cuttings' },
             { name = 'Walnut Log' },
             { name = 'Willow Log' },

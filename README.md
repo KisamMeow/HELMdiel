@@ -6,7 +6,7 @@ Per-zone fatigue counters, skill levels read from your own skill-up messages,
 drop logging with icons and rarity tiers, a session tally with gil, and CSV
 export.
 
-Ashita v4.30+ addon. Version 0.30.1. Released under GPL-3.0. Coded with help
+Ashita v4.30+ addon. Version 0.30.2. Released under GPL-3.0. Coded with help
 from Claude Opus 5.5.
 
 ## Screenshots
@@ -163,7 +163,8 @@ the drop data.
 
 Gold Rush repeats one item until the node runs out, and Motherlode, which can
 only fire at a node Gold Rush has already hit, upgrades that item a tier for
-the rest of it. Those extra items are real but they are not a fair sample of
+the rest of it. The ore from the swing either one fires on counts as one of its
+drops too. Those items are real but they are not a fair sample of
 what the zone drops, so **Count Gold Rush/Motherlode Drops** in Settings
 decides whether they count towards your drop percentages. It is on by default,
 and flipping it moves every repeat you have ever recorded in or out of your
@@ -178,7 +179,9 @@ drop. While Count Gold Rush/Motherlode Drops is on, those two ores'
 percentages draw in gold, because node repeats are in the figure.
 
 HELMdiel follows the node itself rather than guessing from the item name, so
-moving to another vein ends the run even if it gives the same ore.
+using your tool on another vein ends the run even if it gives the same ore, or
+nothing. The game drops the buff there too, so going back to the first vein is
+ordinary gathering.
 
 ### What a zone earns
 

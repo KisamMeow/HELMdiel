@@ -1,6 +1,6 @@
 addon.name    = 'HELMdiel';
 addon.author  = 'Masuru';
-addon.version = '0.30.1';
+addon.version = '0.30.2';
 addon.desc    = 'Tracks HELM (Harvesting/Excavation/Logging/Mining) regional gathering fatigue on HorizonXI.';
 addon.link    = 'https://github.com/KisamMeow/HELMdiel';
 
@@ -35,6 +35,12 @@ local state = T{
     node_index           = nil,
     node_id              = nil,
     node_time            = 0,
+    last_item            = nil,
+    last_item_activity   = nil,
+    last_item_zone       = nil,
+    last_item_time       = 0,
+    last_item_repeat     = false,
+    last_item_found      = nil,
 };
 
 local recent_break       = {};
@@ -77,6 +83,7 @@ local function report_gate(activity, zoneId, item)
         :fmt(name, activity, found.skill, resources.zone_name(zoneId), found.gate));
     warn(('Worth reporting to %s. Settings, under Findings, can copy it.')
         :fmt(data.REPORT_TO));
+    return name;
 end
 
 
@@ -127,6 +134,25 @@ local function in_run(activity, zoneId, item, now)
     return state.repeat_item == nil or state.repeat_item == item;
 end
 
+local function claim_last(activity, zoneId, proc_name, now)
+    if (state.last_item == nil or state.last_item_repeat) then return; end
+    if (state.last_item_activity ~= activity or state.last_item_zone ~= zoneId) then return; end
+    if ((now - state.last_item_time) >= data.NODE_WINDOW_SECONDS) then return; end
+
+    store.claim_repeat(activity, zoneId, state.last_item);
+    state.last_item_repeat = true;
+    if (state.debug) then
+        msg(('[repeat] %s counted with the run it started'):fmt(state.last_item));
+    end
+
+    local found = state.last_item_found;
+    if (found ~= nil) then
+        store.forget_finding(activity, zoneId, found);
+        state.last_item_found = nil;
+        warn(('%s came with the %s, so it is not a finding after all.'):fmt(found, proc_name));
+    end
+end
+
 ashita.events.register('packet_out', 'helmdiel_packet_out', function(e)
     if (e.id ~= data.HELM_PACKET) then return; end
 
@@ -142,6 +168,11 @@ ashita.events.register('packet_out', 'helmdiel_packet_out', function(e)
     state.node_time = os.clock();
     if (state.debug) then
         msg(('[node] swing at node %d (index %d)'):fmt(serverId, index));
+    end
+
+    if (state.repeat_node ~= nil and state.repeat_node ~= serverId) then
+        clear_run();
+        if (state.debug) then msg('[repeat] a swing at another node ended the run'); end
     end
 end);
 
@@ -196,6 +227,9 @@ ashita.events.register('text_in', 'helmdiel_text_in', function(e)
 
         if (not repeated(recent_proc, proc_name, now)) then
             store.register_proc(proc_name, zoneId);
+            if (data.PROC_REPEATS[proc_name]) then
+                claim_last(proc_activity, zoneId, proc_name, now);
+            end
             store.save();
             if (state.debug) then msg(('[proc] counted %s'):fmt(proc_name)); end
         end
@@ -298,7 +332,11 @@ ashita.events.register('text_in', 'helmdiel_text_in', function(e)
 
             if (data.TRACKED_ZONE_SET[activity][zoneId]) then
                 store.register_item_gather(activity, zoneId, item, repeated);
-                if (not repeated) then report_gate(activity, zoneId, item); end
+                local found = nil;
+                if (not repeated) then found = report_gate(activity, zoneId, item); end
+                state.last_item, state.last_item_activity = item, activity;
+                state.last_item_zone, state.last_item_time = zoneId, now;
+                state.last_item_repeat, state.last_item_found = repeated, found;
 
                 if (store.auto_show() and store.reveal_activity(activity)) then
                     msg(('%s was hidden and is showing again.'):fmt(activity));
@@ -356,6 +394,12 @@ local function clear_detection_state()
     state.node_index           = nil;
     state.node_id              = nil;
     state.node_time            = 0;
+    state.last_item            = nil;
+    state.last_item_activity   = nil;
+    state.last_item_zone       = nil;
+    state.last_item_time       = 0;
+    state.last_item_repeat     = false;
+    state.last_item_found      = nil;
 
     recent_break       = {};
     recent_proc        = {};

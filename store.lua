@@ -542,6 +542,31 @@ function store.get_spoils(charname)
     return char.spoils;
 end
 
+local function take_one(log, itemName)
+    local now = (log[itemName] or 0) - 1;
+    if (now > 0) then log[itemName] = now; else log[itemName] = nil; end
+end
+
+function store.claim_repeat(activity, zoneId, itemName)
+    local group, key, char = ensure_zone(store.char_name(), 'item_log',
+                                         activity, zoneId, T);
+
+    local run = char.goldrush[key] or T{};
+    char.goldrush[key] = run;
+    run[itemName] = (run[itemName] or 0) + 1;
+
+    local since = char.session_goldrush[key] or T{};
+    char.session_goldrush[key] = since;
+    since[itemName] = (since[itemName] or 0) + 1;
+
+    if (not store.count_repeats()) then
+        take_one(group[key], itemName);
+        local session = ensure_zone(store.char_name(), 'session_log',
+                                    activity, zoneId, T);
+        take_one(session[key], itemName);
+    end
+end
+
 function store.register_item_gather(activity, zoneId, itemName, repeated)
     if (itemName == nil) then return; end
     settle_stops(activity, zoneId);
@@ -783,6 +808,11 @@ function store.note_gate(activity, zoneId, itemName)
         end
     end
     return nil;
+end
+
+function store.forget_finding(activity, zoneId, shown)
+    local group, key = ensure_zone(store.char_name(), 'findings', activity, zoneId, T);
+    group[key][shown] = nil;
 end
 
 function store.get_findings(charname, activity, zoneId)
