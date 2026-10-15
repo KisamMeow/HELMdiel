@@ -6,7 +6,7 @@ Per-zone fatigue counters, skill levels read from your own skill-up messages,
 drop logging with icons and rarity tiers, a session tally with gil, and CSV
 export.
 
-Ashita v4.30+ addon. Version 0.30.2. Released under GPL-3.0. Coded with help
+Ashita v4.30+ addon. Version 0.31.0. Released under GPL-3.0. Coded with help
 from Claude Opus 5.5.
 
 ## Screenshots
@@ -115,15 +115,13 @@ rates worth trusting live: they need hundreds of gathers and a session rarely
 has them.
 
 **Last Skill** is how many swings you have made since your skill last
-rose, or **Cap (20)** once your skill reaches the zone's ceiling, since the
-count stops meaning anything once your skill cannot move. Every tracked zone
-has a known cap now. **Hover it** for your skill up rate in this zone and the
-numbers behind it.
+rose. **Hover it** for your skill up rate in this zone and the numbers behind
+it. Once your skill reaches the zone's ceiling it can no longer rise there, so
+the tile shows the zone's **Gil/hr** instead. Every tracked zone has a known cap.
 
 **Gil/hr in Place of Last Skill**, in Settings, swaps that tile for this
-zone's gil an hour, the same figure as its foldout on the activity tab, with
-every drop sold to an NPC in brackets. An activity at skill 60 shows it anyway,
-since its Last Skill can no longer move.
+zone's gil an hour everywhere, the same figure as its foldout on the activity
+tab, with every drop sold to an NPC in brackets.
 
 **Swings in a zone you have outskilled do not count towards that last figure.**
 It answers how long you have been waiting for a skill up, and a finished zone
@@ -176,7 +174,8 @@ ore the node repeats and the Motherlode tile the ore it upgrades to, in gold;
 on the Mining tab the same two names follow the rates. Motherlode can hand out
 ore your skill would not, so its ore can read `Locked` in the grid and still
 drop. While Count Gold Rush/Motherlode Drops is on, those two ores'
-percentages draw in gold, because node repeats are in the figure.
+percentages draw in gold, because node repeats are in the figure, and so does
+the zone's Gil/hr, for the same reason.
 
 HELMdiel follows the node itself rather than guessing from the item name, so
 using your tool on another vein ends the run even if it gives the same ore, or
@@ -368,7 +367,7 @@ Hover any control for a one-line explanation.
 |---|---|
 | Font | Segoe UI, Consolas, Arial, Tahoma or Trebuchet MS |
 | Home Detail | Full, Normal (no item list) or Compact (skill and fatigue only) |
-| Gil/hr in Place of Last Skill | Home's second tile shows this zone's gil an hour, NPC figure in brackets. Always on at skill 60 |
+| Gil/hr in Place of Last Skill | Home's second tile shows this zone's gil an hour, NPC figure in brackets. Always on where your skill has reached the zone's cap |
 | Count Gold Rush/Motherlode Drops | On by default. Off keeps a node's Gold Rush and Motherlode repeats out of your drop rates |
 | Item Icons | Item art beside each drop. On by default |
 | Large Item Size | Off gives smaller item art, and smaller item text with it |

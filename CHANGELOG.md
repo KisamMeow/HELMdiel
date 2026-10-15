@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.31.0] - 2026-10-15
+
+### Added
+
+- **Kunwu Ore in Zeruhn Mines and Molybdenum Ore in Gusgen Mines**, from Mining
+  skill 60.
+
+### Changed
+
+- **A Mining zone's Gil/hr draws in gold while Count Gold Rush/Motherlode Drops
+  is ticked**, like its node ores' percentages, since node repeats are in it.
+- **Home's Last Skill tile turns to Gil/hr in any zone your skill can no longer
+  rise in**, not only at skill 60. It no longer reads Cap there.
+
 ## [0.30.2] - 2026-10-10
 
 ### Changed
@@ -1026,7 +1040,8 @@ Initial public release.
 - The rule that a gather decays *all* other zones for that activity was
   inferred from a two-zone observation.
 
-[Unreleased]: https://github.com/KisamMeow/HELMdiel/compare/v0.30.2...HEAD
+[Unreleased]: https://github.com/KisamMeow/HELMdiel/compare/v0.31.0...HEAD
+[0.31.0]: https://github.com/KisamMeow/HELMdiel/compare/v0.30.2...v0.31.0
 [0.30.2]: https://github.com/KisamMeow/HELMdiel/compare/v0.30.1...v0.30.2
 [0.30.1]: https://github.com/KisamMeow/HELMdiel/compare/v0.30.0...v0.30.1
 [0.30.0]: https://github.com/KisamMeow/HELMdiel/compare/v0.29.0...v0.30.0

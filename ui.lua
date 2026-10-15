@@ -573,14 +573,18 @@ local function hint(text)
     if (imgui.IsItemHovered()) then tooltip(text); end
 end
 
-local function stat(caption, value, tip, ...)
+local function stat_in(color, caption, value, tip, ...)
     imgui.TextColored(data.COLOR_CAPTION, caption);
     local hot = imgui.IsItemHovered();
     imgui.SameLine(0, px(data.CELL_GUTTER) * 0.5);
-    imgui.TextColored(data.COLOR_SKILLUP, value);
+    imgui.TextColored(color, value);
     if (tip ~= nil and (hot or imgui.IsItemHovered())) then
         tooltip(tip(...));
     end
+end
+
+local function stat(caption, value, tip, ...)
+    stat_in(data.COLOR_SKILLUP, caption, value, tip, ...);
 end
 
 local PROC_PARTS = {};
@@ -1001,12 +1005,6 @@ local function divider()
     imgui.Spacing();
 end
 
-local function zone_cap_label(charname, activity, zoneId)
-    local cap = store.skill_capped(charname, activity, zoneId);
-    if (cap == nil) then return nil; end
-    return ('Cap (%d)'):fmt(cap);
-end
-
 local function stop_note(ability, charname, zoneId)
     local at = store.proc_stop_at(ability, zoneId);
     if (at == nil) then
@@ -1076,11 +1074,7 @@ local function items_tip(total)
         :fmt(total, total == 1 and '' or 's');
 end
 
-local function skillup_tip(ups, swings, cap_at)
-    if (cap_at ~= nil) then
-        return ('Caps at %d. Swings here are not counted.'):fmt(cap_at);
-    end
-
+local function skillup_tip(ups, swings)
     if (swings == 0) then
         return 'Nothing swung here yet.';
     end
@@ -1175,6 +1169,13 @@ local function home_gil_tip(charname, activity, zoneId, total)
                         charname, zoneId, unknown);
 end
 
+local function gil_color(activity, zoneId)
+    if (node_pair(activity, zoneId) ~= nil and store.count_repeats()) then
+        return data.COLOR_GOLD;
+    end
+    return data.COLOR_SKILLUP;
+end
+
 local function render_activity(charname, activity, curZoneId, zoneName)
     local log   = store.get_session_log(charname, activity, curZoneId);
     local total = count_gathers(log);
@@ -1192,20 +1193,17 @@ local function render_activity(charname, activity, curZoneId, zoneName)
 
     if (mode == 'Compact') then return; end
 
-    local ups    = store.get_skillups(charname, activity, curZoneId);
-    local swings = store.get_attempts(charname, activity, curZoneId);
-    local capped = zone_cap_label(charname, activity, curZoneId);
-    local since  = store.get_since_skillup(charname, activity);
-
     tile(1, 'COLLECTED', ('%d'):fmt(total));
-    local maxed = (store.get_skill(charname, activity) or 0) >= data.SKILL_MAX;
-    if (maxed or store.home_gil()) then
+    local done = store.skill_capped(charname, activity, curZoneId) ~= nil
+              or (store.get_skill(charname, activity) or 0) >= data.SKILL_MAX;
+    if (done or store.home_gil()) then
         tile(2, 'GIL/HR', home_gil(charname, activity, curZoneId, kept),
-             data.COLOR_SKILLUP, home_gil_tip, charname, activity, curZoneId, kept);
+             gil_color(activity, curZoneId), home_gil_tip, charname, activity, curZoneId, kept);
     else
-        tile(2, 'LAST SKILL', capped or ('%d'):fmt(since), data.COLOR_SKILLUP,
-             skillup_tip, ups, swings,
-             store.skill_capped(charname, activity, curZoneId));
+        tile(2, 'LAST SKILL', ('%d'):fmt(store.get_since_skillup(charname, activity)),
+             data.COLOR_SKILLUP, skillup_tip,
+             store.get_skillups(charname, activity, curZoneId),
+             store.get_attempts(charname, activity, curZoneId));
     end
 
     local count = 2;
@@ -1763,7 +1761,7 @@ local function render_activity_tab(charname, activity)
             if (capAt == nil and swings > 0) then
                 if (not first) then imgui.SameLine(0, px(data.STAT_GAP)); end
                 stat('SKILL UPS', ('%.1f%%'):fmt(ups / swings * 100),
-                     skillup_tip, ups, swings, nil);
+                     skillup_tip, ups, swings);
             end
 
             render_procs(charname, activity, zone.id, total, proc_tip);
@@ -1781,8 +1779,9 @@ local function render_activity_tab(charname, activity)
 
                 local rate, span, timed = store.zone_pace(charname, activity, zone.id);
 
-                stat('GIL/HR', rate_text(each, sold, rate), gil_hour_tip, each, rate, span, timed,
-                     total, charname, zone.id, unknown);
+                stat_in(gil_color(activity, zone.id), 'GIL/HR', rate_text(each, sold, rate),
+                        gil_hour_tip, each, rate, span, timed,
+                        total, charname, zone.id, unknown);
                 imgui.SameLine(0, px(data.STAT_GAP));
                 stat('PER GATHER', gil(each), gil_each_tip,
                      gross, cost, total, charname, activity, zone.id);
@@ -1904,7 +1903,7 @@ local function render_settings(charname)
     if (checkbox('Gil/hr in Place of Last Skill', store.home_gil())) then
         store.toggle_home_gil();
     end
-    hint('Home shows this zone\'s gil an hour,\nwith every drop sold to an NPC in brackets.\nAlways on for an activity at skill 60.');
+    hint('Home shows this zone\'s gil an hour,\nwith every drop sold to an NPC in brackets.\nAlways on where your skill can no longer rise.');
 
     imgui.Spacing();
 
